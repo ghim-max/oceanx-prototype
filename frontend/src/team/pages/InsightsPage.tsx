@@ -114,6 +114,7 @@ export function InsightsPage() {
   const [testerProgress, setTesterProgress] = useState<TesterProgress | null>(null);
   const [savingDecision, setSavingDecision] = useState(false);
   const [showAnswers, setShowAnswers] = useState(false);
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [testerDecision, setTesterDecision] = useState<'Reuse' | 'Adapt' | 'Drop' | null>(null);
   const [testerConfidence, setTesterConfidence] = useState<number | null>(null);
@@ -431,6 +432,51 @@ export function InsightsPage() {
                           Last updated {newestGeneratedAt ? formatDateTime(newestGeneratedAt) : 'n/a'} &middot;{' '}
                           {session.completed ?? 0} learners &middot; {maxEducatorCount} educators
                         </p>
+            <button
+              type="button"
+              className={styles.howToggle}
+              aria-expanded={showHowItWorks}
+              aria-controls="how-it-works"
+              onClick={() => setShowHowItWorks((v) => !v)}
+            >
+              {showHowItWorks ? 'Hide how this dashboard works' : 'How this dashboard works'}
+            </button>
+            {showHowItWorks && (
+              <section id="how-it-works" className={styles.howPanel} aria-label="How this dashboard works">
+                <h2 className={styles.howH2}>How this dashboard works</h2>
+                <p className={styles.howIntro}>
+                  It turns learner and educator feedback into one clear recommendation per piece of content,
+                  so you can see what to reuse, adapt or drop in minutes instead of reading every response.
+                </p>
+                <ol className={styles.howSteps}>
+                  <li>
+                    <strong>Collect.</strong> Learners answer a short quiz before and after the seminar and rate the content.
+                    Educators rate each piece of content after teaching it.
+                  </li>
+                  <li>
+                    <strong>Measure.</strong> Every number on a card, such as learning gain, engagement and educator use,
+                    is calculated directly from those responses. The AI never makes up numbers.
+                  </li>
+                  <li>
+                    <strong>Find the evidence (RAG).</strong> For each piece of content, the system searches all comments
+                    for the ones about it and gives only those, plus the numbers, to the AI. This is called
+                    retrieval-augmented generation (RAG): the AI answers from your data, not from general knowledge.
+                  </li>
+                  <li>
+                    <strong>Recommend.</strong> The AI reads the evidence and suggests Reuse, Adapt or Drop,
+                    with a short reason, a suggested action and quotes.
+                  </li>
+                  <li>
+                    <strong>Check.</strong> Every quote is matched word for word against real comments, and quotes about
+                    other content are removed. Each recommendation is also checked against set decision rules.
+                  </li>
+                  <li>
+                    <strong>You decide.</strong> Approve or reject each recommendation. Switch to Raw data at any time
+                    to see everything behind it.
+                  </li>
+                </ol>
+              </section>
+            )}
           </div>
           {isAdmin && (
             <div className={styles.headerRight}>

@@ -1834,3 +1834,69 @@
     gap: 4px;
   }
 }
+
+/* ── How this dashboard works ── */
+.howToggle {
+  margin-top: 4px;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: var(--text-small);
+  font-weight: 500;
+  color: var(--color-link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.howToggle:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 3px;
+}
+
+.howPanel {
+  margin-top: 16px;
+  max-width: 760px;
+  padding: 24px;
+  border: 1px solid #E5E9EE;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.howH2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 300;
+  color: #000000;
+}
+
+.howIntro {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 350;
+  line-height: 1.6;
+  color: rgb(91, 103, 112);
+}
+
+.howSteps {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.howSteps li {
+  font-size: 15px;
+  font-weight: 350;
+  line-height: 1.6;
+  color: rgb(91, 103, 112);
+}
+
+.howSteps strong {
+  font-weight: 500;
+  color: #000000;
+}
