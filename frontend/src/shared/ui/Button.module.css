@@ -1,0 +1,68 @@
+/* ── Pill button ─────────────────────────────────────────────
+   Transparent fill, 1px solid border, fully rounded.
+   Two context variants: --btn-color and --btn-hover-bg are
+   set per variant so this module needs no descendant selectors.
+   ──────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 999px;
+  border: 1px solid var(--btn-color, var(--color-text-primary));
+  background: transparent;
+  color: var(--btn-color, var(--color-text-primary));
+  font-family: var(--font-body);
+  font-weight: var(--weight-label);
+  text-decoration: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  white-space: nowrap;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.btn:hover {
+  background: var(--btn-hover-bg, rgba(15, 30, 40, 0.08));
+}
+
+.btn:active {
+  background: var(--btn-active-bg, rgba(15, 30, 40, 0.14));
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--btn-color, var(--color-link));
+  outline-offset: 3px;
+  border-radius: 999px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn { transition: none; }
+}
+
+/* ── Sizes ── */
+.md {
+  font-size: var(--text-body);
+  padding: 13px 24px;  /* 13 + ~18 line + 13 = 44px min touch target */
+}
+
+.sm {
+  font-size: var(--text-small);
+  padding: 11px 18px; /* 11 + (14×1.6) + 11 = 44.4px — meets 44px min */
+}
+
+/* ── Variants ── */
+
+/* Default: dark border + text (on white/light sections) */
+.dark {
+  --btn-color: var(--color-text-primary);
+  --btn-hover-bg: rgba(15, 30, 40, 0.08);
+  --btn-active-bg: rgba(15, 30, 40, 0.14);
+}
+
+/* Light: white border + text (on hero / dark backgrounds) */
+.light {
+  --btn-color: #ffffff;
+  --btn-hover-bg: rgba(255, 255, 255, 0.12);
+  --btn-active-bg: rgba(255, 255, 255, 0.2);
+}

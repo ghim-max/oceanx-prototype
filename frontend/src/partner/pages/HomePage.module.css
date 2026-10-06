@@ -1,0 +1,442 @@
+.page {
+  /* sections manage their own spacing */
+}
+
+/* ──────────────────────────────────────────────────────────────
+   1. Hero
+   ────────────────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  height: 160svh;
+  min-height: 160vh;
+  /* escape page-main's padding-top so hero starts at top of viewport */
+  margin-top: calc(-1 * var(--nav-height));
+  /* no overflow: hidden — would prevent .heroSticky from working */
+}
+
+/* Image layer: fills the full 160svh, scrolls with the page */
+.heroMedia {
+  position: absolute;
+  inset: 0;
+  overflow: hidden; /* clips image within wrapper bounds */
+}
+
+.heroImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Sticky frame: stays at viewport top while wrapper scrolls past (~60svh of extra scroll),
+   then releases and scrolls away normally when wrapper bottom clears the frame. */
+.heroSticky {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-end;
+}
+
+/* Overlay removed — hero images show at full brightness. */
+.heroOverlay {
+  display: none;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  padding-inline: clamp(20px, 3vw, 40px);
+  /* bottom padding: clear the FAB (56px height + 24px gap + comfort) */
+  padding-bottom: var(--space-20);
+}
+
+/* Reduced motion: revert to original static hero — no sticky effect */
+@media (prefers-reduced-motion: reduce) {
+  .hero {
+    height: 100svh;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+
+  .heroSticky {
+    /* Collapse sticky into a normal positioned layer covering the hero */
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-end;
+  }
+}
+
+.heroHeadline {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 3.75rem);
+  font-weight: var(--weight-h1);
+  color: #ffffff;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-4);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+}
+
+.heroSubline {
+  font-size: var(--text-body);
+  font-weight: var(--weight-body);
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.6;
+  max-width: 58ch;
+  margin-bottom: var(--space-8);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+}
+
+
+/* ──────────────────────────────────────────────────────────────
+   Wide inner wrapper — replaces page-container on the landing page.
+   Sections fill edge-to-edge; this layer adds padding-inline only.
+   On screens > ~2280px the content caps at 2200px and centres.
+   ────────────────────────────────────────────────────────────── */
+.wideInner {
+  width: 100%;
+  padding-inline: 40px;
+  max-width: 2280px; /* 2200px content + 40px padding each side */
+  margin-inline: auto;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Shared: section headings and body text
+   ────────────────────────────────────────────────────────────── */
+.sectionHeading {
+  font-family: var(--font-display);
+  font-size: var(--text-h1);
+  font-weight: var(--weight-h2);
+  color: var(--color-heading);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  text-wrap: balance;
+  margin-bottom: var(--space-6);
+}
+
+.bodyText {
+  font-size: var(--text-body);
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  max-width: 70ch;
+  margin-bottom: var(--space-4);
+  text-wrap: pretty;
+}
+
+.bodyText:last-child {
+  margin-bottom: 0;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   2. Why seagrass matters
+   ────────────────────────────────────────────────────────────── */
+.seagrassSection {
+  padding-block: var(--space-20);
+  background: var(--color-bg);
+}
+
+.seagrassGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-16);
+  align-items: start;
+}
+
+.seagrassText {
+  /* headings and paragraphs */
+}
+
+.seagrassVideo {
+  /* video embed */
+}
+
+.videoWrapper {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 */
+  height: 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-surface-raised);
+}
+
+.videoIframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+.videoCredit {
+  margin-top: var(--space-3);
+  font-size: var(--text-micro);
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   3. Featured story
+   ────────────────────────────────────────────────────────────── */
+.featuredSection {
+  padding-block: var(--space-20);
+  background: var(--color-surface);
+}
+
+.featuredGrid {
+  display: grid;
+  grid-template-columns: 58fr 42fr;
+  gap: var(--space-12);
+  align-items: center;
+}
+
+.featuredImageWrap {
+  border-radius: var(--radius-image);
+  overflow: hidden;
+  aspect-ratio: 3 / 2;
+}
+
+.featuredImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.featuredLabel {
+  font-size: var(--text-micro);
+  font-weight: var(--weight-label);
+  color: var(--color-text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: var(--space-3);
+  font-family: var(--font-body);
+}
+
+.featuredTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-h1);
+  font-weight: var(--weight-h2);
+  color: var(--color-heading);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  margin-bottom: var(--space-4);
+  text-wrap: balance;
+}
+
+.featuredQuestion {
+  font-family: var(--font-display);
+  font-size: var(--text-h3);
+  font-weight: var(--weight-h3);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin-bottom: var(--space-6);
+  text-wrap: balance;
+}
+
+.quickFacts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-8);
+}
+
+.quickFact {
+  font-size: var(--text-small);
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+}
+
+.quickFactDot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--color-border);
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+
+/* ──────────────────────────────────────────────────────────────
+   4. Browse by audience
+   ────────────────────────────────────────────────────────────── */
+.audienceSection {
+  padding-block: var(--space-20);
+  background: var(--color-bg);
+}
+
+.audienceGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-8);
+  margin-top: var(--space-8);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   5. Learning journey
+   ────────────────────────────────────────────────────────────── */
+.journeySection {
+  padding-block-start: 100px;
+  /* bottom clears the fixed FAB (56px height + 24px gap) with comfortable margin */
+  padding-block-end: 140px;
+  background-color: #0a1a2a; /* dark fallback while image loads */
+  background-size: cover;
+  background-position: center;
+}
+
+.journeySection .sectionHeading {
+  color: #ffffff;
+}
+
+.journeySection .journeyStep {
+  border-top-color: rgba(255, 255, 255, 0.2);
+}
+
+.journeySection .journeyNumber {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.journeySection .journeyStepHeading {
+  color: #ffffff;
+}
+
+.journeySection .journeyStepBody {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.journeyStrip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-8);
+  margin-top: var(--space-8);
+  list-style: none;
+}
+
+.journeyStep {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.journeyNumber {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--text-h2);
+  font-weight: var(--weight-h1);
+  color: var(--color-link);
+  line-height: 1;
+  margin-bottom: var(--space-4);
+}
+
+.journeyStepHeading {
+  font-family: var(--font-display);
+  font-size: var(--text-h3);
+  font-weight: var(--weight-h3);
+  color: var(--color-heading);
+  letter-spacing: -0.01em;
+  margin-bottom: var(--space-2);
+}
+
+.journeyStepBody {
+  font-size: var(--text-small);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Responsive
+   ────────────────────────────────────────────────────────────── */
+
+/* Pin hero headline to single line on wide viewports */
+@media (min-width: 768px) {
+  .heroHeadline {
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 1024px) {
+  .wideInner {
+    padding-inline: 32px;
+  }
+
+  .seagrassGrid {
+    gap: var(--space-12);
+  }
+}
+
+@media (max-width: 768px) {
+  .seagrassSection,
+  .featuredSection,
+  .audienceSection {
+    padding-block: var(--space-16); /* step down: 80px → 64px → 48px at 480px */
+  }
+
+  .journeySection {
+    padding-block-start: 80px;
+    padding-block-end: 120px;
+  }
+
+  .seagrassGrid {
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+  }
+
+  .featuredGrid {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  .audienceGrid {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  .journeyStrip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .sectionHeading {
+    font-size: var(--text-h2);
+  }
+}
+
+@media (max-width: 480px) {
+  .wideInner {
+    padding-inline: 20px;
+  }
+
+  .heroContent {
+    padding-inline: 20px;
+    padding-bottom: calc(var(--space-20) + 20px);
+  }
+
+  .seagrassSection,
+  .featuredSection,
+  .audienceSection {
+    padding-block: var(--space-12);
+  }
+
+  .journeySection {
+    padding-block-start: 64px;
+    padding-block-end: 112px;
+  }
+
+  .journeyStrip {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  .quickFacts {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+
+  .quickFactDot {
+    display: none;
+  }
+}

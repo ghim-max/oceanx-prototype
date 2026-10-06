@@ -1,0 +1,80 @@
+.fab {
+  position: fixed;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  right: calc(24px + env(safe-area-inset-right, 0px));
+  z-index: 50;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  /* Default: over white/light sections — white bg, black border, black icon */
+  background: #ffffff;
+  border: 1px solid #000000;
+  color: #000000;       /* lucide uses stroke="currentColor", so this sets icon colour */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fab {
+    transition:
+      background-color 175ms ease,
+      border-color 175ms ease,
+      color 175ms ease,
+      transform 150ms ease-out,
+      box-shadow 150ms ease-out;
+  }
+}
+
+.fab:hover {
+  background: #000000;
+  color: #ffffff;
+  border-color: #000000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.fab:focus-visible {
+  outline: 2px solid #000000;
+  outline-offset: 3px;
+}
+
+/* ── Dark variant: over hero or journey image ── */
+/* Transparent bg, white border, white icon.
+   Applied dynamically via JS when the FAB centre is inside a [data-hero] or [data-journey] rect. */
+.fabDark {
+  background: transparent;
+  border-color: #ffffff;
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.fabDark:hover {
+  background: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.20);
+}
+
+.fabDark:focus-visible {
+  outline-color: #ffffff;
+}
+
+/* ── Tooltip ── */
+.tooltip {
+  background: #0f1e28;
+  color: #ffffff;
+  font-size: var(--text-small);
+  font-weight: var(--weight-label);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.arrow {
+  fill: #0f1e28;
+}

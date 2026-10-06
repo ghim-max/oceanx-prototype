@@ -1,0 +1,594 @@
+/* Decision Card - 3-column horizontal layout */
+.aiCard {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 16px;
+  padding: 32px;
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: 300px 1fr 1.2fr;
+  gap: 40px;
+  align-items: start;
+}
+
+/* Column 1: Identity + Decision */
+.cardCol1 {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.cardMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: rgb(91, 103, 112);
+  font-family: var(--font-body);
+}
+
+.statusTag {
+  display: inline-block;
+  padding: 2px var(--space-3);
+  font-size: var(--text-micro);
+  font-weight: 500;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  max-width: fit-content;
+}
+
+.sourceLine {
+  font-weight: 350;
+}
+
+.cardTitle {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 300;
+  letter-spacing: -0.01em;
+  color: var(--color-heading);
+  line-height: 1.2;
+  margin: 0;
+}
+
+.recommendationPillWrapper {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.recommendationPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  font-size: 15px;
+  font-weight: var(--weight-label);
+  font-family: var(--font-body);
+  letter-spacing: 0.02em;
+}
+
+.cardActions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: auto;
+  padding-top: var(--space-4);
+}
+
+/* Thumbnail */
+.thumbWrapper {
+  position: relative;
+  width: 100%;
+  max-width: 240px;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #E5E9EE;
+  background: #F5F7FA;
+}
+
+.thumbImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.thumbPlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #F5F7FA;
+  font-size: 14px;
+  font-weight: 500;
+  color: #0F1E28;
+  font-family: var(--font-body);
+}
+
+.thumbPlaceholder::after {
+  content: 'Placeholder';
+}
+
+.thumbBadge {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: white;
+  color: #0F1E28;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+  font-family: var(--font-body);
+}
+
+.cardActions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: auto;
+  padding-top: var(--space-4);
+}
+
+.approveBtn {
+  min-height: 44px;
+  padding: 0 var(--space-6);
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
+  font-size: var(--text-body);
+  font-weight: var(--weight-label);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.approveBtn:hover {
+  background: var(--color-accent-dim);
+}
+
+.approveBtn:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 2px;
+}
+
+.rejectBtn {
+  min-height: 44px;
+  padding: 0 var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-size: var(--text-body);
+  font-weight: var(--weight-label);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.rejectBtn:hover {
+  border-color: var(--color-accent);
+  background: var(--color-surface-raised);
+}
+
+.rejectBtn:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 2px;
+}
+
+.approved,
+.rejected {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  font-size: var(--text-body);
+  font-weight: var(--weight-label);
+  color: var(--color-text-secondary);
+}
+
+.approved a,
+.rejected a {
+  color: var(--color-link);
+  text-decoration: underline;
+  font-weight: 350;
+}
+
+/* Column 2: Numbers */
+.cardCol2 {
+  min-width: 0;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.statCardItem {
+  border-left: 1px solid var(--color-border-subtle);
+  padding-left: 20px;
+}
+
+.statCardLabelRow {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.accentSquare {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  background: var(--color-accent);
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.statCardLabelText {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0F1E28;
+}
+
+.statCardNumberRow {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.statCardBigNumber {
+  font-family: var(--font-numbers);
+  font-size: clamp(40px, 3.2vw, 52px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: #000000;
+  font-variant-numeric: tabular-nums;
+}
+
+.statSuffix {
+  font-family: var(--font-numbers);
+  font-size: clamp(18px, 1.4vw, 24px);
+  font-weight: 500;
+  line-height: 1;
+  color: var(--color-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.statCardSub {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 350;
+  color: rgb(91, 103, 112);
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Column 3: Explanation */
+.cardCol3 {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.cardSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sectionLabel {
+  font-size: 12px;
+  font-weight: var(--weight-label);
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.whyText,
+.actionText {
+  font-size: 17px;
+  font-weight: 350;
+  color: rgb(91, 103, 112);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Quotes */
+.quotesList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.quoteItem {
+  border-left: 2px solid var(--color-accent);
+  padding-left: 16px;
+}
+
+.quoteText {
+  font-size: 16px;
+  font-weight: 350;
+  color: #0F1E28;
+  line-height: 1.6;
+  margin: 0 0 4px 0;
+  font-style: italic;
+}
+
+.quoteAttribution {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* Card actions */
+.cardActions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: auto;
+  padding-top: var(--space-4);
+}
+
+.approveBtn {
+  min-height: 44px;
+  padding: 0 var(--space-6);
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
+  font-size: var(--text-body);
+  font-weight: var(--weight-label);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.approveBtn:hover {
+  background: var(--color-accent-dim);
+}
+
+.approveBtn:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 2px;
+}
+
+.rejectBtn {
+  min-height: 44px;
+  padding: 0 var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-size: var(--text-body);
+  font-weight: var(--weight-label);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.rejectBtn:hover {
+  border-color: var(--color-accent);
+  background: var(--color-surface-raised);
+}
+
+.rejectBtn:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 2px;
+}
+
+.approved,
+.rejected {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  font-size: var(--text-body);
+  font-weight: var(--weight-label);
+  color: var(--color-text-secondary);
+}
+
+.approved a,
+.rejected a {
+  color: var(--color-link);
+  text-decoration: underline;
+  font-weight: 350;
+}
+
+/* Responsive for Decision Card */
+@media (max-width: 1100px) {
+  .cardGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .statCardItem {
+    border-left: none;
+    border-top: 1px solid var(--color-border-subtle);
+    padding-left: 0;
+    padding-top: 12px;
+  }
+}
+/* ── Layout v2: decision bar on top of the explanation column ── */
+.thumbPlaceholder::after {
+  content: none;
+}
+
+.decisionBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 16px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #E5E9EE;
+}
+
+.decisionBar .recommendationPillWrapper {
+  margin: 0;
+}
+
+.decisionBar .recommendationPill {
+  font-size: 15px;
+  font-weight: 570;
+  padding: 8px 16px;
+}
+
+.decisionBar .cardActions {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.decisionBar .approveBtn,
+.decisionBar .rejectBtn {
+  font-size: 14px;
+  font-weight: 500;
+  padding: 6px 14px;
+  min-height: 34px;
+}
+
+.cardCol1 .thumbWrapper {
+  margin-bottom: 4px;
+}
+
+/* ── Layout v3: lighter card, recommendation as text (no container) ── */
+.aiCard {
+  padding: 24px 28px;
+}
+
+.cardGrid {
+  align-items: start;
+}
+
+.thumbWrapper {
+  max-width: 168px;
+  border-radius: 10px;
+}
+
+.thumbBadge {
+  font-size: 11px;
+  padding: 2px 8px;
+}
+
+.cardTitle {
+  font-size: 22px;
+}
+
+.decisionBar {
+  padding-bottom: 12px;
+}
+
+.decisionBar .recommendationPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.recDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.recLabel {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(91, 103, 112);
+}
+
+.recValue {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* ── v4: one font, one size for the recommendation line ── */
+.recLabel,
+.recValue {
+  font-family: var(--font-body);
+  font-size: 16px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.recLabel {
+  font-weight: 400;
+  color: rgb(91, 103, 112);
+}
+
+.recValue {
+  font-weight: 600;
+}
+
+/* ── v5: balance the card. Left and middle columns sit in the vertical
+   middle of the (taller) explanation column; bigger thumbnail. ── */
+.cardCol1,
+.cardCol2 {
+  align-self: center;
+}
+
+.thumbWrapper {
+  max-width: 280px;
+  border-radius: 12px;
+}
+
+.thumbBadge {
+  font-size: 12px;
+  padding: 3px 10px;
+}
+
+@media (max-width: 1100px) {
+  .cardCol1,
+  .cardCol2 {
+    align-self: start;
+  }
+}
+
+/* ── v6: more breathing room between thumbnail and numbers ── */
+.cardCol2 {
+  padding-left: 40px;
+}
+
+@media (max-width: 1100px) {
+  .cardCol2 {
+    padding-left: 0;
+  }
+}
+
+/* Suffixes (pts, /5, %) in black so they are readable */
+.statSuffix {
+  color: #000000;
+}

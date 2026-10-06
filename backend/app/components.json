@@ -1,0 +1,77 @@
+[
+  {
+    "id": "game",
+    "title": "Seagrass Stories game",
+    "status": "Fixed",
+    "quiz_question_id": "q4",
+    "description": "An interactive game where students make restoration decisions and see the consequences unfold.",
+    "keywords": [
+      "game",
+      "playing",
+      "play"
+    ]
+  },
+  {
+    "id": "create-activity",
+    "title": "Map the chain: choice, consequence, change",
+    "status": "Adapted",
+    "quiz_question_id": "q5",
+    "description": "Groups use sticky notes to trace how one decision ripples through a seagrass ecosystem over time. For university, becomes a short research question.",
+    "keywords": [
+      "map the chain",
+      "chain activity",
+      "the chain",
+      "sticky"
+    ]
+  },
+  {
+    "id": "further-reading-unep",
+    "title": "UNEP: Seagrass meadows",
+    "status": "Fixed",
+    "quiz_question_id": "q3",
+    "description": "Overview of seagrass meadow ecosystems, threats and restoration priorities from the UN Environment Programme.",
+    "keywords": [
+      "unep",
+      "pre-reading",
+      "reading",
+      "dense"
+    ]
+  },
+  {
+    "id": "video-changi-point",
+    "title": "Changi Point: a meadow in trouble",
+    "status": "Fixed",
+    "quiz_question_id": "q2",
+    "description": "A short film about the seagrass meadow at Changi Point, Singapore.",
+    "keywords": [
+      "changi",
+      "video",
+      "footage",
+      "meadow"
+    ]
+  },
+  {
+    "id": "video-nada",
+    "title": "Meet Nada: a seagrass scientist",
+    "status": "Fixed",
+    "quiz_question_id": "q1",
+    "description": "Nada introduces her work and explains why she chose to study seagrass restoration.",
+    "keywords": [
+      "nada",
+      "scientist"
+    ]
+  },
+  {
+    "id": "learner-organiser",
+    "title": "Learner organiser",
+    "status": "Fixed",
+    "quiz_question_id": null,
+    "description": "A one-page template for learners to record observations, questions and key evidence throughout the session.",
+    "keywords": [
+      "organiser",
+      "organizer",
+      "worksheet",
+      "own notes"
+    ]
+  }
+]

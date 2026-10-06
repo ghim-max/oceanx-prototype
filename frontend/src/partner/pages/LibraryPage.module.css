@@ -1,0 +1,1253 @@
+/* ──────────────────────────────────────────────────────────────
+   Page shell
+   ────────────────────────────────────────────────────────────── */
+.page {
+  background: var(--color-bg);
+  padding-bottom: var(--space-20);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Hero — same structure as landing page
+   ────────────────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  height: 160svh;
+  min-height: 160vh;
+  /* escape page-main's padding-top so hero starts at top of viewport */
+  margin-top: calc(-1 * var(--nav-height));
+}
+
+/* Image layer: fills the full 160svh, scrolls with the page */
+.heroMedia {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.heroImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Sticky frame: stays at viewport top while wrapper scrolls past,
+   then releases when wrapper bottom clears the frame. */
+.heroSticky {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-end;
+}
+
+/* Overlay removed — hero image shows at full brightness. */
+.heroOverlay {
+  display: none;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  /* clamp(--space-5, fluid, --space-10): tokens used as literal px because
+     CSS custom properties cannot be used as clamp() bounds directly */
+  padding-inline: clamp(var(--space-5), 3vw, var(--space-10));
+  padding-bottom: var(--space-20);
+}
+
+/* Reduced motion: revert to original static hero — no sticky effect */
+@media (prefers-reduced-motion: reduce) {
+  .hero {
+    height: 100svh;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+
+  .heroSticky {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-end;
+  }
+}
+
+.heroHeadline {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 4vw, 3.25rem);
+  font-weight: var(--weight-h1);
+  color: #ffffff;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  max-width: 22ch;
+  text-wrap: balance;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Wide inner wrapper — matches landing page exactly:
+   40px desktop, 32px tablet, 20px mobile, 2200px max centred.
+   ────────────────────────────────────────────────────────────── */
+.wideInner {
+  width: 100%;
+  padding-inline: var(--space-10);
+  max-width: 2280px;
+  margin-inline: auto;
+  padding-top: var(--nav-height);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Filter heading
+   ────────────────────────────────────────────────────────────── */
+.filterHeading {
+  font-family: var(--font-display);
+  font-size: var(--text-h1);
+  font-weight: var(--weight-h1);
+  color: var(--color-heading);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  margin-bottom: var(--space-6);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Filter bar
+   ────────────────────────────────────────────────────────────── */
+.filterBar {
+  padding-bottom: var(--space-10);
+  border-bottom: 1px solid var(--color-border-subtle);
+  margin-bottom: var(--space-10);
+}
+
+.filterBarDesktop {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.filterBarMobile {
+  display: none;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.filtersPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.chipGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.chipGroupLabel {
+  font-size: var(--text-micro);
+  font-weight: var(--weight-label);
+  color: var(--color-text-muted);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  font-family: var(--font-body);
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  font-size: var(--text-small);
+  color: var(--color-text-secondary);
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
+  line-height: 1;
+}
+
+.chip:hover {
+  border-color: var(--color-text-muted);
+  color: var(--color-text-primary);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 2px;
+}
+
+.chipActive {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-text-on-accent);
+}
+
+.chipActive:hover {
+  background: var(--color-accent-dim);
+  border-color: var(--color-accent-dim);
+  color: var(--color-text-on-accent);
+}
+
+.chipClear {
+  color: var(--color-text-muted);
+}
+
+.chipClear:hover {
+  color: var(--color-text-secondary);
+  border-color: var(--color-text-muted);
+}
+
+.filterBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-heading);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.filterBarMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.resultCount {
+  font-size: var(--text-small);
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Main content
+   ────────────────────────────────────────────────────────────── */
+.main {
+  min-height: 40vh;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Empty state
+   ────────────────────────────────────────────────────────────── */
+.emptyState {
+  padding: var(--space-20) 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.emptyText {
+  font-size: var(--text-body);
+  color: var(--color-text-muted);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Story group
+   ────────────────────────────────────────────────────────────── */
+.storyGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Stage sections
+   ────────────────────────────────────────────────────────────── */
+.stageSection {
+  scroll-margin-top: calc(var(--nav-height) + var(--space-6));
+}
+
+.stageHeadingRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-8);
+}
+
+.stageHeading {
+  font-family: var(--font-display);
+  font-size: var(--text-h1);
+  font-weight: var(--weight-h1);
+  color: var(--color-heading);
+  letter-spacing: -0.01em;
+}
+
+.stageDesc {
+  font-size: var(--text-body);
+  font-weight: 350;
+  color: var(--color-text-secondary);
+  font-family: var(--font-body);
+  line-height: 1.5;
+  max-width: 72ch;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Card grid — 3 / 2 / 1 columns, incomplete rows centred
+   ────────────────────────────────────────────────────────────── */
+.cardGrid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: var(--space-6);
+}
+
+/* Each card occupies exactly 1/3 of the row (minus gaps).
+   Incomplete rows left-align from the grid's left edge. */
+.cardGrid > .card {
+  flex: 0 0 calc((100% - 2 * var(--space-6)) / 3);
+  min-width: 0;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Component card
+   ────────────────────────────────────────────────────────────── */
+.card {
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  border-radius: var(--radius-image);
+  transition: opacity 150ms ease;
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 4px;
+}
+
+.card:hover .cardThumbImg {
+  transform: scale(1.03);
+}
+
+.cardThumb {
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-image);
+  overflow: hidden;
+  background: var(--color-surface-raised);
+  margin-bottom: var(--space-4);
+  flex-shrink: 0;
+}
+
+.cardThumbImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 300ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cardThumbImg { transition: none; }
+  .card:hover .cardThumbImg { transform: none; }
+}
+
+.cardThumbPlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-bg));
+  transition: background 200ms ease-out;
+}
+
+.card:hover .cardThumbPlaceholder {
+  background: color-mix(in srgb, var(--color-accent) 22%, var(--color-bg));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cardThumbPlaceholder { transition: none; }
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-inline: 2px;
+}
+
+.cardTypeLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--text-micro);
+  font-weight: var(--weight-label);
+  color: var(--color-text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-family: var(--font-body);
+}
+
+.cardTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-body);
+  font-weight: 300;
+  color: var(--color-heading);
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+.cardDesc {
+  font-size: var(--text-small);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cardMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: 2px;
+}
+
+.cardMetaItem {
+  font-size: var(--text-micro);
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+}
+
+.cardAudienceTag {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-family: var(--font-body);
+  line-height: 1.4;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Drawer overlay + panel
+   ────────────────────────────────────────────────────────────── */
+.drawerOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.32);
+  z-index: 200;
+  animation: fadeIn 180ms ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawerOverlay { animation: none; }
+}
+
+.drawerContent {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 480px;
+  max-width: 92vw;
+  background: var(--color-bg);
+  z-index: 201;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideIn 220ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  box-shadow: -2px 0 24px rgba(0,0,0,0.10);
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawerContent { animation: none; }
+}
+
+.drawerHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-6) var(--space-6) var(--space-5);
+  border-bottom: 1px solid var(--color-border-subtle);
+  flex-shrink: 0;
+}
+
+.drawerTypeLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--text-micro);
+  font-weight: var(--weight-label);
+  color: var(--color-text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-family: var(--font-body);
+  margin-bottom: var(--space-2);
+}
+
+.drawerTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-h3);
+  font-weight: 300;
+  color: var(--color-heading);
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.drawerClose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+  transition: border-color 150ms ease, color 150ms ease;
+}
+
+.drawerClose:hover {
+  border-color: var(--color-text-muted);
+  color: var(--color-heading);
+}
+
+.drawerClose:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 2px;
+}
+
+.drawerBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Drawer: coming soon note
+   ────────────────────────────────────────────────────────────── */
+.comingSoon {
+  font-size: var(--text-small);
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Drawer: working content — video
+   ────────────────────────────────────────────────────────────── */
+.workingVideo {
+  /* */
+}
+
+.videoWrapper {
+  position: relative;
+  padding-bottom: 56.25%;
+  height: 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-surface-raised);
+}
+
+.videoIframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+.videoCredit {
+  margin-top: var(--space-3);
+  font-size: var(--text-micro);
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Drawer: external links section
+   ────────────────────────────────────────────────────────────── */
+.linksSection {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Drawer: working content — game
+   ────────────────────────────────────────────────────────────── */
+.workingGame {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.gameDesc {
+  font-size: var(--text-small);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.gameButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: 1px solid var(--color-heading);
+  background: transparent;
+  color: var(--color-heading);
+  font-size: var(--text-small);
+  font-family: var(--font-body);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+  align-self: flex-start;
+}
+
+.gameButton:hover {
+  background: var(--color-heading);
+  color: #fff;
+}
+
+.gameButton:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 2px;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Drawer: working content — activity
+   ────────────────────────────────────────────────────────────── */
+.workingActivity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.activityGoal {
+  font-size: var(--text-small);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.activitySectionHead {
+  font-family: var(--font-display);
+  font-size: var(--text-small);
+  font-weight: 400;
+  color: var(--color-heading);
+  letter-spacing: -0.01em;
+}
+
+.activitySteps {
+  padding-left: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.activitySteps li {
+  font-size: var(--text-small);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.activityMeta {
+  font-size: var(--text-small);
+  color: var(--color-text-secondary);
+}
+
+.activityUniversity {
+  font-size: var(--text-small);
+  color: var(--color-text-muted);
+  border-left: 2px solid var(--color-border);
+  padding-left: var(--space-4);
+  line-height: 1.6;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Fixed note (video-nada, game drawers)
+   ────────────────────────────────────────────────────────────── */
+.fixedNote {
+  font-size: var(--text-micro);
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  margin-top: var(--space-2);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Adapt entry points
+   ────────────────────────────────────────────────────────────── */
+.adaptEntry {
+  /* spacing handled by drawerBody gap */
+}
+
+.adaptPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-small);
+  font-family: var(--font-body);
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 150ms ease, color 150ms ease;
+  align-self: flex-start;
+}
+
+.adaptPill:hover {
+  border-color: var(--color-text-muted);
+  color: var(--color-heading);
+}
+
+.adaptPill:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 2px;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Drawer: details section
+   ────────────────────────────────────────────────────────────── */
+.drawerDetails {
+  border-top: 1px solid var(--color-border-subtle);
+  padding-top: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.drawerDetailHeading {
+  font-family: var(--font-display);
+  font-size: var(--text-small);
+  font-weight: 400;
+  color: var(--color-heading);
+  margin-bottom: 0;
+}
+
+.drawerDetailText {
+  font-size: var(--text-small);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.drawerDetailRow {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.drawerDetailLabel {
+  font-size: var(--text-micro);
+  font-weight: var(--weight-label);
+  color: var(--color-text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-family: var(--font-body);
+  min-width: 88px;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.drawerDetailValue {
+  font-size: var(--text-small);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.externalNote {
+  font-size: var(--text-micro);
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  letter-spacing: 0.05em;
+}
+
+.forAudienceBlock {
+  border-top: 1px solid var(--color-border-subtle);
+  padding-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.forAudienceHeading {
+  font-family: var(--font-display);
+  font-size: var(--text-small);
+  font-weight: 400;
+  color: var(--color-heading);
+  margin-bottom: var(--space-1);
+}
+
+.forAudienceLine {
+  font-size: var(--text-small);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.forAudienceLine strong {
+  color: var(--color-heading);
+  font-weight: 500;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Mobile filter sheet
+   ────────────────────────────────────────────────────────────── */
+.sheetOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.32);
+  z-index: 200;
+  animation: fadeIn 180ms ease;
+}
+
+.sheetContent {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-bg);
+  z-index: 201;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+  animation: sheetUp 220ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@keyframes sheetUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheetContent { animation: none; }
+  .sheetOverlay { animation: none; }
+}
+
+.sheetHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-5) var(--space-5) var(--space-4);
+  border-bottom: 1px solid var(--color-border-subtle);
+  flex-shrink: 0;
+}
+
+.sheetTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-h3);
+  font-weight: 300;
+  color: var(--color-heading);
+  letter-spacing: -0.01em;
+}
+
+.sheetBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-5);
+}
+
+.sheetFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--color-border-subtle);
+  flex-shrink: 0;
+}
+
+.sheetDoneButton {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: 1px solid var(--color-heading);
+  background: var(--color-heading);
+  color: #fff;
+  font-size: var(--text-small);
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: opacity 150ms ease;
+}
+
+.sheetDoneButton:hover {
+  opacity: 0.88;
+}
+
+.sheetDoneButton:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 2px;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Responsive
+   ────────────────────────────────────────────────────────────── */
+
+@media (max-width: 1024px) {
+  .wideInner {
+    padding-inline: var(--space-8);
+  }
+}
+
+/* 2 columns on tablet, hide desktop filters */
+@media (max-width: 768px) {
+  .cardGrid > .card {
+    flex: 0 0 calc((100% - var(--space-6)) / 2);
+  }
+
+  .filterBarDesktop {
+    display: none;
+  }
+
+  .filterBarMobile {
+    display: flex;
+  }
+
+  .chipGroupLabel {
+    min-width: auto;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .wideInner {
+    padding-inline: var(--space-5);
+    padding-top: var(--space-10);
+  }
+
+  .heroContent {
+    padding-inline: var(--space-5);
+    padding-bottom: calc(var(--space-20) + var(--space-5));
+  }
+
+  .cardGrid > .card {
+    flex: 0 0 100%;
+  }
+
+  .drawerContent {
+    width: 100%;
+    max-width: 100%;
+    top: auto;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    max-height: 90vh;
+  }
+}
+
+/* V8 fix: guard the mobile drawer sheet animation behind no-preference so the
+   reduced-motion block at the top of this file is not overridden here */
+@media (max-width: 480px) and (prefers-reduced-motion: no-preference) {
+  .drawerContent {
+    animation: sheetUp 220ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Disabled card (non-pickable in demo)
+   ────────────────────────────────────────────────────────────── */
+.cardDisabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  position: relative;
+}
+
+.cardDisabled .cardThumbImg {
+  filter: grayscale(100%);
+}
+
+.cardDisabled .cardThumbPlaceholder {
+  filter: grayscale(100%);
+}
+
+/* Hover tooltip */
+.cardDisabled::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 30, 40, 0.88);
+  color: #fff;
+  font-size: 12px;
+  font-family: var(--font-body);
+  padding: 6px 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 150ms ease;
+  z-index: 20;
+}
+
+.cardDisabled:hover::after {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cardDisabled::after { transition: none; }
+}
+
+/* Touch tap caption (controlled via React state) */
+.touchCaption {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 30, 40, 0.88);
+  color: #fff;
+  font-size: 12px;
+  font-family: var(--font-body);
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   "Add to my version" in drawer
+   ────────────────────────────────────────────────────────────── */
+.pickActionRow {
+  border-top: 1px solid var(--color-border-subtle);
+  padding-top: var(--space-5);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.addToVersionBtn {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: 1px solid var(--color-heading);
+  background: var(--color-heading);
+  color: #fff;
+  font-size: var(--text-small);
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: opacity 150ms ease;
+}
+
+.addToVersionBtn:hover {
+  opacity: 0.86;
+}
+
+.addToVersionBtn:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 2px;
+}
+
+.addedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--text-small);
+  color: var(--color-heading);
+  font-family: var(--font-body);
+  font-weight: 500;
+}
+
+.removePickBtn {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: var(--text-small);
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.removePickBtn:hover {
+  color: var(--color-text-secondary);
+}
+
+.removePickBtn:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Floating picks tray
+   ────────────────────────────────────────────────────────────── */
+@keyframes trayIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+@keyframes trayInMobile {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.tray {
+  position: fixed;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: 10px 10px 10px var(--space-5);
+
+  background: #fff;
+  border: 1px solid var(--color-heading);
+  border-radius: 999px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+
+  /* Keep tray away from the FAB (56px wide at 24px from right) */
+  max-width: calc(100vw - 140px);
+  white-space: nowrap;
+
+  animation: trayIn 220ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tray { animation: none; }
+}
+
+.trayLabel {
+  font-size: var(--text-small);
+  font-weight: 500;
+  color: var(--color-heading);
+  font-family: var(--font-body);
+  flex-shrink: 0;
+}
+
+.trayCount {
+  font-size: var(--text-small);
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  flex-shrink: 0;
+}
+
+.trayChips {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  overflow: hidden;
+}
+
+.trayChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 4px 8px 4px 10px;
+  border-radius: 999px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  font-size: var(--text-micro);
+  font-family: var(--font-body);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.trayChipTitle {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trayChipRemove {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-size: 15px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.trayChipRemove:hover {
+  color: var(--color-heading);
+}
+
+.trayChipRemove:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 1px;
+  border-radius: 50%;
+}
+
+.trayContinue {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: var(--color-heading);
+  color: #fff;
+  font-size: var(--text-small);
+  font-family: var(--font-body);
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 150ms ease;
+  flex-shrink: 0;
+}
+
+.trayContinue:hover {
+  opacity: 0.86;
+}
+
+.trayContinue:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 2px;
+}
+
+/* Mobile: full-width tray with right padding to clear the FAB
+   FAB: 56px wide, 24px from right + env(safe-area-inset-right) */
+@media (max-width: 640px) {
+  .tray {
+    left: var(--space-5);
+    right: calc(56px + 24px + 12px + env(safe-area-inset-right, 0px));
+    transform: none;
+    border-radius: var(--radius-lg);
+    max-width: none;
+    animation-name: trayInMobile;
+    white-space: normal;
+  }
+
+  .trayChips {
+    flex-wrap: wrap;
+  }
+}

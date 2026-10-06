@@ -1,0 +1,450 @@
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  height: var(--nav-height);
+  background-color: var(--color-bg);
+  display: flex;
+  align-items: center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .nav {
+    transition: background-color 200ms ease;
+  }
+}
+
+/* ── transparent hero mode ── */
+.navOver {
+  background-color: transparent;
+}
+
+/* white logo needs a soft shadow against bright photo areas */
+.navOver .logo {
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.35));
+}
+
+/* hamburger icon becomes white over hero */
+.navOver .menuToggle {
+  color: rgba(255, 255, 255, 0.88);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+}
+
+/* pill link becomes white over hero */
+.navOver .link {
+  border-color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.88);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+
+.navOver .link:hover {
+  border-color: #ffffff;
+  color: #000000;
+  background: #ffffff;
+}
+
+.navOver .link.active {
+  border-color: #ffffff;
+  color: #ffffff;
+}
+
+.navOver .link:focus-visible {
+  outline-color: #ffffff;
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: var(--page-max-width);
+  margin-inline: auto;
+  padding-inline: var(--space-6);
+}
+
+/* Library page: match the wide content layout so logo/links align with page edges */
+.innerWide {
+  max-width: 2280px;
+  padding-inline: var(--space-10); /* 40px — same as .wideInner */
+}
+
+@media (max-width: 1024px) {
+  .innerWide {
+    padding-inline: var(--space-8);
+  }
+}
+
+/* Team page: match the insights page width so logo aligns with page content */
+.innerTeam {
+  max-width: 1840px;
+  padding-inline: 32px;
+}
+
+@media (max-width: 1024px) {
+  .innerTeam {
+    padding-inline: var(--space-6);
+  }
+}
+
+@media (max-width: 480px) {
+  .innerTeam {
+    padding-inline: var(--space-4);
+  }
+}
+
+.wordmark {
+  display: flex;
+  align-items: center;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.logo {
+  height: 41px;
+  width: auto;
+  display: block;
+  flex-shrink: 0;
+}
+
+.links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  list-style: none;
+}
+
+.linkItem {
+  display: flex;
+  align-items: center;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--color-text-primary);
+  background: transparent;
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-small);
+  font-weight: var(--weight-label);
+  padding: 11px 16px; /* 11 + (14×1.6) + 11 = 44.4px — meets 44px min */
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .link {
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+  }
+}
+
+.link:hover {
+  background: #000000;
+  color: #ffffff;
+  border-color: #000000;
+}
+
+.link:active {
+  background: rgba(15, 30, 40, 0.14);
+}
+
+.link.active {
+  border-color: var(--color-link);
+  color: var(--color-link);
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 3px;
+  border-radius: 999px;
+}
+
+/* ── Library quick-links (plain text) ───────────────────────────────────── */
+
+/* Container: flex row on ≥768px; hidden below (Menu button takes over) */
+.libLinks {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8); /* ~32px */
+}
+
+@media (max-width: 768px) {
+  .libLinks {
+    display: none;
+  }
+}
+
+/* Plain text button — no border, no background, no pill */
+.libPill {
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: none;
+  padding: 11px 0; /* vertical tap target without horizontal padding */
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-small);
+  font-weight: var(--weight-label);
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.libPill:hover,
+.libPill:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.libPill:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+/* Active audience: underlined + slightly heavier */
+.libPillActive {
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* Over-hero: white text with soft shadow for legibility */
+.navOver .libPill {
+  color: rgba(255, 255, 255, 0.88);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+}
+
+.navOver .libPill:hover,
+.navOver .libPill:focus-visible {
+  color: #ffffff;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+}
+
+.navOver .libPillActive {
+  color: #ffffff;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+}
+
+/* "Menu" button: hidden on desktop, visible on mobile — same plain-text style */
+.libMenuPill {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .libMenuPill {
+    display: inline-flex;
+  }
+}
+
+/* ── Library mobile bottom sheet ─────────────────────────────────────────── */
+
+@keyframes libFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes libSheetUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.libSheetOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.32);
+  z-index: 200;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .libSheetOverlay {
+    animation: libFadeIn 180ms ease;
+  }
+}
+
+.libSheetContent {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-bg);
+  z-index: 201;
+  border-radius: 12px 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-shadow: 0 -4px 32px rgba(0, 0, 0, 0.12);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .libSheetContent {
+    animation: libSheetUp 220ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+}
+
+.libSheetHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.libSheetTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-h3);
+  font-weight: 300;
+  color: var(--color-heading);
+  letter-spacing: -0.01em;
+}
+
+.libSheetClose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.libSheetClose:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 2px;
+}
+
+.libSheetBody {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0 16px;
+}
+
+.libSheetItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 16px 20px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--color-border-subtle);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  text-align: left;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.libSheetItem:last-child {
+  border-bottom: none;
+}
+
+.libSheetItem:hover {
+  background: var(--color-surface);
+}
+
+.libSheetItem:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: -2px;
+}
+
+.libSheetItemActive {
+  font-weight: var(--weight-label);
+  color: var(--color-heading);
+}
+
+/* Mobile menu toggle (visible below 480px) */
+.menuToggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  margin-right: -6px; /* keep visual alignment; extra tap area extends outward */
+  color: var(--color-text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+/* ── Mobile: revert pill to flat text links in dropdown ── */
+@media (max-width: 480px) {
+  .logo {
+    height: 34px;
+  }
+
+  .links {
+    display: none;
+    position: absolute;
+    top: var(--nav-height);
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    background-color: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--space-4) var(--space-6);
+  }
+
+  .links.open {
+    display: flex;
+  }
+
+  .links .link {
+    border: none;
+    border-bottom: 1px solid var(--color-border-subtle);
+    border-radius: 0;
+    padding: var(--space-3) 0;
+    background: transparent !important;
+    color: var(--color-text-secondary);
+    font-size: var(--text-body);
+    width: 100%;
+  }
+
+  .links .link.active {
+    color: var(--color-link);
+  }
+
+  .links .link:hover {
+    color: var(--color-text-primary);
+  }
+
+  .linkItem:last-child .link {
+    border-bottom: none;
+  }
+
+  .navOver .links.open .link {
+    color: var(--color-text-secondary);
+  }
+
+  .navOver .links.open .link.active {
+    color: var(--color-link);
+  }
+
+  .navOver .links.open .link:hover {
+    color: var(--color-text-primary);
+  }
+
+  .navOver .menuToggle {
+    color: rgba(255, 255, 255, 0.88);
+  }
+
+  .menuToggle {
+    display: flex;
+  }
+}
