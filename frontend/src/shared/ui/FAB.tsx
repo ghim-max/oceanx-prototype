@@ -47,7 +47,9 @@ export function FAB() {
   // Hide while the assistant panel is open (class toggled by AdaptPage)
   useEffect(() => {
     function check() {
-      setPanelOpen(document.body.classList.contains('assistant-panel-open'));
+      const c = document.body.classList;
+      // Also hidden during tester questions (class toggled by InsightsPage)
+      setPanelOpen(c.contains('assistant-panel-open') || c.contains('tester-active'));
     }
     check();
     const obs = new MutationObserver(check);
@@ -72,14 +74,15 @@ export function FAB() {
           <button
             className={`${styles.fab}${overDark ? ` ${styles.fabDark}` : ''}`}
             onClick={handleClick}
-            aria-label="Back to start"
+            aria-label="Back to home page to choose Partner or OceanX team"
           >
-            <Home size={24} strokeWidth={1.75} aria-hidden="true" />
+            <Home size={20} strokeWidth={1.75} aria-hidden="true" />
+            <span className={styles.label}>Switch role</span>
           </button>
         </Tooltip.Trigger>
         <Tooltip.Portal>
           <Tooltip.Content className={styles.tooltip} side="left" sideOffset={10}>
-            Back to start
+            Back to home page to choose Partner or OceanX team
             <Tooltip.Arrow className={styles.arrow} />
           </Tooltip.Content>
         </Tooltip.Portal>

@@ -3,9 +3,11 @@
   bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   right: calc(24px + env(safe-area-inset-right, 0px));
   z-index: 50;
-  width: 56px;
   height: 56px;
-  border-radius: 50%;
+  padding: 0 22px 0 18px;
+  gap: 8px;
+  border-radius: 999px;
+  font-family: inherit;
   /* Default: over white/light sections — white bg, black border, black icon */
   background: #ffffff;
   border: 1px solid #000000;
@@ -77,4 +79,11 @@
 
 .arrow {
   fill: #0f1e28;
+}
+
+.label {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
 }

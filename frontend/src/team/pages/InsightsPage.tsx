@@ -119,6 +119,7 @@ export function InsightsPage() {
   const [testerConfidence, setTesterConfidence] = useState<number | null>(null);
   const [testerReason, setTesterReason] = useState('');
   const scenarioStartRef = useRef<number>(Date.now());
+  const testerPanelRef = useRef<HTMLElement>(null);
   // One-click test start: rotates T1 > T2 > T3 so the counterbalancing stays intact
   const startTestSession = () => {
     const order = ['T1', 'T2', 'T3'];
@@ -184,6 +185,20 @@ export function InsightsPage() {
       setTesterReason('');
       scenarioStartRef.current = Date.now();
     }
+  }, [isTesterMode, testerPhase, testerProgress?.currentIndex]);
+
+  // Hide the Switch role button while a tester is answering questions
+  useEffect(() => {
+    const active = isTesterMode && testerPhase === 'scenario';
+    document.body.classList.toggle('tester-active', active);
+    return () => document.body.classList.remove('tester-active');
+  }, [isTesterMode, testerPhase]);
+
+  // Back to the top on every new question and screen (page and decision panel)
+  useEffect(() => {
+    if (!isTesterMode) return;
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    testerPanelRef.current?.scrollTo({ top: 0 });
   }, [isTesterMode, testerPhase, testerProgress?.currentIndex]);
 
   // Fetch data (normal mode AND tester mode: testers need the cards and raw data)
@@ -944,7 +959,7 @@ export function InsightsPage() {
               )}
 
           </div>
-          <aside className={styles.testerPanel} aria-label="Your decision">
+          <aside ref={testerPanelRef} className={styles.testerPanel} aria-label="Your decision">
               <div className={styles.testerProgress} role="progressbar" aria-valuenow={testerProgress.currentIndex + 1} aria-valuemin={1} aria-valuemax={scenarios.length}>
                 <div className={styles.testerProgressFill} style={{ width: `${progressPercent}%` }} />
               </div>
