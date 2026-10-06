@@ -12,11 +12,23 @@ app.add_middleware(
     CORSMiddleware,
     # ALLOWED_ORIGIN can hold several origins, comma separated
     # (e.g. http://localhost:5173,https://oceanx-prototype.vercel.app)
-    allow_origins=[o.strip() for o in ALLOWED_ORIGIN.split(",") if o.strip()],
+    allow_origins=[o.strip().rstrip("/") for o in ALLOWED_ORIGIN.split(",") if o.strip()],
+    # Also allow Vercel preview deployments of this project
+    allow_origin_regex=r"https://oceanx-prototype(-[a-z0-9-]+)?\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Lets the live (https) Vercel site call this backend on the user's own
+# laptop (http://localhost:8000). Chrome's Private Network Access needs this
+# header on the preflight response.
+@app.middleware("http")
+async def allow_private_network(request, call_next):
+    response = await call_next(request)
+    response.headers["Access-Control-Allow-Private-Network"] = "true"
+    return response
+
 
 class GenerateResponse(BaseModel):
     run_id: str

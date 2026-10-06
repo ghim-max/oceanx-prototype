@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { getInsights, getRaw, generateInsights } from '../../shared/services/insightsApi';
 import { submitTesterDecision } from '../../shared/services/feedbackService';
 import { DecisionCard } from '../../team/components/DecisionCard';
-import { getComponentThumb } from '../../shared/utils/thumbnails';
+import { getComponentThumb, getComponent } from '../../shared/utils/thumbnails';
 import { PROJECT } from '../../team/data/projectContext';
 import type { RawInsightsResponse } from '../../shared/types/insights';
 import styles from './InsightsPage.module.css';
@@ -16,6 +16,17 @@ const COMPONENT_ORDER = [
   'further-reading-unep',
   'learner-organiser',
 ];
+
+// Answer key (shown only after a tester has saved all 6 decisions, for the debrief).
+// Scoring for the report still comes from backend/supabase/007_test_results.sql.
+const ANSWER_KEY: Record<string, { answer: 'Reuse' | 'Adapt' | 'Drop'; why: string }> = {
+  game: { answer: 'Reuse', why: 'Big learning gain (+50), high learning and engagement, all educators used it.' },
+  'video-nada': { answer: 'Reuse', why: 'Big learning gain (+43), rated 4.7, all educators used it.' },
+  'create-activity': { answer: 'Adapt', why: 'Strong learning, but too short for the time slot and mostly changed by educators.' },
+  'video-changi-point': { answer: 'Adapt', why: 'Learners loved it (engagement 4.7) but learned little (+7). Add a guiding question.' },
+  'further-reading-unep': { answer: 'Drop', why: 'Tiny learning gain (+7), mostly skipped, often picked as least useful.' },
+  'learner-organiser': { answer: 'Drop', why: 'Skipped by all educators, low fit with course goals.' },
+};
 
 const TESTER_SET_X = ['game', 'create-activity', 'learner-organiser'];
 const TESTER_SET_Y = ['video-nada', 'video-changi-point', 'further-reading-unep'];
@@ -41,6 +52,7 @@ interface TesterProgress {
     confidence: number;
     reason: string | undefined;
     seconds_to_decide: number;
+    card_recommendation?: string | null;
   }>;
   startTime: number;
   scenarioStartTime: number;
@@ -101,11 +113,20 @@ export function InsightsPage() {
   const [testerPhase, setTesterPhase] = useState<'intro' | 'scenario' | 'end'>('intro');
   const [testerProgress, setTesterProgress] = useState<TesterProgress | null>(null);
   const [savingDecision, setSavingDecision] = useState(false);
+  const [showAnswers, setShowAnswers] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [testerDecision, setTesterDecision] = useState<'Reuse' | 'Adapt' | 'Drop' | null>(null);
   const [testerConfidence, setTesterConfidence] = useState<number | null>(null);
   const [testerReason, setTesterReason] = useState('');
   const scenarioStartRef = useRef<number>(Date.now());
+  // One-click test start: rotates T1 > T2 > T3 so the counterbalancing stays intact
+  const startTestSession = () => {
+    const order = ['T1', 'T2', 'T3'];
+    const last = safeLocalStorageGet('oxe-last-tester');
+    const next = order[(order.indexOf(last ?? '') + 1) % order.length];
+    safeLocalStorageSet('oxe-last-tester', next);
+    setSearchParams({ tester: next, reset: '1' });
+  };
 
   // Check for reset param
   useEffect(() => {
@@ -115,7 +136,10 @@ export function InsightsPage() {
         setTesterPhase('intro');
         setTesterProgress(null);
       }
-      setSearchParams({}, { replace: true });
+      // Remove only ?reset, keep ?tester so the tester stays in tester mode
+      const next = new URLSearchParams(searchParams);
+      next.delete('reset');
+      setSearchParams(next, { replace: true });
     }
   }, [searchParams, setSearchParams, isTesterMode, testerCode]);
 
@@ -162,13 +186,8 @@ export function InsightsPage() {
     }
   }, [isTesterMode, testerPhase, testerProgress?.currentIndex]);
 
-  // Fetch data for normal mode
+  // Fetch data (normal mode AND tester mode: testers need the cards and raw data)
   useEffect(() => {
-    if (isTesterMode) {
-      setLoading(false);
-      return;
-    }
-
     let cancelled = false;
     setLoading(true);
     setError(null);
@@ -282,6 +301,7 @@ export function InsightsPage() {
             confidence,
             reason: reason?.trim() || undefined,
             seconds_to_decide: secondsToDecide,
+            card_recommendation: row.card_recommendation,
           },
         ],
         startTime: testerProgress.startTime,
@@ -399,14 +419,27 @@ export function InsightsPage() {
           </div>
           {isAdmin && (
             <div className={styles.headerRight}>
-              <button
-                type="button"
-                className={styles.generateBtn}
-                onClick={handleGenerate}
-                disabled={generating}
-              >
-                {generating ? 'Generating... (1 to 3 minutes)' : 'Generate recommendations'}
-              </button>
+              <div className={styles.headerButtons}>
+                <div className={styles.testStart}>
+                  <div className={styles.testBubble} role="note">
+                    <ul>
+                      <li>Test how confident you are in deciding what to reuse, adapt or drop.</li>
+                      <li>Don't cheat. It's not about right or wrong, but whether AI helps drive better decisions.</li>
+                    </ul>
+                  </div>
+                  <button type="button" className={styles.testMenuBtn} onClick={startTestSession}>
+                    Start test session
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  className={styles.generateBtn}
+                  onClick={handleGenerate}
+                  disabled={generating}
+                >
+                  {generating ? 'Generating... (1 to 3 minutes)' : 'Generate recommendations'}
+                </button>
+              </div>
               {generateErrors.length > 0 && (
                 <ul className={styles.generateErrors} role="alert" aria-live="polite">
                   {generateErrors.map((e, i) => <li key={i}>{e}</li>)}
@@ -631,7 +664,6 @@ export function InsightsPage() {
                     return (
                       <li key={lc.id} className={styles.noteItem}>
                         <p className={styles.noteText}>{lc.comment}</p>
-                        {lc.helped_most && <span className={styles.noteUsage}>Helped most: {lc.helped_most}</span>}
                       </li>
                     );
                   }
@@ -654,10 +686,72 @@ export function InsightsPage() {
   };
 
   // Render tester mode
+  const renderAnswers = () => {
+    const decisions = testerProgress?.decisions ?? [];
+    if (decisions.length === 0) {
+      return <p className={styles.testerEndText}>Answers are not available for this session (the page was reloaded after finishing).</p>;
+    }
+    const rows = decisions.map((d, i) => {
+      const key = ANSWER_KEY[d.component_id];
+      const correct = key ? d.decision === key.answer : false;
+      const plantedWrong = d.view === 'ai' && !!d.card_recommendation && !!key && d.card_recommendation !== key.answer;
+      return { ...d, i, key, correct, plantedWrong, title: getComponent(d.component_id)?.title ?? d.component_id };
+    });
+    const ai = rows.filter((r) => r.view === 'ai');
+    const raw = rows.filter((r) => r.view === 'raw');
+    return (
+      <section className={styles.answers} aria-label="Answers">
+        <p className={styles.answersSummary}>
+          AI cards: <strong>{ai.filter((r) => r.correct).length} of {ai.length}</strong> correct
+          {' · '}
+          Raw data: <strong>{raw.filter((r) => r.correct).length} of {raw.length}</strong> correct
+        </p>
+        <div className={styles.answersTableWrap}>
+          <table className={styles.answersTable}>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Content</th>
+                <th>View</th>
+                <th>Your answer</th>
+                <th>Confidence</th>
+                <th>Correct answer</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.component_id}>
+                  <td>{r.i + 1}</td>
+                  <td>{r.title}</td>
+                  <td>{r.view === 'ai' ? 'AI card' : 'Raw data'}</td>
+                  <td>{r.decision}</td>
+                  <td>{r.confidence} / 5</td>
+                  <td>
+                    <strong>{r.key?.answer ?? 'n/a'}</strong>
+                    {r.key && <span className={styles.answerWhy}>{r.key.why}</span>}
+                    {r.plantedWrong && (
+                      <span className={styles.answerFlag}>
+                        This AI card was deliberately wrong (it showed {r.card_recommendation}).
+                      </span>
+                    )}
+                  </td>
+                  <td className={r.correct ? styles.answerCorrect : styles.answerWrong}>
+                    {r.correct ? 'Correct' : 'Different'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    );
+  };
+
   const renderTesterMode = () => {
     if (isUnknownTester) {
       return (
-        <div className={styles.testerContainer}>
+        <div className={`${styles.testerContainer} ${styles.testerIntro}`}>
           <h1 className={styles.h1}>Content decisions</h1>
           <p className={styles.testerError}>Unknown tester code</p>
         </div>
@@ -666,7 +760,7 @@ export function InsightsPage() {
 
     if (!testerAssignment) {
       return (
-        <div className={styles.testerContainer}>
+        <div className={`${styles.testerContainer} ${styles.testerIntro}`}>
           <h1 className={styles.h1}>Content decisions</h1>
           <p className={styles.testerError}>Invalid tester assignment</p>
         </div>
@@ -675,8 +769,36 @@ export function InsightsPage() {
 
     if (testerPhase === 'intro') {
       return (
-        <div className={styles.testerContainer}>
+        <div className={`${styles.testerContainer} ${styles.testerIntro}`}>
           <h1 className={styles.h1}>Content decisions</h1>
+          <p className={styles.testerIntroText}>
+            We hope you now understand how this website works and what it is for.
+          </p>
+
+          <h2 className={styles.introH2}>The three decisions</h2>
+          <dl className={styles.introTerms}>
+            <div>
+              <dt>Reuse</dt>
+              <dd>The content works as it is. Learners improve after using it and educators keep it. OceanX keeps it in the next package unchanged.</dd>
+            </div>
+            <div>
+              <dt>Adapt</dt>
+              <dd>The content has value, but something gets in the way, such as timing, an unclear message or a poor fit with the seminar. OceanX keeps it with a specific change.</dd>
+            </div>
+            <div>
+              <dt>Drop</dt>
+              <dd>The content is not helping. Learners do not improve or educators skip it. OceanX removes it and frees up seminar time.</dd>
+            </div>
+          </dl>
+
+          <h2 className={styles.introH2}>How this helps OceanX</h2>
+          <ul className={styles.introList}>
+            <li>Design time goes to content that needs work, not content that already works.</li>
+            <li>Decisions are based on what learners and educators actually said and scored, not gut feel.</li>
+            <li>Each new package gets better than the last one.</li>
+          </ul>
+
+          <h2 className={styles.introH2}>What you will do</h2>
           <p className={styles.testerIntroText}>
             You will see 6 pieces of Seagrass Stories content used in university seminars.
             For each one, decide whether OceanX should Reuse, Adapt or Drop it, and how confident you are.
@@ -691,9 +813,16 @@ export function InsightsPage() {
 
     if (testerPhase === 'end') {
       return (
-        <div className={styles.testerContainer}>
+        <div className={`${styles.testerContainer} ${styles.testerIntro}`}>
           <h1 className={styles.h1}>Content decisions</h1>
           <p className={styles.testerEndText}>Thank you. Your decisions are saved.</p>
+          {!showAnswers ? (
+            <button type="button" className={styles.startBtn} onClick={() => setShowAnswers(true)}>
+              View answers
+            </button>
+          ) : (
+            renderAnswers()
+          )}
         </div>
       );
     }
@@ -714,170 +843,186 @@ export function InsightsPage() {
       };
 
       return (
-        <div className={styles.testerContainer}>
-          <div className={styles.testerProgress} role="progressbar" aria-valuenow={testerProgress.currentIndex + 1} aria-valuemin={1} aria-valuemax={scenarios.length}>
-            <div className={styles.testerProgressFill} style={{ width: `${progressPercent}%` }} />
+        <div className={styles.testerLayout}>
+          <div className={styles.testerMain}>
+            <header className={styles.testerHeader}>
+              <h1 className={styles.h1}>Asset dashboard</h1>
+              <p className={styles.projectLine}>
+                {PROJECT.story} · {PROJECT.owner}, {PROJECT.programme}
+              </p>
+            </header>
+              <p className={styles.testerContext}>You manage Seagrass Stories for universities.</p>
+
+              {loading && <p className={styles.testerContext}>Loading content...</p>}
+              {!loading && error && (
+                <p className={styles.testerContext} role="alert">
+                  Content could not be loaded. Make sure the insights service is running, then refresh.
+                </p>
+              )}
+
+              {currentScenario.view === 'ai' && card && (
+                <DecisionCard
+                  card={card}
+                  showActions={false}
+                />
+              )}
+
+              {currentScenario.view === 'raw' && rawMetric && (
+                <div className={styles.testerRawCard}>
+                  {/* Thumbnail */}
+                  <div className={styles.rawComponentThumb}>
+                    {thumb ? (
+                      <img
+                        src={thumb.src}
+                        alt={thumb.alt}
+                        className={styles.rawComponentThumbImg}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className={styles.rawComponentThumbPlaceholder} />
+                    )}
+                  </div>
+                  <h3 className={styles.cardTitle}>{card?.title || rawMetric.component_id}</h3>
+                  <dl className={styles.rawFields}>
+                    <div><dt>Correct before</dt><dd>{rawMetric.pre_pct !== null ? `${rawMetric.pre_pct}%` : 'n/a'}</dd></div>
+                    <div><dt>Correct after</dt><dd>{rawMetric.post_pct !== null ? `${rawMetric.post_pct}%` : 'n/a'}</dd></div>
+                    <div><dt>Gain</dt><dd>{rawMetric.gain_pts !== null ? `+${rawMetric.gain_pts}` : 'n/a'}</dd></div>
+                    <div><dt>Learning</dt><dd>{rawMetric.learning !== null ? `${rawMetric.learning} / 5` : 'n/a'}</dd></div>
+                    <div><dt>Engagement</dt><dd>{rawMetric.engagement !== null ? `${rawMetric.engagement} / 5` : 'n/a'}</dd></div>
+                    <div><dt>Used as is</dt><dd>{rawMetric.used_as_is}</dd></div>
+                    <div><dt>Changed</dt><dd>{rawMetric.changed}</dd></div>
+                    <div><dt>Skipped</dt><dd>{rawMetric.skipped}</dd></div>
+                    <div><dt>Time about right</dt><dd>{rawMetric.time_right}</dd></div>
+                    <div><dt>Time too long</dt><dd>{rawMetric.time_too_long}</dd></div>
+                    <div><dt>Time too short</dt><dd>{rawMetric.time_too_short}</dd></div>
+                    <div><dt>Curriculum fit</dt><dd>{rawMetric.curriculum_fit !== null ? `${rawMetric.curriculum_fit} / 5` : 'n/a'}</dd></div>
+                    <div><dt>Adaptation helped</dt><dd>{rawMetric.adaptation_helped !== null ? `${rawMetric.adaptation_helped} / 5` : 'n/a'}</dd></div>
+                    <div><dt>Helped most</dt><dd>{rawMetric.helped_most}</dd></div>
+                    <div><dt>Least useful</dt><dd>{rawMetric.least_useful}</dd></div>
+                  </dl>
+
+                  {rawNotes.length > 0 && (
+                    <div className={styles.rawNotesSection}>
+                      <h4 className={styles.sectionLabel}>Educator notes</h4>
+                      <ul className={styles.notesList}>
+                        {rawNotes.map((note: any) => (
+                          <li key={note.id} className={styles.noteItem}>
+                            <p className={styles.noteText}>{note.note}</p>
+                            <span className={styles.noteUsage}>({note.usage})</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {allLearnerComments.length > 0 && (
+                    <div className={styles.rawNotesSection}>
+                      <h4 className={styles.sectionLabel}>All learner comments</h4>
+                      <ul className={styles.notesList}>
+                        {allLearnerComments.map((lc: any) => {
+                          if (lc.comment) {
+                            return (
+                              <li key={lc.id} className={styles.noteItem}>
+                                <p className={styles.noteText}>{lc.comment}</p>
+                              </li>
+                            );
+                          }
+                          if (lc.short_answer) {
+                            return (
+                              <li key={lc.id} className={styles.noteItem}>
+                                <p className={styles.noteText}>{lc.short_answer}</p>
+                                <span className={styles.noteUsage}>(Short answer)</span>
+                              </li>
+                            );
+                          }
+                          return null;
+                        })}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
           </div>
-          <p className={styles.testerProgressText}>Scenario {testerProgress.currentIndex + 1} of {scenarios.length}</p>
-
-          <p className={styles.testerContext}>You manage Seagrass Stories for universities.</p>
-
-          {currentScenario.view === 'ai' && card && (
-            <DecisionCard
-              card={card}
-              showActions={false}
-            />
-          )}
-
-          {currentScenario.view === 'raw' && rawMetric && (
-            <div className={styles.testerRawCard}>
-              {/* Thumbnail */}
-              <div className={styles.rawComponentThumb}>
-                {thumb ? (
-                  <img
-                    src={thumb.src}
-                    alt={thumb.alt}
-                    className={styles.rawComponentThumbImg}
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className={styles.rawComponentThumbPlaceholder} />
-                )}
+          <aside className={styles.testerPanel} aria-label="Your decision">
+              <div className={styles.testerProgress} role="progressbar" aria-valuenow={testerProgress.currentIndex + 1} aria-valuemin={1} aria-valuemax={scenarios.length}>
+                <div className={styles.testerProgressFill} style={{ width: `${progressPercent}%` }} />
               </div>
-              <h3 className={styles.cardTitle}>{card?.title || rawMetric.component_id}</h3>
-              <dl className={styles.rawFields}>
-                <div><dt>Correct before</dt><dd>{rawMetric.pre_pct !== null ? `${rawMetric.pre_pct}%` : 'n/a'}</dd></div>
-                <div><dt>Correct after</dt><dd>{rawMetric.post_pct !== null ? `${rawMetric.post_pct}%` : 'n/a'}</dd></div>
-                <div><dt>Gain</dt><dd>{rawMetric.gain_pts !== null ? `+${rawMetric.gain_pts}` : 'n/a'}</dd></div>
-                <div><dt>Learning</dt><dd>{rawMetric.learning !== null ? `${rawMetric.learning} / 5` : 'n/a'}</dd></div>
-                <div><dt>Engagement</dt><dd>{rawMetric.engagement !== null ? `${rawMetric.engagement} / 5` : 'n/a'}</dd></div>
-                <div><dt>Used as is</dt><dd>{rawMetric.used_as_is}</dd></div>
-                <div><dt>Changed</dt><dd>{rawMetric.changed}</dd></div>
-                <div><dt>Skipped</dt><dd>{rawMetric.skipped}</dd></div>
-                <div><dt>Time about right</dt><dd>{rawMetric.time_right}</dd></div>
-                <div><dt>Time too long</dt><dd>{rawMetric.time_too_long}</dd></div>
-                <div><dt>Time too short</dt><dd>{rawMetric.time_too_short}</dd></div>
-                <div><dt>Curriculum fit</dt><dd>{rawMetric.curriculum_fit !== null ? `${rawMetric.curriculum_fit} / 5` : 'n/a'}</dd></div>
-                <div><dt>Adaptation helped</dt><dd>{rawMetric.adaptation_helped !== null ? `${rawMetric.adaptation_helped} / 5` : 'n/a'}</dd></div>
-                <div><dt>Helped most</dt><dd>{rawMetric.helped_most}</dd></div>
-                <div><dt>Least useful</dt><dd>{rawMetric.least_useful}</dd></div>
-              </dl>
+              <p className={styles.testerProgressText}>Scenario {testerProgress.currentIndex + 1} of {scenarios.length}</p>
 
-              {rawNotes.length > 0 && (
-                <div className={styles.rawNotesSection}>
-                  <h4 className={styles.sectionLabel}>Educator notes</h4>
-                  <ul className={styles.notesList}>
-                    {rawNotes.map((note: any) => (
-                      <li key={note.id} className={styles.noteItem}>
-                        <p className={styles.noteText}>{note.note}</p>
-                        <span className={styles.noteUsage}>({note.usage})</span>
-                      </li>
-                    ))}
-                  </ul>
+              <fieldset className={styles.decisionForm}>
+                <legend className={styles.decisionLegend}>What should OceanX do with this content?</legend>
+                <div className={styles.pillGroup} role="radiogroup" aria-label="Decision">
+                  {['Reuse', 'Adapt', 'Drop'].map((opt) => (
+                    <label key={opt} className={`${styles.pillLabel} ${testerDecision === opt ? styles.pillSelected : ''}`}>
+                      <input
+                        type="radio"
+                        name="decision"
+                        value={opt}
+                        checked={testerDecision === opt}
+                        onChange={() => setTesterDecision(opt as 'Reuse' | 'Adapt' | 'Drop')}
+                        className={styles.pillInput}
+                      />
+                      <span className={styles.pillText}>{opt}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+
+              <fieldset className={styles.decisionForm}>
+                <legend className={styles.decisionLegend}>How confident are you?</legend>
+                <div className={styles.confidenceScale} aria-hidden="true">
+                  <span>1 = Not at all</span>
+                  <span>5 = Very confident</span>
+                </div>
+                <div className={styles.pillGroup} role="radiogroup" aria-label="Confidence">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <label key={n} className={`${styles.pillLabel} ${testerConfidence === n ? styles.pillSelected : ''}`}>
+                      <input
+                        type="radio"
+                        name="confidence"
+                        value={n}
+                        checked={testerConfidence === n}
+                        onChange={() => setTesterConfidence(n)}
+                        className={styles.pillInput}
+                      />
+                      <span className={styles.pillText}>{n}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+
+              <fieldset className={styles.decisionForm}>
+                <legend className={styles.decisionLegend}>In one line, why?</legend>
+                <textarea
+                  className={styles.reasonInput}
+                  value={testerReason}
+                  onChange={(e) => setTesterReason(e.target.value.slice(0, 500))}
+                  maxLength={500}
+                  rows={2}
+                  placeholder="Optional"
+                />
+                <div className={styles.charCounter}>{testerReason.length}/500</div>
+              </fieldset>
+
+              {saveError && (
+                <div className={styles.saveError} role="alert" aria-live="polite">
+                  <p>{saveError}</p>
+                  <button type="button" className={styles.retryBtn} onClick={handleRetrySave}>
+                    Try again
+                  </button>
                 </div>
               )}
 
-              {allLearnerComments.length > 0 && (
-                <div className={styles.rawNotesSection}>
-                  <h4 className={styles.sectionLabel}>All learner comments</h4>
-                  <ul className={styles.notesList}>
-                    {allLearnerComments.map((lc: any) => {
-                      if (lc.comment) {
-                        return (
-                          <li key={lc.id} className={styles.noteItem}>
-                            <p className={styles.noteText}>{lc.comment}</p>
-                            {lc.helped_most && <span className={styles.noteUsage}>Helped most: {lc.helped_most}</span>}
-                          </li>
-                        );
-                      }
-                      if (lc.short_answer) {
-                        return (
-                          <li key={lc.id} className={styles.noteItem}>
-                            <p className={styles.noteText}>{lc.short_answer}</p>
-                            <span className={styles.noteUsage}>(Short answer)</span>
-                          </li>
-                        );
-                      }
-                      return null;
-                    })}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
-
-          <fieldset className={styles.decisionForm}>
-            <legend className={styles.decisionLegend}>What should OceanX do with this content?</legend>
-            <div className={styles.pillGroup} role="radiogroup" aria-label="Decision">
-              {['Reuse', 'Adapt', 'Drop'].map((opt) => (
-                <label key={opt} className={`${styles.pillLabel} ${testerDecision === opt ? styles.pillSelected : ''}`}>
-                  <input
-                    type="radio"
-                    name="decision"
-                    value={opt}
-                    checked={testerDecision === opt}
-                    onChange={() => setTesterDecision(opt as 'Reuse' | 'Adapt' | 'Drop')}
-                    className={styles.pillInput}
-                  />
-                  <span className={styles.pillText}>{opt}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
-          <fieldset className={styles.decisionForm}>
-            <legend className={styles.decisionLegend}>How confident are you?</legend>
-            <div className={styles.confidenceScale} aria-hidden="true">
-              <span>1 = Not at all</span>
-              <span>5 = Very confident</span>
-            </div>
-            <div className={styles.pillGroup} role="radiogroup" aria-label="Confidence">
-              {[1, 2, 3, 4, 5].map((n) => (
-                <label key={n} className={`${styles.pillLabel} ${testerConfidence === n ? styles.pillSelected : ''}`}>
-                  <input
-                    type="radio"
-                    name="confidence"
-                    value={n}
-                    checked={testerConfidence === n}
-                    onChange={() => setTesterConfidence(n)}
-                    className={styles.pillInput}
-                  />
-                  <span className={styles.pillText}>{n}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
-          <fieldset className={styles.decisionForm}>
-            <legend className={styles.decisionLegend}>In one line, why?</legend>
-            <textarea
-              className={styles.reasonInput}
-              value={testerReason}
-              onChange={(e) => setTesterReason(e.target.value.slice(0, 500))}
-              maxLength={500}
-              rows={2}
-              placeholder="Optional"
-            />
-            <div className={styles.charCounter}>{testerReason.length}/500</div>
-          </fieldset>
-
-          {saveError && (
-            <div className={styles.saveError} role="alert" aria-live="polite">
-              <p>{saveError}</p>
-              <button type="button" className={styles.retryBtn} onClick={handleRetrySave}>
-                Try again
+              <button
+                type="button"
+                className={styles.submitDecisionBtn}
+                onClick={handleSubmit}
+                disabled={!testerDecision || testerConfidence === null || savingDecision}
+              >
+                {savingDecision ? 'Saving...' : 'Save and continue'}
               </button>
-            </div>
-          )}
-
-          <button
-            type="button"
-            className={styles.submitDecisionBtn}
-            onClick={handleSubmit}
-            disabled={!testerDecision || testerConfidence === null || savingDecision}
-          >
-            {savingDecision ? 'Saving...' : 'Save and continue'}
-          </button>
+          </aside>
         </div>
       );
     }

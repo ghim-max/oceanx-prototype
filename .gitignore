@@ -30,3 +30,4 @@ dist-ssr
 *.local
 **/.venv/
 __pycache__/
+.claude/settings.local.json
