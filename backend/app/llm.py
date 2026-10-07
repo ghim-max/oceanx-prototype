@@ -13,7 +13,7 @@ from app.config import OPENROUTER_API_KEY, OPENROUTER_MODEL, OPENROUTER_FALLBACK
 # OpenRouter via OpenAI client
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
-    api_key=OPENROUTER_API_KEY,
+    api_key=OPENROUTER_API_KEY or "not-set",  # hosted read-only backend has no key
 )
 
 SYSTEM_PROMPT = """You are an analyst for OceanX Education content managers.

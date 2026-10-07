@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from app.pipeline import run_pipeline, get_latest_run, get_latest_cards, get_raw_data, COMPONENTS
-from app.config import ALLOWED_ORIGIN
+from app.config import ALLOWED_ORIGIN, ALLOW_GENERATE
 
 app = FastAPI(title="OceanX Pipeline B", version="1.0.0")
 
@@ -42,6 +42,8 @@ def health():
 
 @app.post("/insights/generate", response_model=GenerateResponse)
 def generate_insights(only: Optional[str] = Query(None, description="Comma separated component ids to (re)generate, e.g. video-nada,learner-organiser")):
+    if not ALLOW_GENERATE:
+        raise HTTPException(status_code=403, detail="Generate is turned off on the hosted version. Run it on the laptop.")
     only_list = [x.strip() for x in only.split(",") if x.strip()] if only else None
     try:
         result = run_pipeline(only=only_list)

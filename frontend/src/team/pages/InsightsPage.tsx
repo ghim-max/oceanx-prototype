@@ -412,7 +412,8 @@ export function InsightsPage() {
     const dropCount = cards.filter((c: any) => c.recommendation === 'Drop').length;
 
     // Generate button is always shown on the dashboard (tester mode has its own view without it).
-    const isAdmin = true;
+    // Generate and Start test session only show on the laptop (localhost)
+    const isAdmin = ['localhost', '127.0.0.1'].includes(window.location.hostname);
 
     // Headline stats
     const learnersCompleted = session.completed ?? 0;

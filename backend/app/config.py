@@ -6,13 +6,13 @@ from dotenv import load_dotenv
 env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(env_path)
 
-required_keys = [
-    "SUPABASE_URL",
-    "SUPABASE_SERVICE_ROLE_KEY",
-    "OPENROUTER_API_KEY",
-    "OPENROUTER_MODEL",
-    "ALLOWED_ORIGIN",
-]
+# ALLOW_GENERATE=false on the hosted backend: it only serves saved cards,
+# so it does not need the AI model keys. Generate runs on the laptop.
+ALLOW_GENERATE = os.getenv("ALLOW_GENERATE", "true").strip().lower() != "false"
+
+required_keys = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "ALLOWED_ORIGIN"]
+if ALLOW_GENERATE:
+    required_keys += ["OPENROUTER_API_KEY", "OPENROUTER_MODEL"]
 
 missing = [k for k in required_keys if not os.getenv(k)]
 if missing:
@@ -22,7 +22,7 @@ if missing:
 main_model = os.getenv("OPENROUTER_MODEL", "")
 fallback_models_str = os.getenv("OPENROUTER_FALLBACK_MODELS", "")
 
-if not main_model.endswith(":free"):
+if ALLOW_GENERATE and not main_model.endswith(":free"):
     raise RuntimeError(
         "Only free OpenRouter models are allowed. Model ids must end with :free"
     )
