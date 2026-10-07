@@ -102,7 +102,7 @@ export function InsightsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
-  const [generateErrors, setGenerateErrors] = useState<string[]>([]);
+  const [generateErrors, setGenerateErrors] = useState<any[]>([]);
   const [approvalState, setApprovalState] = useState<Record<string, 'approve' | 'reject' | null>>({});
 
   // Tester mode state
@@ -504,7 +504,9 @@ export function InsightsPage() {
               </div>
               {generateErrors.length > 0 && (
                 <ul className={styles.generateErrors} role="alert" aria-live="polite">
-                  {generateErrors.map((e, i) => <li key={i}>{e}</li>)}
+                  {generateErrors.map((e: any, i) => (
+                    <li key={i}>{typeof e === 'string' ? e : `${e.component_id ?? 'Card'}: ${e.error ?? 'failed'}`}</li>
+                  ))}
                 </ul>
               )}
             </div>

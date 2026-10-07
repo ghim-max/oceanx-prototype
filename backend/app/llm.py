@@ -110,14 +110,23 @@ Return JSON only:
                 extra_body=extra_body,
                 temperature=0.2,
             )
-            content = response.choices[0].message.content
+            # Free models sometimes return an empty reply (no choices / no content)
+            if not getattr(response, "choices", None) or not response.choices[0].message.content:
+                raise RuntimeError("empty reply from model")
+            content = response.choices[0].message.content.strip()
+            first, last = content.find("{"), content.rfind("}")
+            if first != -1 and last > first:
+                content = content[first:last + 1]
             result = json.loads(content)
             return result
         except Exception as e:
-            if "429" in str(e) or "rate limit" in str(e).lower():
-                if attempt < len(waits):
-                    time.sleep(waits[attempt])
-                    continue
+            msg = str(e).lower()
+            temporary = ("429" in msg or "rate limit" in msg or "empty reply" in msg
+                         or "nonetype" in msg or "expecting value" in msg or "503" in msg)
+            if temporary and attempt < len(waits):
+                print(f"[llm] {component.get('id')} attempt {attempt + 1} failed, retrying: {str(e)[:150]}")
+                time.sleep(waits[attempt])
+                continue
             raise
 
     raise RuntimeError("LLM call failed after retries")

@@ -18,6 +18,20 @@ RATE_LIMIT_WAITS = [10, 20, 40]  # seconds, used on HTTP 429
 with open("app/components.json") as f:
     COMPONENTS = json.load(f)
 
+def _parse_why(content) -> str:
+    """Read {"why": "..."} even if the model wraps it in code fences or extra text."""
+    if not content:
+        return ""
+    text = str(content).strip()
+    first, last = text.find("{"), text.rfind("}")
+    if first != -1 and last > first:
+        text = text[first:last + 1]
+    try:
+        return str(std_json.loads(text).get("why", "")).strip()
+    except Exception:
+        return ""
+
+
 def parse_overrides(overrides_str: str) -> dict:
     """Parse TEST_OVERRIDES like 'create-activity:Reuse,video-changi-point:Reuse'"""
     result = {}
@@ -104,28 +118,38 @@ def run_pipeline(only: Optional[list[str]] = None) -> dict:
                 models = [OPENROUTER_MODEL] + OPENROUTER_FALLBACK_MODELS
                 extra_body = {"models": models}
             
+                override_why = ""
+                time.sleep(PAUSE_BETWEEN_CARDS)  # avoid back-to-back calls on free models
                 for attempt in range(len(RATE_LIMIT_WAITS) + 1):
                     try:
                         response = client.chat.completions.create(
                             model=OPENROUTER_MODEL,
                             messages=[
-                                {"role": "system", "content": SYSTEM_PROMPT},
+                                {"role": "system", "content": "You write short, factual justifications. Return JSON only."},
                                 {"role": "user", "content": override_prompt},
                             ],
                             response_format={"type": "json_object"},
                             extra_body=extra_body,
                             temperature=0.2,
                         )
-                        override_why = std_json.loads(response.choices[0].message.content).get("why", "")
-                        break
+                        override_why = _parse_why(response.choices[0].message.content)
+                        if override_why:
+                            break
                     except Exception as e:
-                        if "429" in str(e) or "rate limit" in str(e).lower():
-                            if attempt < 2:
-                                time.sleep(5)
-                                continue
-                        raise
-                else:
-                    raise RuntimeError("Override LLM call failed")
+                        print(f"[override] {comp['id']} attempt {attempt + 1} failed: {str(e)[:200]}")
+                    if attempt < len(RATE_LIMIT_WAITS):
+                        time.sleep(RATE_LIMIT_WAITS[attempt])
+                if not override_why:
+                    # Fallback: plain sentence built from the true numbers only
+                    gain = metrics.get("gain_pts")
+                    parts = []
+                    if gain is not None:
+                        parts.append(f"a {gain} point learning gain")
+                    if metrics.get("engagement") is not None:
+                        parts.append(f"engagement of {metrics['engagement']}/5")
+                    if metrics.get("used_as_is") is not None:
+                        parts.append(f"{metrics['used_as_is']} of {metrics.get('educator_count', 3)} educators using it as is")
+                    override_why = f"Recommended {override_rec} based on " + (", ".join(parts) if parts else "the feedback received") + "."
             
                 # Build card with override
                 card = {
