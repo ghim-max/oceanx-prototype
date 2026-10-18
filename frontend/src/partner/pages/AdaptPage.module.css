@@ -1221,6 +1221,206 @@
   cursor: not-allowed;
 }
 
+/* ── Extras section (inline cards) ──────────────────────────────────────── */
+
+.optionalBadge {
+  display: inline-block;
+  margin-left: var(--space-3);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  font-size: var(--text-micro);
+  font-weight: var(--weight-label);
+  font-family: var(--font-body);
+  color: var(--color-text-muted);
+  vertical-align: middle;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.extrasGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+}
+
+@media (max-width: 767px) {
+  .extrasGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.extrasCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+.extrasCardDimmed {
+  opacity: 0.45;
+}
+
+.extrasCardHead {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.extrasCardFooter {
+  display: flex;
+  align-items: center;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border-subtle);
+  margin-top: auto;
+}
+
+.comingSoonBadge {
+  font-size: var(--text-micro);
+  font-weight: var(--weight-label);
+  font-family: var(--font-body);
+  color: var(--color-text-muted);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+}
+
+/* ── Quiz expand (inline options) ────────────────────────────────────────── */
+
+.quizExpand {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.segGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.segLabel {
+  font-size: var(--text-micro);
+  font-weight: var(--weight-label);
+  font-family: var(--font-body);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.segBtns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.segBtn {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  font-size: var(--text-small);
+  font-family: var(--font-body);
+  font-weight: var(--weight-label);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.segBtn:hover:not(.segBtnActive) {
+  background: var(--color-surface);
+}
+
+.segBtn:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 2px;
+}
+
+.segBtnActive {
+  background: #90E0EF;
+  border-color: #5ecfe6;
+  color: #000;
+}
+
+/* ── Count stepper ───────────────────────────────────────────────────────── */
+
+.countStepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.countBtn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: var(--color-bg);
+  font-size: 18px;
+  font-family: var(--font-body);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+  user-select: none;
+  transition: background 120ms ease;
+}
+
+.countBtn:hover:not(:disabled) {
+  background: var(--color-surface);
+}
+
+.countBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.countVal {
+  min-width: 40px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-body);
+  font-family: var(--font-body);
+  font-weight: var(--weight-label);
+  color: var(--color-text-primary);
+  border-left: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
+}
+
+/* ── Assemble result message ─────────────────────────────────────────────── */
+
+.assembleMsg {
+  font-size: var(--text-small);
+  font-family: var(--font-body);
+  font-weight: var(--weight-body);
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+}
+
+.assembleMsgOk {
+  background: #f0fbfd;
+  color: #1e7a8c;
+}
+
+.assembleMsgError {
+  background: #fef3f2;
+  color: #c0392b;
+}
+
 /* ── Mobile responsive ───────────────────────────────────────────────────── */
 
 @media (max-width: 767px) {

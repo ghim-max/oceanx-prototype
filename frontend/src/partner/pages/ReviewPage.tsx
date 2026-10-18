@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Check, AlertCircle, ExternalLink } from 'lucide-react';
+import { Check, AlertCircle } from 'lucide-react';
 import {
   sendPackage,
   emailjsConfigured,
@@ -8,7 +8,6 @@ import {
   MissingEnvError,
   type PackagePayload,
 } from '../../shared/services/sendPackage';
-import type { GeneratedQuiz, GeneratedLessonPlan } from '../../shared/services/generateExtras';
 import styles from './ReviewPage.module.css';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -30,8 +29,24 @@ interface AdaptPackage {
   audience: string;
   picks: StoredPick[];
   recommendations: StoredRec[];
-  quiz: GeneratedQuiz | null;
-  lessonPlan: GeneratedLessonPlan | null;
+}
+
+interface AdaptOptions {
+  quizEnabled: boolean;
+  quizType: string;
+  quizDifficulty: string;
+  quizCount: number;
+  itemIds: string[];
+  componentIds: string[];
+}
+
+function readAdaptOptions(): AdaptOptions | null {
+  try {
+    const raw = sessionStorage.getItem('adaptOptions');
+    return raw ? (JSON.parse(raw) as AdaptOptions) : null;
+  } catch {
+    return null;
+  }
 }
 
 type SendState = 'idle' | 'sending' | 'success' | 'error' | 'missing-env';
@@ -69,6 +84,7 @@ export function ReviewPage() {
   }, []);
 
   const [pkg, setPkg] = useState<AdaptPackage | null>(null);
+  const [adaptOpts, setAdaptOpts] = useState<AdaptOptions | null>(null);
   const [checking, setChecking] = useState(true);
   const [email, setEmail] = useState(DEMO_EMAIL);
   const [emailTouched, setEmailTouched] = useState(false);
@@ -96,6 +112,7 @@ export function ReviewPage() {
         // malformed — will show no-package state
       }
     }
+    setAdaptOpts(readAdaptOptions());
     const t = setTimeout(() => setChecking(false), 1000);
     return () => {
       clearTimeout(t);
@@ -116,20 +133,65 @@ export function ReviewPage() {
     setSendState('sending');
     setErrorMessage('');
 
+    const adaptOptions = readAdaptOptions();
+    const quizEnabled = adaptOptions?.quizEnabled ?? false;
+    const quizTitle = quizEnabled && (adaptOptions?.itemIds.length ?? 0) > 0 ? 'Knowledge Check' : undefined;
+    const quizAssembly = {
+      component_ids: adaptOptions?.componentIds ?? [],
+      options: adaptOptions
+        ? { type: adaptOptions.quizType, difficulty: adaptOptions.quizDifficulty, count: adaptOptions.quizCount }
+        : {},
+      item_ids: adaptOptions?.itemIds ?? [],
+    };
+
+    // First, create the package on the backend to get a slug
+    let slug: string | undefined;
+    try {
+      const createResponse = await fetch('/api/packages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          audience: pkg.audience,
+          picks: pkg.picks,
+          recommendations: pkg.recommendations,
+          quiz_title: quizTitle,
+          lesson_plan_title: undefined,
+          lesson_plan_url: undefined,
+          educator_email: email.trim(),
+          component_ids: quizAssembly.component_ids,
+          options: quizAssembly.options,
+          item_ids: quizAssembly.item_ids,
+        }),
+      });
+      if (!createResponse.ok) {
+        throw new Error('Failed to create package');
+      }
+      const createdPkg = await createResponse.json();
+      slug = createdPkg.slug;
+    } catch (err) {
+      console.error('[create package error]', err);
+      setSendState('error');
+      setErrorMessage('Failed to create package. Please try again.');
+      return;
+    }
+
+    // Then send the email with the slug
     const payload: PackagePayload = {
       email: email.trim(),
       audience: pkg.audience,
       picks: pkg.picks,
       recommendations: pkg.recommendations,
-      quizTitle: pkg.quiz?.title,
-      lessonPlanTitle: pkg.lessonPlan?.title,
-      lessonPlanUrl: pkg.lessonPlan?.pdfUrl,
+      quizTitle,
+      lessonPlanTitle: undefined,
+      lessonPlanUrl: undefined,
+      slug,
     };
 
     try {
       await sendPackage(payload);
       setSendState('success');
       sessionStorage.removeItem('adaptPackage');
+      sessionStorage.removeItem('adaptOptions');
     } catch (err) {
       console.error('[sendPackage error]', err);
       if (err instanceof MissingEnvError) {
@@ -237,42 +299,23 @@ export function ReviewPage() {
                 label="Components selected"
                 value={`${totalComponents} (${pkg?.picks.length ?? 0} ${(pkg?.picks.length ?? 0) === 1 ? 'pick' : 'picks'}, ${pkg?.recommendations.length ?? 0} ${(pkg?.recommendations.length ?? 0) === 1 ? 'recommendation' : 'recommendations'})`}
               />
-              {pkg?.quiz ? (
-                <CheckRow label="Quiz" value={pkg.quiz.title} />
+              {adaptOpts?.quizEnabled && (adaptOpts?.itemIds.length ?? 0) > 0 ? (
+                <CheckRow
+                  label="Knowledge check"
+                  value={`${adaptOpts.itemIds.length} ${adaptOpts.quizType === 'mcq' ? 'MCQ' : adaptOpts.quizType === 'short' ? 'short answer' : 'mixed'} questions, ${adaptOpts.quizDifficulty} difficulty`}
+                />
               ) : (
                 <div className={styles.checkRowMuted}>
                   <span className={styles.checkIconMuted} aria-hidden="true" />
-                  <span className={styles.checkLabel}>Quiz</span>
+                  <span className={styles.checkLabel}>Knowledge check</span>
                   <span className={styles.checkValueMuted}>Not included</span>
                 </div>
               )}
-              {pkg?.lessonPlan ? (
-                <div className={styles.checkRow}>
-                  <span className={styles.checkIcon} aria-hidden="true">
-                    <Check size={14} />
-                  </span>
-                  <span className={styles.checkLabel}>Lesson plan</span>
-                  <div className={styles.checkValueWithLink}>
-                    <span className={styles.checkValue}>{pkg.lessonPlan.title}</span>
-                    <a
-                      href={pkg.lessonPlan.pdfUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={styles.pdfLink}
-                    >
-                      Open PDF
-                      <ExternalLink size={12} aria-hidden="true" />
-                      <span className="visually-hidden">(opens in a new tab)</span>
-                    </a>
-                  </div>
-                </div>
-              ) : (
-                <div className={styles.checkRowMuted}>
-                  <span className={styles.checkIconMuted} aria-hidden="true" />
-                  <span className={styles.checkLabel}>Lesson plan</span>
-                  <span className={styles.checkValueMuted}>Not included</span>
-                </div>
-              )}
+              <div className={styles.checkRowMuted}>
+                <span className={styles.checkIconMuted} aria-hidden="true" />
+                <span className={styles.checkLabel}>Lesson plan</span>
+                <span className={styles.checkValueMuted}>Not included</span>
+              </div>
             </div>
             <p className={styles.gateNotice}>
               Your package has entered the OceanX Education Review Gate. Allow up to 1 business day for your links to arrive.

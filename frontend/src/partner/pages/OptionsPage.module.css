@@ -1,0 +1,340 @@
+.page {
+  min-height: 100vh;
+  padding: 0 0 120px;
+  background: var(--bg);
+}
+
+.inner {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ── Back ── */
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 32px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: var(--font-body);
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.backLink:hover {
+  color: var(--text);
+}
+
+/* ── Header ── */
+.pageHeader {
+  margin: 24px 0 32px;
+}
+
+.h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+  margin: 0;
+}
+
+/* ── Section ── */
+.section {
+  margin-bottom: 32px;
+}
+
+.h2 {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 16px;
+}
+
+/* ── Toggle ── */
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+
+.toggleLabel {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.toggleDesc {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+}
+
+.toggle {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.toggleSlider {
+  position: absolute;
+  inset: 0;
+  background: var(--border);
+  border-radius: 99px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.toggleSlider::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+}
+
+.toggle input:checked + .toggleSlider {
+  background: var(--accent);
+}
+
+.toggle input:checked + .toggleSlider::after {
+  transform: translateX(20px);
+}
+
+/* ── Options grid ── */
+.optionsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.optionsGrid.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fieldLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.pillGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pillOption {
+  position: relative;
+}
+
+.pillOption input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.pillText {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 16px;
+  border-radius: 99px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.pillOption input:checked + .pillText {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--text);
+}
+
+.pillOption input:focus-visible + .pillText {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ── Count stepper ── */
+.countRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.countBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s;
+  line-height: 1;
+}
+
+.countBtn:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.countBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.countValue {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text);
+  min-width: 28px;
+  text-align: center;
+}
+
+/* ── Error ── */
+.assembleError {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #fff0f0;
+  border: 1px solid #fca5a5;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-top: 8px;
+}
+
+.assembleError p {
+  font-size: 0.875rem;
+  color: #b91c1c;
+  margin: 0;
+}
+
+/* ── Lesson plan stub ── */
+.comingSoon {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.comingSoon strong {
+  color: var(--text);
+  display: block;
+  margin-bottom: 4px;
+}
+
+/* ── Continue button ── */
+.continuePill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 13px 28px;
+  border-radius: 99px;
+  background: var(--accent);
+  color: #fff;
+  font: var(--font-body);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.continuePill:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.continuePill:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.sendingDots {
+  display: inline-flex;
+  gap: 4px;
+  margin-right: 8px;
+}
+
+.sendingDots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.sendingDots span:nth-child(2) { animation-delay: 0.2s; }
+.sendingDots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes pulse {
+  0%, 80%, 100% { opacity: 0.25; }
+  40% { opacity: 1; }
+}
+
+/* ── No package state ── */
+.noPackageMsg {
+  color: var(--text-muted);
+  margin: 48px 0 16px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 22px;
+  border-radius: 99px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  color: var(--text);
+  font: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+}

@@ -8,6 +8,7 @@ export interface PackagePayload {
   quizTitle?: string;
   lessonPlanTitle?: string;
   lessonPlanUrl?: string;
+  slug?: string; // package slug for feedback links
 }
 
 const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID as string | undefined;
@@ -67,15 +68,15 @@ export async function sendPackage(payload: PackagePayload): Promise<void> {
     );
   }
 
-  const { picks, recommendations, quizTitle, lessonPlanUrl } = payload;
+  const { picks, recommendations, quizTitle, lessonPlanUrl, slug } = payload;
 
   const templateParams = {
     email: payload.email,
     audience: payload.audience,
     components: buildComponentsText(picks, recommendations),
-    quiz_link: quizTitle ? `${BASE_URL}/quiz/seagrass-university` : 'Not included',
+    quiz_link: quizTitle ? `${BASE_URL}/quiz${slug ? `/p/${slug}` : '/seagrass-university'}` : 'Not included',
     lesson_plan_link: lessonPlanUrl ? `${BASE_URL}${lessonPlanUrl}` : 'Not included',
-    feedback_link: `${BASE_URL}/educator/seagrass-university`,
+    feedback_link: `${BASE_URL}/educator${slug ? `/p/${slug}` : '/seagrass-university'}`,
   };
 
   await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, { publicKey: PUBLIC_KEY });

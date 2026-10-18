@@ -14,7 +14,10 @@ import {
 import styles from './Nav.module.css';
 
 const PARTNER_LINKS = [{ to: '/partner/library', label: 'Browse library' }];
-const TEAM_LINKS: Array<{ to: string; label: string }> = []; // No nav links on /team pages - Insights is the landing page
+const TEAM_LINKS: Array<{ to: string; label: string }> = [
+  { to: '/team/insights', label: 'Insights' },
+  { to: '/team/bank', label: 'Question bank' },
+];
 
 function stageToAnchor(stage: ComponentStage): string {
   return stage.toLowerCase().replace(/\s+/g, '-');
@@ -204,7 +207,10 @@ export function Nav() {
 
   const isLibraryPage = pathname === '/partner/library';
   const isAdaptPage =
-    pathname === '/partner/adapt' || pathname === '/partner/adapt/review';
+    pathname === '/partner/adapt' ||
+    pathname === '/partner/adapt/options' ||
+    pathname === '/partner/adapt/preview' ||
+    pathname === '/partner/adapt/review';
   const isQuizPage = pathname.startsWith('/quiz');
   const isEducatorPage = pathname.startsWith('/educator');
   const isTeamPage = pathname.startsWith('/team');
@@ -267,7 +273,9 @@ export function Nav() {
                   <NavLink
                     to={to}
                     className={({ isActive }) =>
-                      `${styles.link} ${isActive ? styles.active : ''}`
+                      effectiveRole === 'team'
+                        ? `${styles.teamLink} ${isActive ? styles.teamLinkActive : ''}`
+                        : `${styles.link} ${isActive ? styles.active : ''}`
                     }
                     onClick={() => setMenuOpen(false)}
                   >

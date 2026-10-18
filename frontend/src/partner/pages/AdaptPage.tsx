@@ -1,22 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import * as Dialog from '@radix-ui/react-dialog';
-import {
-  ArrowLeft,
-  Check,
-  ShieldCheck,
-  X,
-  Play,
-  Gamepad2,
-  MessageCircle,
-  Pencil,
-  BookOpen,
-  BookMarked,
-  FileText,
-  ListChecks,
-  Sparkles,
-  ExternalLink,
-} from 'lucide-react';
+import { ArrowLeft, ShieldCheck, Play, Gamepad2, MessageCircle, Pencil, BookOpen, BookMarked, ListChecks } from 'lucide-react';
+import { getApprovedBankItems, type BankItem } from '../../shared/services/bankApi';
+import { assembleQuiz, type QuizType, type QuizDifficulty, type AssembleResult } from '../../shared/services/assembleQuiz';
 import {
   SEAGRASS_STORIES,
   STAGES,
@@ -28,18 +14,11 @@ import {
   recommendComponents,
   type Recommendation,
 } from '../../shared/services/recommendComponents';
-import {
-  generateExtras,
-  type GeneratedQuiz,
-  type GeneratedLessonPlan,
-} from '../../shared/services/generateExtras';
 import { usePicks } from '../../shared/context/PicksContext';
 import { UNIVERSITY_STATUS } from '../../shared/data/university-version';
 import styles from './AdaptPage.module.css';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
-
-type ExtraStatus = 'pending' | 'approved' | 'removed';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -187,58 +166,6 @@ function PickRow({
   );
 }
 
-// ─── ApprovedExtraRow ─────────────────────────────────────────────────────────
-
-function ApprovedExtraRow({
-  typeLabel,
-  title,
-  actionLabel,
-  actionHref,
-  onAction,
-  onRemove,
-}: {
-  typeLabel: string;
-  title: string;
-  actionLabel: string;
-  actionHref?: string;
-  onAction?: () => void;
-  onRemove: () => void;
-}) {
-  return (
-    <div className={styles.pickRow}>
-      <div className={styles.pickBody}>
-        <div className={styles.pickMeta}>
-          <span className={styles.typeLabel}>{typeLabel}</span>
-          <span className={`${styles.statusBadge} ${styles.statusAdapted}`}>Adapted</span>
-          <span className={styles.approvedPickBadge}>Approved</span>
-        </div>
-        <p className={styles.pickTitle}>{title}</p>
-        <div className={styles.approvedExtraActions}>
-          {actionHref ? (
-            <a
-              href={actionHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={styles.extraActionPill}
-            >
-              {actionLabel}
-              <ExternalLink size={12} aria-hidden="true" />
-              <span className="visually-hidden">(opens in a new tab)</span>
-            </a>
-          ) : (
-            <button type="button" className={styles.extraActionPill} onClick={onAction}>
-              {actionLabel}
-            </button>
-          )}
-          <button type="button" className={styles.removeLink} onClick={onRemove}>
-            Remove
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── RecommendationCard ───────────────────────────────────────────────────────
 
 function RecommendationCard({
@@ -299,283 +226,16 @@ function LoadingRecs() {
   );
 }
 
-// ─── AssistantPanel ───────────────────────────────────────────────────────────
-
-const CHIPS = [
-  { label: 'Generate a quiz', request: 'Generate a quiz' },
-  { label: 'Build a lesson plan', request: 'Build a lesson plan' },
-  { label: 'Add both', request: 'Generate a quiz and build a lesson plan' },
-];
-
-function AssistantPanel({
-  open,
-  onClose,
-  onSubmit,
-  generating,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onSubmit: (request: string) => void;
-  generating: boolean;
-}) {
-  const [input, setInput] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const submit = (request: string) => {
-    if (!request.trim() || generating) return;
-    setInput('');
-    onSubmit(request);
-  };
-
-  return (
-    <Dialog.Root open={open} onOpenChange={v => { if (!v) onClose(); }}>
-      <Dialog.Portal>
-        <Dialog.Overlay className={styles.panelOverlay} />
-        <Dialog.Content
-          className={styles.panel}
-          aria-describedby="panel-desc"
-          onOpenAutoFocus={e => {
-            e.preventDefault();
-            inputRef.current?.focus();
-          }}
-        >
-          {/* Header */}
-          <div className={styles.panelHeader}>
-            <Dialog.Title asChild>
-              <h2 className={styles.panelTitle}>Assistant</h2>
-            </Dialog.Title>
-            <Dialog.Close asChild>
-              <button type="button" className={styles.panelClose} aria-label="Close assistant">
-                <X size={20} aria-hidden="true" />
-              </button>
-            </Dialog.Close>
-          </div>
-
-          {/* Conversation area */}
-          <div className={styles.panelConversation}>
-            <p id="panel-desc" className={styles.panelIntroMsg}>
-              Tell me what you need for your seminar, and how you'd like to run it.
-            </p>
-            {generating && (
-              <div className={styles.panelThinking} role="status">
-                <span className={styles.loadingDots} aria-hidden="true">
-                  <span /><span /><span />
-                </span>
-                <span>Thinking...</span>
-              </div>
-            )}
-          </div>
-
-          {/* Input area */}
-          <div className={styles.panelInputArea}>
-            <div className={styles.panelChips} role="group" aria-label="Quick options">
-              {CHIPS.map(chip => (
-                <button
-                  key={chip.label}
-                  type="button"
-                  className={styles.panelChip}
-                  onClick={() => submit(chip.request)}
-                  disabled={generating}
-                >
-                  {chip.label}
-                </button>
-              ))}
-            </div>
-
-            <form
-              className={styles.panelForm}
-              onSubmit={e => {
-                e.preventDefault();
-                submit(input);
-              }}
-            >
-              <input
-                ref={inputRef}
-                type="text"
-                className={styles.panelInput}
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                placeholder="Or describe what you need..."
-                disabled={generating}
-                aria-label="Describe what you need"
-              />
-              <button
-                type="submit"
-                className={styles.panelSubmit}
-                disabled={generating || !input.trim()}
-              >
-                Send
-              </button>
-            </form>
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
-  );
-}
-
-// ─── QuizCard ─────────────────────────────────────────────────────────────────
-
-function QuizCard({
-  quiz,
-  onApprove,
-  onRemove,
-  onPreview,
-}: {
-  quiz: GeneratedQuiz;
-  onApprove: () => void;
-  onRemove: () => void;
-  onPreview: () => void;
-}) {
-  return (
-    <div className={styles.extraCard}>
-      <div className={styles.extraIcon} aria-hidden="true">
-        <ListChecks size={22} />
-      </div>
-      <div className={styles.extraBody}>
-        <p className={styles.extraType}>Quiz</p>
-        <p className={styles.extraTitle}>{quiz.title}</p>
-        <p className={styles.extraMeta}>
-          {quiz.metaLabel ?? `${quiz.questionCount} questions · ${quiz.duration}`}
-        </p>
-        <div className={styles.extraCardActions}>
-          <button type="button" className={styles.extraActionPill} onClick={onPreview}>
-            Preview quiz
-          </button>
-          <button type="button" className={styles.extraActionPillPrimary} onClick={onApprove}>
-            <Check size={13} aria-hidden="true" />
-            Looks good
-          </button>
-          <button type="button" className={styles.extraActionPill} onClick={onRemove}>
-            Remove
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── LessonPlanCard ───────────────────────────────────────────────────────────
-
-function LessonPlanCard({
-  plan,
-  onApprove,
-  onRemove,
-}: {
-  plan: GeneratedLessonPlan;
-  onApprove: () => void;
-  onRemove: () => void;
-}) {
-  return (
-    <div className={styles.extraCard}>
-      <div className={styles.extraIcon} aria-hidden="true">
-        <FileText size={22} />
-      </div>
-      <div className={styles.extraBody}>
-        <p className={styles.extraType}>Lesson plan</p>
-        <p className={styles.extraTitle}>{plan.title}</p>
-        <p className={styles.extraMeta}>{plan.totalDuration}</p>
-        <p className={styles.extraDesc}>{plan.description}</p>
-        <div className={styles.extraCardActions}>
-          <a
-            href={plan.pdfUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.extraActionPill}
-          >
-            Open PDF
-            <ExternalLink size={13} aria-hidden="true" />
-            <span className="visually-hidden">(opens in a new tab)</span>
-          </a>
-          <button type="button" className={styles.extraActionPillPrimary} onClick={onApprove}>
-            <Check size={13} aria-hidden="true" />
-            Looks good
-          </button>
-          <button type="button" className={styles.extraActionPill} onClick={onRemove}>
-            Remove
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── QuizPreviewModal ─────────────────────────────────────────────────────────
-
-function QuizPreviewModal({
-  quiz,
-  open,
-  onClose,
-}: {
-  quiz: GeneratedQuiz;
-  open: boolean;
-  onClose: () => void;
-}) {
-  return (
-    <Dialog.Root open={open} onOpenChange={v => { if (!v) onClose(); }}>
-      <Dialog.Portal>
-        <Dialog.Overlay className={styles.previewOverlay} />
-        <Dialog.Content className={styles.previewModal} aria-describedby={undefined}>
-          <div className={styles.previewHeader}>
-            <Dialog.Title asChild>
-              <h2 className={styles.previewTitle}>{quiz.title}</h2>
-            </Dialog.Title>
-            <Dialog.Close asChild>
-              <button type="button" className={styles.panelClose} aria-label="Close quiz preview">
-                <X size={20} aria-hidden="true" />
-              </button>
-            </Dialog.Close>
-          </div>
-          <div className={styles.previewBody}>
-            <p className={styles.previewMeta}>
-              {quiz.metaLabel ?? `${quiz.questionCount} questions · ${quiz.duration}`}
-            </p>
-            <ol className={styles.questionList}>
-              {quiz.questions.map((q, qi) => (
-                <li key={q.id} className={styles.questionItem}>
-                  <p className={styles.questionText}>{qi + 1}. {q.question}</p>
-                  {q.type === 'short-answer' ? (
-                    <div className={styles.shortAnswerBox} aria-label="Short answer response area (not interactive in preview)" />
-                  ) : (
-                    <ul className={styles.optionList}>
-                      {q.options.map((opt, oi) => (
-                        <li
-                          key={oi}
-                          className={`${styles.optionItem} ${oi === q.correct ? styles.optionCorrect : ''}`}
-                        >
-                          <span className={styles.optionLetter}>{String.fromCharCode(65 + oi)}</span>
-                          {opt}
-                          {oi === q.correct && (
-                            <span className={styles.correctMark} aria-label="Correct answer">
-                              <Check size={13} aria-hidden="true" />
-                            </span>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </li>
-              ))}
-            </ol>
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
-  );
-}
-
 // ─── SummaryBar ───────────────────────────────────────────────────────────────
 
 function SummaryBar({
   componentCount,
   minutes,
-  extrasCount,
   canContinue,
   onContinue,
 }: {
   componentCount: number;
   minutes: number;
-  extrasCount: number;
   canContinue: boolean;
   onContinue: () => void;
 }) {
@@ -585,19 +245,13 @@ function SummaryBar({
         <span>{componentCount} {componentCount === 1 ? 'component' : 'components'}</span>
         <span className={styles.summarySep} aria-hidden="true">·</span>
         <span>about {minutes} min</span>
-        {extrasCount > 0 && (
-          <>
-            <span className={styles.summarySep} aria-hidden="true">·</span>
-            <span>{extrasCount} {extrasCount === 1 ? 'extra' : 'extras'}</span>
-          </>
-        )}
       </p>
       <button
         type="button"
         className={`${styles.continuePill} ${!canContinue ? styles.continuePillDisabled : ''}`}
         onClick={canContinue ? onContinue : undefined}
         aria-disabled={!canContinue}
-        title={!canContinue ? 'Approve or remove all generated extras to continue' : undefined}
+        title={!canContinue ? 'Add at least one component to continue' : undefined}
       >
         Continue to review
       </button>
@@ -605,7 +259,7 @@ function SummaryBar({
   );
 }
 
-// ─── AdaptPage ────────────────────────────────────────────────────────────────
+// ─── AdaptPage ────────────────────────────────────────────────────────────
 
 export function AdaptPage() {
   const [searchParams] = useSearchParams();
@@ -622,18 +276,16 @@ export function AdaptPage() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [addedRecs, setAddedRecs] = useState<Set<string>>(new Set());
 
+  const [quizEnabled, setQuizEnabled] = useState(false);
+  const [quizType, setQuizType] = useState<QuizType>('mcq');
+  const [quizDifficulty, setQuizDifficulty] = useState<QuizDifficulty>('medium');
+  const [quizCount, setQuizCount] = useState(4);
+  const [bankItems, setBankItems] = useState<BankItem[]>([]);
+  const [bankLoading, setBankLoading] = useState(false);
+  const [bankLoaded, setBankLoaded] = useState(false);
+  const [assembleResult, setAssembleResult] = useState<AssembleResult | null>(null);
+
   const [liveMsg, setLiveMsg] = useState('');
-
-  const [assistantOpen, setAssistantOpen] = useState(false);
-  const [generating, setGenerating] = useState(false);
-
-  const [generatedQuiz, setGeneratedQuiz] = useState<GeneratedQuiz | null>(null);
-  const [generatedPlan, setGeneratedPlan] = useState<GeneratedLessonPlan | null>(null);
-  const [quizStatus, setQuizStatus] = useState<ExtraStatus>('pending');
-  const [planStatus, setPlanStatus] = useState<ExtraStatus>('pending');
-  const [quizPreviewOpen, setQuizPreviewOpen] = useState(false);
-
-  const extrasRef = useRef<HTMLDivElement>(null);
 
   // Load recommendations
   useEffect(() => {
@@ -644,21 +296,27 @@ export function AdaptPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Hide FAB while assistant panel is open
-  useEffect(() => {
-    if (assistantOpen) {
-      document.body.classList.add('assistant-panel-open');
-    } else {
-      document.body.classList.remove('assistant-panel-open');
-    }
-    return () => document.body.classList.remove('assistant-panel-open');
-  }, [assistantOpen]);
-
   // Page title
   useEffect(() => {
     document.title = 'Build your university version — OceanX Education';
     return () => { document.title = 'OceanX Education'; };
   }, []);
+
+  // Fetch bank items once when quiz is first enabled.
+  // bankLoading intentionally excluded from deps — including it causes an infinite retry loop
+  // when the fetch fails (finally resets bankLoading, which re-triggers the effect).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!quizEnabled || bankLoaded || bankLoading) return;
+    setBankLoading(true);
+    getApprovedBankItems()
+      .then(items => {
+        setBankItems(items);
+        setBankLoaded(true);
+      })
+      .catch(() => {})
+      .finally(() => setBankLoading(false));
+  }, [quizEnabled, bankLoaded]);
 
   const handleRemovePick = (id: string) => {
     const next = picks.filter(p => p !== id);
@@ -698,29 +356,29 @@ export function AdaptPage() {
     navigate(`/partner/library?audience=${encodeURIComponent(audience)}&picks=${encodeURIComponent(picksStr)}`);
   };
 
-  const handleAssistantSubmit = async (request: string) => {
-    setGenerating(true);
-    try {
-      const extras = await generateExtras({ audience, picks, request });
-      if (extras.quiz) {
-        setGeneratedQuiz(extras.quiz);
-        setQuizStatus('pending');
-      }
-      if (extras.lessonPlan) {
-        setGeneratedPlan(extras.lessonPlan);
-        setPlanStatus('pending');
-      }
-    } finally {
-      setGenerating(false);
-      setAssistantOpen(false);
-      setTimeout(() => {
-        extrasRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 200);
-    }
-  };
-
   // All picks grouped by stage
   const allPickIds = [...picks, ...Array.from(addedRecs)];
+  const picksKey = allPickIds.join(',');
+
+  // Run assembleQuiz live whenever options or picks change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!bankLoaded || !quizEnabled || allPickIds.length === 0) {
+      setAssembleResult(null);
+      return;
+    }
+    setAssembleResult(
+      assembleQuiz(bankItems, {
+        componentIds: allPickIds,
+        qtype: quizType,
+        difficulty: quizDifficulty,
+        count: quizCount,
+      })
+    );
+  // picksKey is a stable string proxy for allPickIds
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bankLoaded, bankItems, quizEnabled, quizType, quizDifficulty, quizCount, picksKey]);
+
   const picksByStage = STAGES
     .map((stage: ComponentStage) => ({
       stage,
@@ -733,26 +391,12 @@ export function AdaptPage() {
     recommendations.length > 0 &&
     recommendations.every(r => addedRecs.has(r.id));
 
-  // Extras state helpers
-  const quizPending = generatedQuiz !== null && quizStatus === 'pending';
-  const planPending = generatedPlan !== null && planStatus === 'pending';
-  const quizApproved = generatedQuiz !== null && quizStatus === 'approved';
-  const planApproved = generatedPlan !== null && planStatus === 'approved';
-  const hasPendingExtras = quizPending || planPending;
-  const hasApprovedExtras = quizApproved || planApproved;
-  const hasAnyNonRemovedExtra =
-    (generatedQuiz !== null && quizStatus !== 'removed') ||
-    (generatedPlan !== null && planStatus !== 'removed');
-  const allNonRemovedExtrasApproved = hasAnyNonRemovedExtra && !hasPendingExtras;
-
   // Summary bar values
   const componentCount = allPickIds.length;
   const minutes = approxMinutes(allPickIds);
-  const approvedExtrasCount = [quizApproved, planApproved].filter(Boolean).length;
 
-  // Enabled: at least 1 pick exists and no extra is awaiting approval.
-  // Extras are optional — if none were generated, hasPendingExtras is false.
-  const canContinue = allPickIds.length > 0 && !hasPendingExtras;
+  // Enabled: at least 1 pick exists
+  const canContinue = allPickIds.length > 0;
 
   const handleContinue = () => {
     const addedRecDetails = Array.from(addedRecs).map(id => {
@@ -770,10 +414,25 @@ export function AdaptPage() {
         audience,
         picks: pickDetails,
         recommendations: addedRecDetails,
-        quiz: generatedQuiz && quizStatus === 'approved' ? generatedQuiz : null,
-        lessonPlan: generatedPlan && planStatus === 'approved' ? generatedPlan : null,
       })
     );
+
+    const quizItemIds =
+      quizEnabled && assembleResult && !assembleResult.error
+        ? assembleResult.itemIds
+        : [];
+    sessionStorage.setItem(
+      'adaptOptions',
+      JSON.stringify({
+        quizEnabled: quizItemIds.length > 0,
+        quizType,
+        quizDifficulty,
+        quizCount,
+        itemIds: quizItemIds,
+        componentIds: allPickIds,
+      })
+    );
+
     navigate('/partner/adapt/review');
   };
 
@@ -855,35 +514,6 @@ export function AdaptPage() {
                 ))}
               </div>
             ))}
-            {hasApprovedExtras && (
-              <div className={styles.pickGroup}>
-                <p className={styles.pickGroupLabel}>Extras</p>
-                {quizApproved && generatedQuiz && (
-                  <ApprovedExtraRow
-                    typeLabel="Quiz"
-                    title={generatedQuiz.title}
-                    actionLabel="Preview quiz"
-                    onAction={() => setQuizPreviewOpen(true)}
-                    onRemove={() => {
-                      setQuizStatus('pending');
-                      setLiveMsg('Quiz moved back to your extras');
-                    }}
-                  />
-                )}
-                {planApproved && generatedPlan && (
-                  <ApprovedExtraRow
-                    typeLabel="Lesson plan"
-                    title={generatedPlan.title}
-                    actionLabel="Open PDF"
-                    actionHref={generatedPlan.pdfUrl}
-                    onRemove={() => {
-                      setPlanStatus('pending');
-                      setLiveMsg('Lesson plan moved back to your extras');
-                    }}
-                  />
-                )}
-              </div>
-            )}
           </div>
         </section>
 
@@ -926,74 +556,145 @@ export function AdaptPage() {
           </section>
         )}
 
-        {/* ── Section 3: Assistant trigger + Section 4: Generated extras ── */}
-        {!recsLoading && (
-          <section
-            className={styles.section}
-            aria-labelledby="extras-heading"
-            ref={extrasRef}
-          >
-            <div className={styles.extrasHead}>
-              <div className={styles.extrasHeadText}>
-                <h2 className={styles.h2} id="extras-heading">
-                  {hasAnyNonRemovedExtra ? 'Your extras' : 'Need More Materials?'}
-                </h2>
-                {!hasAnyNonRemovedExtra && (
-                  <p className={styles.extrasSubline}>
-                    You can generate here - a quiz or lesson plan, created for this seminar in seconds.
-                  </p>
+        {/* ── Section 3: Need more materials? ── */}
+        <section className={styles.section} aria-labelledby="extras-heading">
+          <h2 className={styles.h2} id="extras-heading">
+            Need more materials?
+            <span className={styles.optionalBadge}>Optional</span>
+          </h2>
+          <p className={styles.extrasSubline}>Add a knowledge check or lesson plan to your package.</p>
+
+          <div className={styles.extrasGrid}>
+            {/* Knowledge check card */}
+            <div className={styles.extrasCard}>
+              <div className={styles.extrasCardHead}>
+                <div className={styles.extraIcon}>
+                  <ListChecks size={20} aria-hidden="true" />
+                </div>
+                <div>
+                  <p className={styles.extraType}>Quiz</p>
+                  <p className={styles.extraTitle}>Knowledge check</p>
+                </div>
+              </div>
+              <p className={styles.extraDesc}>Questions drawn from the approved question bank, one per activity.</p>
+
+              {quizEnabled && (
+                <div className={styles.quizExpand}>
+                  <div className={styles.segGroup}>
+                    <p className={styles.segLabel}>Type</p>
+                    <div className={styles.segBtns}>
+                      {(['mcq', 'short', 'mixed'] as QuizType[]).map((val) => {
+                        const label = val === 'mcq' ? 'Multiple choice' : val === 'short' ? 'Short answer' : 'Mixed';
+                        return (
+                          <button
+                            key={val}
+                            type="button"
+                            className={`${styles.segBtn} ${quizType === val ? styles.segBtnActive : ''}`}
+                            aria-pressed={quizType === val}
+                            onClick={() => setQuizType(val)}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className={styles.segGroup}>
+                    <p className={styles.segLabel}>Difficulty</p>
+                    <div className={styles.segBtns}>
+                      {(['easy', 'medium', 'hard', 'mixed'] as QuizDifficulty[]).map((val) => (
+                        <button
+                          key={val}
+                          type="button"
+                          className={`${styles.segBtn} ${quizDifficulty === val ? styles.segBtnActive : ''}`}
+                          aria-pressed={quizDifficulty === val}
+                          onClick={() => setQuizDifficulty(val)}
+                        >
+                          {val.charAt(0).toUpperCase() + val.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className={styles.segGroup}>
+                    <p className={styles.segLabel}>Questions</p>
+                    <div className={styles.countStepper}>
+                      <button
+                        type="button"
+                        className={styles.countBtn}
+                        onClick={() => setQuizCount(c => Math.max(3, c - 1))}
+                        disabled={quizCount <= 3}
+                        aria-label="Decrease question count"
+                      >
+                        −
+                      </button>
+                      <span className={styles.countVal} aria-live="polite">{quizCount}</span>
+                      <button
+                        type="button"
+                        className={styles.countBtn}
+                        onClick={() => setQuizCount(c => Math.min(10, c + 1))}
+                        disabled={quizCount >= 10}
+                        aria-label="Increase question count"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  {bankLoading ? (
+                    <p className={styles.assembleMsg}>Loading questions...</p>
+                  ) : assembleResult ? (
+                    assembleResult.error ? (
+                      <p className={`${styles.assembleMsg} ${styles.assembleMsgError}`}>{assembleResult.error}</p>
+                    ) : (
+                      <p className={`${styles.assembleMsg} ${styles.assembleMsgOk}`}>
+                        {assembleResult.itemIds.length} {assembleResult.itemIds.length === 1 ? 'question' : 'questions'} selected
+                      </p>
+                    )
+                  ) : null}
+                </div>
+              )}
+
+              <div className={styles.extrasCardFooter}>
+                {quizEnabled ? (
+                  <button
+                    type="button"
+                    className={styles.removeLink}
+                    onClick={() => { setQuizEnabled(false); setAssembleResult(null); }}
+                  >
+                    Remove
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className={styles.addPill}
+                    onClick={() => setQuizEnabled(true)}
+                  >
+                    Add
+                  </button>
                 )}
               </div>
-              <button
-                type="button"
-                className={styles.openAssistantPill}
-                onClick={() => setAssistantOpen(true)}
-                aria-label="Open assistant to generate extras"
-              >
-                <Sparkles size={15} aria-hidden="true" />
-                Ask the assistant
-              </button>
             </div>
 
-            {generatedQuiz === null && generatedPlan === null && !generating && (
-              <p className={styles.extrasEmpty}>
-                Nothing generated yet. Open the assistant to get started.
-              </p>
-            )}
-
-            {hasPendingExtras && (
-              <div className={styles.extrasList}>
-                {quizPending && (
-                  <QuizCard
-                    quiz={generatedQuiz!}
-                    onApprove={() => {
-                      setQuizStatus('approved');
-                      setLiveMsg('Quiz approved and added to your picks');
-                    }}
-                    onRemove={() => setQuizStatus('removed')}
-                    onPreview={() => setQuizPreviewOpen(true)}
-                  />
-                )}
-                {planPending && (
-                  <LessonPlanCard
-                    plan={generatedPlan!}
-                    onApprove={() => {
-                      setPlanStatus('approved');
-                      setLiveMsg('Lesson plan approved and added to your picks');
-                    }}
-                    onRemove={() => setPlanStatus('removed')}
-                  />
-                )}
+            {/* Lesson plan card */}
+            <div className={`${styles.extrasCard} ${styles.extrasCardDimmed}`}>
+              <div className={styles.extrasCardHead}>
+                <div className={styles.extraIcon}>
+                  <BookMarked size={20} aria-hidden="true" />
+                </div>
+                <div>
+                  <p className={styles.extraType}>Resources</p>
+                  <p className={styles.extraTitle}>Lesson plan</p>
+                </div>
               </div>
-            )}
-
-            {allNonRemovedExtrasApproved && (
-              <p className={styles.allExtrasApprovedMsg} role="status">
-                All extras approved and added to your picks.
-              </p>
-            )}
-          </section>
-        )}
+              <p className={styles.extraDesc}>A structured plan for your seminar session.</p>
+              <div className={styles.extrasCardFooter}>
+                <span className={styles.comingSoonBadge}>Coming soon</span>
+              </div>
+            </div>
+          </div>
+        </section>
 
       </div>
 
@@ -1001,27 +702,9 @@ export function AdaptPage() {
       <SummaryBar
         componentCount={componentCount}
         minutes={minutes}
-        extrasCount={approvedExtrasCount}
         canContinue={canContinue}
         onContinue={handleContinue}
       />
-
-      {/* ── Assistant panel ── */}
-      <AssistantPanel
-        open={assistantOpen}
-        onClose={() => setAssistantOpen(false)}
-        onSubmit={handleAssistantSubmit}
-        generating={generating}
-      />
-
-      {/* ── Quiz preview modal ── */}
-      {generatedQuiz && (
-        <QuizPreviewModal
-          quiz={generatedQuiz}
-          open={quizPreviewOpen}
-          onClose={() => setQuizPreviewOpen(false)}
-        />
-      )}
     </div>
   );
 }

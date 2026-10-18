@@ -9,10 +9,15 @@ import { KitPage } from './pages/KitPage';
 import { HomePage } from './partner/pages/HomePage';
 import { LibraryPage } from './partner/pages/LibraryPage';
 import { AdaptPage } from './partner/pages/AdaptPage';
+import { OptionsPage } from './partner/pages/OptionsPage';
+import { PreviewPage } from './partner/pages/PreviewPage';
 import { ReviewPage } from './partner/pages/ReviewPage';
 import { InsightsPage } from './team/pages/InsightsPage';
+import { BankPage } from './team/pages/BankPage';
 import { QuizPage } from './learner/pages/QuizPage';
+import { QuizPackagePage } from './learner/pages/QuizPackagePage';
 import { EducatorFeedbackPage } from './educator/pages/EducatorFeedbackPage';
+import { EducatorPackageFeedbackPage } from './educator/pages/EducatorPackageFeedbackPage';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -50,13 +55,18 @@ function AppContent() {
           <Route path="/partner" element={<HomePage />} />
           <Route path="/partner/library" element={<LibraryPage />} />
           <Route path="/partner/adapt" element={<AdaptPage />} />
+          <Route path="/partner/adapt/options" element={<Navigate to="/partner/adapt" replace />} />
+          <Route path="/partner/adapt/preview" element={<PreviewPage />} />
           <Route path="/partner/adapt/review" element={<ReviewPage />} />
           <Route path="/team" element={<Navigate to="/team/insights" replace />} />
           <Route path="/team/insights" element={<InsightsPage />} />
+          <Route path="/team/bank" element={<BankPage />} />
           <Route path="/kit" element={<KitPage />} />
           <Route path="/quiz/seagrass-university" element={<QuizPage />} />
+          <Route path="/quiz/p/:slug" element={<QuizPackagePage />} />
           <Route path="/feedback" element={<Navigate to="/quiz/seagrass-university" replace />} />
           <Route path="/educator/seagrass-university" element={<EducatorFeedbackPage />} />
+          <Route path="/educator/p/:slug" element={<EducatorPackageFeedbackPage />} />
         </Routes>
       </main>
       <FAB />
