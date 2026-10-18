@@ -9,7 +9,6 @@ import { KitPage } from './pages/KitPage';
 import { HomePage } from './partner/pages/HomePage';
 import { LibraryPage } from './partner/pages/LibraryPage';
 import { AdaptPage } from './partner/pages/AdaptPage';
-import { OptionsPage } from './partner/pages/OptionsPage';
 import { PreviewPage } from './partner/pages/PreviewPage';
 import { ReviewPage } from './partner/pages/ReviewPage';
 import { InsightsPage } from './team/pages/InsightsPage';
