@@ -33,7 +33,6 @@ type FeedbackAnswers = {
   helpedMost?: string;
   comment: string;
   confidence_post?: number;
-  did_pre_reading?: boolean;
   least_useful?: string;
 };
 
@@ -103,7 +102,6 @@ export function QuizPackagePage() {
     helpedMost: undefined,
     comment: '',
     confidence_post: undefined,
-    did_pre_reading: undefined,
     least_useful: undefined,
   });
   const [submitting, setSubmitting] = useState(false);
@@ -222,13 +220,13 @@ export function QuizPackagePage() {
     window.scrollTo({ top: 0 });
 
     // Save pre-check answers to learner_package_responses (non-blocking)
-    const responseRows: LearnerPackageResponseInsert[] = mcqItems.map((item, idx) => ({
+    const responseRows: LearnerPackageResponseInsert[] = mcqItems.map((item) => ({
       session_id,
-      question_index: idx,
       item_id: item.id,
       component_id: item.component_id,
-      answer_index: preAnswers[item.id] as number | undefined,
-      is_correct: correctByItemId[item.id],
+      qtype: 'mcq' as const,
+      chosen_index: preAnswers[item.id] as number | undefined,
+      correct: correctByItemId[item.id],
       is_precheck: true,
       is_sample: false,
     }));
@@ -261,7 +259,6 @@ export function QuizPackagePage() {
       feedbackAnswers.wouldRecommend !== undefined &&
       feedbackAnswers.helpedMost !== undefined &&
       feedbackAnswers.confidence_post !== undefined &&
-      feedbackAnswers.did_pre_reading !== undefined &&
       feedbackAnswers.least_useful !== undefined
     );
   };
@@ -293,22 +290,22 @@ export function QuizPackagePage() {
     const session_id = precheck?.session_id ?? crypto.randomUUID();
 
     // Build learner package responses (one per question)
-    const responseRows: LearnerPackageResponseInsert[] = questions.map((q, idx) => {
+    const responseRows: LearnerPackageResponseInsert[] = questions.map((q) => {
       const chosen = postAnswers[q.id];
-      const answerIndex = q.qtype === 'mcq' ? (chosen as number | undefined) : undefined;
-      const answerText = q.qtype === 'short' ? (chosen as string | undefined) : undefined;
-      const isCorrect = q.qtype === 'mcq' && answerIndex !== undefined && q.correct_index !== null
-        ? answerIndex === q.correct_index
+      const chosenIndex = q.qtype === 'mcq' ? (chosen as number | undefined) : undefined;
+      const shortAnswer = q.qtype === 'short' ? (chosen as string | undefined) : undefined;
+      const correct = q.qtype === 'mcq' && chosenIndex !== undefined && q.correct_index !== null
+        ? chosenIndex === q.correct_index
         : undefined;
 
       return {
         session_id,
-        question_index: idx,
         item_id: q.id,
         component_id: q.component_id,
-        answer_index: answerIndex,
-        answer_text: answerText || undefined,
-        is_correct: isCorrect,
+        qtype: q.qtype as 'mcq' | 'short',
+        chosen_index: chosenIndex,
+        short_answer: shortAnswer || undefined,
+        correct,
         is_precheck: false,
         is_sample: false,
       };
@@ -328,7 +325,6 @@ export function QuizPackagePage() {
       helped_most: pkg?.picks.find((p) => p.title === feedbackAnswers.helpedMost)?.id ?? feedbackAnswers.helpedMost,
       comment: feedbackAnswers.comment.trim() || undefined,
       confidence_post: feedbackAnswers.confidence_post ?? undefined,
-      did_pre_reading: feedbackAnswers.did_pre_reading ?? undefined,
       least_useful: feedbackAnswers.least_useful ?? undefined,
       is_sample: false,
     };
@@ -597,35 +593,6 @@ export function QuizPackagePage() {
             </div>
           </fieldset>
 
-          <fieldset className={styles.feedbackFieldset}>
-            <legend className={styles.feedbackLegend}>
-              Did you do the pre-reading before class?
-            </legend>
-            <div className={styles.pillGroup} role="radiogroup" aria-label="Pre-reading">
-              <label className={styles.pillLabel}>
-                <input
-                  type="radio"
-                  name="did_pre_reading"
-                  value="yes"
-                  checked={feedbackAnswers.did_pre_reading === true}
-                  onChange={() => handleFeedbackChange('did_pre_reading', true)}
-                  className={styles.pillInput}
-                />
-                <span className={styles.pillText}>Yes</span>
-              </label>
-              <label className={styles.pillLabel}>
-                <input
-                  type="radio"
-                  name="did_pre_reading"
-                  value="no"
-                  checked={feedbackAnswers.did_pre_reading === false}
-                  onChange={() => handleFeedbackChange('did_pre_reading', false)}
-                  className={styles.pillInput}
-                />
-                <span className={styles.pillText}>No</span>
-              </label>
-            </div>
-          </fieldset>
 
           <fieldset className={styles.feedbackFieldset}>
             <legend className={styles.feedbackLegend}>

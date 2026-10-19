@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useParams } from 'react-router-dom';
 import { SEAGRASS_STORIES } from '../../shared/data/seagrass-stories';
 import { getUniversityStatus } from '../../shared/data/quizComponentMap';
 import {
@@ -96,7 +96,8 @@ interface PackageData {
 
 export function EducatorPackageFeedbackPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const slug = searchParams.get('slug') ?? '';
+  const { slug: slugParam } = useParams<{ slug: string }>();
+  const slug = slugParam ?? searchParams.get('slug') ?? '';
 
   const [step, setStep] = useState<'form' | 'success'>('form');
   const [answers, setAnswers] = useState<Answers>({});

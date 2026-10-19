@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load .env from backend directory
 env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(env_path)
 
@@ -12,32 +11,15 @@ ALLOW_GENERATE = os.getenv("ALLOW_GENERATE", "true").strip().lower() != "false"
 
 required_keys = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "ALLOWED_ORIGIN"]
 if ALLOW_GENERATE:
-    required_keys += ["OPENROUTER_API_KEY", "OPENROUTER_MODEL"]
+    required_keys += ["ANTHROPIC_API_KEY"]
 
 missing = [k for k in required_keys if not os.getenv(k)]
 if missing:
     raise RuntimeError(f"Missing required environment variables: {', '.join(missing)}")
 
-# Validate that all model IDs end with :free
-main_model = os.getenv("OPENROUTER_MODEL", "")
-fallback_models_str = os.getenv("OPENROUTER_FALLBACK_MODELS", "")
-
-if ALLOW_GENERATE and not main_model.endswith(":free"):
-    raise RuntimeError(
-        "Only free OpenRouter models are allowed. Model ids must end with :free"
-    )
-
-fallback_models = [m.strip() for m in fallback_models_str.split(",") if m.strip()]
-for model in fallback_models:
-    if not model.endswith(":free"):
-        raise RuntimeError(
-            f"Only free OpenRouter models are allowed. Model '{model}' must end with :free"
-        )
-
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-OPENROUTER_MODEL = main_model
-OPENROUTER_FALLBACK_MODELS = fallback_models
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+AI_MODEL = os.getenv("AI_MODEL", "claude-haiku-4-5")
 TEST_OVERRIDES = os.getenv("TEST_OVERRIDES", "")
 ALLOWED_ORIGIN = os.getenv("ALLOWED_ORIGIN")

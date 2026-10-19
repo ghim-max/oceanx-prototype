@@ -7,29 +7,12 @@ from app.db import supabase
 from app.index import sync_embeddings
 from app.retrieve import retrieve_evidence
 from app.rules import decide_recommendation, RuleResult
-from app.llm import generate_card
-from app.config import OPENROUTER_MODEL, TEST_OVERRIDES
-import json as std_json
-
-PAUSE_BETWEEN_CARDS = 8  # seconds
-RATE_LIMIT_WAITS = [10, 20, 40]  # seconds, used on HTTP 429
+from app.llm import generate_card, call_override_why
+from app.config import AI_MODEL, TEST_OVERRIDES
 
 # Load components
 with open("app/components.json") as f:
     COMPONENTS = json.load(f)
-
-def _parse_why(content) -> str:
-    """Read {"why": "..."} even if the model wraps it in code fences or extra text."""
-    if not content:
-        return ""
-    text = str(content).strip()
-    first, last = text.find("{"), text.rfind("}")
-    if first != -1 and last > first:
-        text = text[first:last + 1]
-    try:
-        return str(std_json.loads(text).get("why", "")).strip()
-    except Exception:
-        return ""
 
 
 def parse_overrides(overrides_str: str) -> dict:
@@ -70,11 +53,11 @@ def run_pipeline(only: Optional[list[str]] = None) -> dict:
     errors = []
     todo = [c for c in COMPONENTS if not only or c["id"] in only]
     for i, comp in enumerate(todo):
-        # One failed card (rate limit, bad JSON) must not stop the whole run.
+        # One failed card must not stop the whole run.
         try:
             # Find metrics for this component
             metrics = next((m for m in comp_metrics if m["component_id"] == comp["id"]), {})
-        
+
             # Rule recommendation
             rule_result = decide_recommendation(
                 gain_pts=metrics.get("gain_pts"),
@@ -95,50 +78,15 @@ def run_pipeline(only: Optional[list[str]] = None) -> dict:
             # Check if overridden
             override_rec = overrides.get(comp["id"])
             overridden = override_rec is not None
-        
+
             if overridden:
                 # First, get the AI recommendation using true facts
                 ai_result = generate_card(comp, metrics, evidence)
+                card_usage = ai_result.pop("_usage", {})
                 ai_rec = ai_result["recommendation"]
-            
+
                 # Second call: write a "why" arguing for the override using only true facts
-                override_prompt = f"""Component: {comp['title']} ({comp['status']})
-    Description: {comp['description']}
-
-    METRICS (TRUE FACTS):
-    {std_json.dumps({k: v for k, v in metrics.items() if k not in ('question', 'status')}, indent=2)}
-
-    Write a brief justification (1-2 sentences, under 45 words) for recommending '{override_rec}' for this component.
-    Use ONLY the true metrics above. Do not invent numbers.
-    Return JSON: {{"why": "..."}}"""
-            
-                from app.llm import client, SYSTEM_PROMPT
-                from app.config import OPENROUTER_FALLBACK_MODELS
-            
-                models = [OPENROUTER_MODEL] + OPENROUTER_FALLBACK_MODELS
-                extra_body = {"models": models}
-            
-                override_why = ""
-                time.sleep(PAUSE_BETWEEN_CARDS)  # avoid back-to-back calls on free models
-                for attempt in range(len(RATE_LIMIT_WAITS) + 1):
-                    try:
-                        response = client.chat.completions.create(
-                            model=OPENROUTER_MODEL,
-                            messages=[
-                                {"role": "system", "content": "You write short, factual justifications. Return JSON only."},
-                                {"role": "user", "content": override_prompt},
-                            ],
-                            response_format={"type": "json_object"},
-                            extra_body=extra_body,
-                            temperature=0.2,
-                        )
-                        override_why = _parse_why(response.choices[0].message.content)
-                        if override_why:
-                            break
-                    except Exception as e:
-                        print(f"[override] {comp['id']} attempt {attempt + 1} failed: {str(e)[:200]}")
-                    if attempt < len(RATE_LIMIT_WAITS):
-                        time.sleep(RATE_LIMIT_WAITS[attempt])
+                override_why = call_override_why(comp, metrics, override_rec)
                 if not override_why:
                     # Fallback: plain sentence built from the true numbers only
                     gain = metrics.get("gain_pts")
@@ -150,7 +98,7 @@ def run_pipeline(only: Optional[list[str]] = None) -> dict:
                     if metrics.get("used_as_is") is not None:
                         parts.append(f"{metrics['used_as_is']} of {metrics.get('educator_count', 3)} educators using it as is")
                     override_why = f"Recommended {override_rec} based on " + (", ".join(parts) if parts else "the feedback received") + "."
-            
+
                 # Build card with override
                 card = {
                     "recommendation": override_rec,
@@ -164,6 +112,7 @@ def run_pipeline(only: Optional[list[str]] = None) -> dict:
             else:
                 # Normal generation
                 card = generate_card(comp, metrics, evidence)
+                card_usage = card.pop("_usage", {})
                 ai_recommendation = card["recommendation"]
                 guardrail_ok = (ai_recommendation == rule_rec)
 
@@ -180,8 +129,12 @@ def run_pipeline(only: Optional[list[str]] = None) -> dict:
                 "ai_recommendation": ai_recommendation,
                 "guardrail_ok": guardrail_ok,
                 "overridden": overridden,
-                "model": OPENROUTER_MODEL,
+                "model": AI_MODEL,
                 "suggested_action": card.get("suggested_action"),
+                "input_tokens": card_usage.get("input_tokens"),
+                "output_tokens": card_usage.get("output_tokens"),
+                "latency_ms": card_usage.get("latency_ms"),
+                "cost_usd": card_usage.get("cost_usd"),
             }
             supabase.table("insight_cards").insert(insert_data).execute()
 
@@ -197,13 +150,8 @@ def run_pipeline(only: Optional[list[str]] = None) -> dict:
                 "metrics": {k: v for k, v in metrics.items() if k not in ("question", "status")},
             })
 
-
         except Exception as e:
             errors.append({"component_id": comp["id"], "error": str(e)[:300]})
-
-        # Pause between cards (free models are rate limited)
-        if i < len(todo) - 1:
-            time.sleep(PAUSE_BETWEEN_CARDS)
 
     return {
         "run_id": run_id,
@@ -281,17 +229,17 @@ def get_cards_for_run(run_id: str, admin: bool = False) -> list[dict]:
 def get_raw_data() -> dict:
     """Get raw data for /insights/raw endpoint"""
     comp_metrics = supabase.table("component_metrics").select("*").execute().data
-    
+
     # All learner comments (ungrouped)
     learner_comments = supabase.table("learner_responses").select(
         "id, comment, short_answer, helped_most, is_sample"
     ).or_("comment.not.is.null,short_answer.not.is.null").execute().data
-    
+
     # All educator notes grouped by component_id
     educator_notes = supabase.table("educator_responses").select(
         "id, component_id, note, usage, is_sample"
     ).not_.is_("note", "null").neq("note", "").execute().data
-    
+
     notes_by_component = {}
     for note in educator_notes:
         cid = note["component_id"]
@@ -303,7 +251,7 @@ def get_raw_data() -> dict:
             "usage": note["usage"],
             "is_sample": note["is_sample"],
         })
-    
+
     return {
         "component_metrics": comp_metrics,
         "learner_comments": learner_comments,

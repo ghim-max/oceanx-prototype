@@ -165,7 +165,6 @@ export type LearnerPackageFeedbackInsert = {
   helped_most?: string;
   least_useful?: string;
   comment?: string;
-  did_pre_reading?: boolean;
   is_sample: false;
 };
 
@@ -178,9 +177,20 @@ export async function submitLearnerPackageFeedback(
   }
 
   try {
+    const { data: pkg } = await supabase
+      .from('quiz_packages')
+      .select('id')
+      .eq('slug', slug)
+      .eq('status', 'active')
+      .single();
+
+    if (!pkg) {
+      return { ok: false, error: 'Package not found' };
+    }
+
     const { error } = await supabase
       .from('learner_package_feedback')
-      .insert({ ...row, package_id: slug }); // Note: slug will be resolved to package_id by the API
+      .insert({ ...row, package_id: pkg.id });
     if (error) {
       console.error('Supabase insert error:', error);
       return { ok: false, error: 'We could not save your response. Please try again.' };
@@ -255,14 +265,13 @@ export async function submitEducatorPackageFeedback(
 
 export type LearnerPackageResponseInsert = {
   session_id: string;
-  question_index: number;
-  item_id?: string;
-  component_id?: string;
-  answer_index?: number;
-  answer_text?: string;
-  is_correct?: boolean;
+  item_id: string;
+  component_id: string;
+  qtype: 'mcq' | 'short';
+  chosen_index?: number;
+  short_answer?: string;
+  correct?: boolean;
   is_precheck: boolean;
-  time_spent_ms?: number;
   is_sample: false;
 };
 

@@ -33,7 +33,17 @@ def decide_recommendation(
 
     reasons = []
 
-    # REUSE: gain >= 30 and learning >= 4 and mostly_used and time_ok
+    # 1. DROP first: gain < 15 (or no quiz link) AND mostly skipped.
+    # Checked before ADAPT so high-engagement-but-skipped components don't slip through.
+    if (gain_pts is None or gain_pts < 15) and mostly_skipped:
+        if gain_pts is None:
+            reasons.append("no gain data")
+        else:
+            reasons.append("gain < 15")
+        reasons.append("mostly skipped")
+        return RuleResult(recommendation="Drop", reasons=reasons)
+
+    # 2. REUSE: gain >= 30 and learning >= 4 and mostly_used and time_ok
     if (
         gain_pts is not None
         and gain_pts >= 30
@@ -48,7 +58,7 @@ def decide_recommendation(
         reasons.append("time ok")
         return RuleResult(recommendation="Reuse", reasons=reasons)
 
-    # ADAPT condition 1: (gain >= 30 or learning >= 4) and (changed > used_as_is or not time_ok or engagement < 3.5)
+    # 3. ADAPT condition 1: (gain >= 30 or learning >= 4) and fit problem
     adapt_cond1 = False
     if (
         (gain_pts is not None and gain_pts >= 30)
@@ -70,7 +80,7 @@ def decide_recommendation(
         if engagement is not None and engagement < 3.5:
             reasons.append("engagement < 3.5")
 
-    # ADAPT condition 2: engagement >= 4 and ((gain is not None and gain < 15) or (learning is not None and learning < 3))
+    # 3. ADAPT condition 2: engagement >= 4 and weak learning/gain
     adapt_cond2 = False
     if engagement is not None and engagement >= 4:
         if (gain_pts is not None and gain_pts < 15) or (learning is not None and learning < 3):
@@ -83,15 +93,6 @@ def decide_recommendation(
 
     if adapt_cond1 or adapt_cond2:
         return RuleResult(recommendation="Adapt", reasons=reasons)
-
-    # DROP: (gain is None or gain < 15) and mostly_skipped
-    if (gain_pts is None or gain_pts < 15) and mostly_skipped:
-        if gain_pts is None:
-            reasons.append("no gain data")
-        else:
-            reasons.append("gain < 15")
-        reasons.append("mostly skipped")
-        return RuleResult(recommendation="Drop", reasons=reasons)
 
     # Else: Adapt with mixed signals
     reasons.append("mixed signals")
