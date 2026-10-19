@@ -15,6 +15,9 @@ import { InsightsPage } from './team/pages/InsightsPage';
 import { BankPage } from './team/pages/BankPage';
 import { QuizPage } from './learner/pages/QuizPage';
 import { QuizPackagePage } from './learner/pages/QuizPackagePage';
+import { QuizPreviewPage } from './preview/QuizPreviewPage';
+import { LessonPlanPage } from './learner/pages/LessonPlanPage';
+import { LessonPlanPreviewPage } from './preview/LessonPlanPreviewPage';
 import { EducatorFeedbackPage } from './educator/pages/EducatorFeedbackPage';
 import { EducatorPackageFeedbackPage } from './educator/pages/EducatorPackageFeedbackPage';
 
@@ -66,6 +69,9 @@ function AppContent() {
           <Route path="/feedback" element={<Navigate to="/quiz/seagrass-university" replace />} />
           <Route path="/educator/seagrass-university" element={<EducatorFeedbackPage />} />
           <Route path="/educator/p/:slug" element={<EducatorPackageFeedbackPage />} />
+          <Route path="/lesson/p/:slug" element={<LessonPlanPage />} />
+          <Route path="/preview/quiz" element={<QuizPreviewPage />} />
+          <Route path="/preview/lesson" element={<LessonPlanPreviewPage />} />
         </Routes>
       </main>
       <FAB />

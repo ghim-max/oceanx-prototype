@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShieldCheck, Play, Gamepad2, MessageCircle, Pencil, BookOpen, BookMarked, ListChecks } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, Play, Gamepad2, MessageCircle, Pencil, BookOpen, BookMarked, ListChecks, Eye } from 'lucide-react';
 import { getApprovedBankItems, type BankItem } from '../../shared/services/bankApi';
 import { assembleQuiz, type QuizType, type QuizDifficulty, type AssembleResult } from '../../shared/services/assembleQuiz';
+import { assembleLessonPlan, type LessonLevel, type LessonPlan } from '../../shared/services/assembleLessonPlan';
 import {
   SEAGRASS_STORIES,
   STAGES,
@@ -35,7 +36,7 @@ const TYPE_ICONS: Record<ComponentType, React.ComponentType<{ size?: number; 'ar
 // Groups for recommendations: ordered label → component IDs
 const REC_GROUPS: [string, string[]][] = [
   ['Before class', ['further-reading-unep', 'further-reading-seagrass-watch']],
-  ['In class', ['driving-question', 'game', 'video-nada', 'investigate-prompts', 'reflect-prompts']],
+  ['In class', ['driving-question', 'game', 'video-nada', 'video-changi-point', 'investigate-prompts', 'reflect-prompts']],
   ['For you', ['educator-guide']],
 ];
 
@@ -171,16 +172,18 @@ function PickRow({
 function RecommendationCard({
   recommendation,
   onAdd,
+  disabled = false,
 }: {
   recommendation: Recommendation;
   onAdd: () => void;
+  disabled?: boolean;
 }) {
   const component = getComponent(recommendation.id);
   const entry = UNIVERSITY_STATUS[recommendation.id];
   const Icon = component ? TYPE_ICONS[component.type] : BookOpen;
 
   return (
-    <div className={styles.recCard}>
+    <div className={`${styles.recCard} ${disabled ? styles.recCardDisabled : ''}`}>
       <Thumb component={component} size="md" />
       <div className={styles.recBody}>
         <div className={styles.recMeta}>
@@ -196,6 +199,7 @@ function RecommendationCard({
         </div>
         <p className={styles.recTitle}>{component?.title ?? recommendation.id}</p>
         <p className={styles.recRationale}>{recommendation.rationale}</p>
+        {disabled && <span className={styles.comingSoonBadge}>Coming soon</span>}
       </div>
       <div className={styles.recActions}>
         <button
@@ -203,8 +207,10 @@ function RecommendationCard({
           className={styles.addPill}
           onClick={onAdd}
           aria-label={`Add ${component?.title ?? recommendation.id} to your picks`}
+          disabled={disabled}
+          aria-disabled={disabled}
         >
-          Add
+          {disabled ? 'Coming soon' : 'Add'}
         </button>
       </div>
     </div>
@@ -272,6 +278,15 @@ export function AdaptPage() {
     picksParam.split(',').filter(Boolean)
   );
 
+  // Apply default picks if no URL picks provided
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (picks.length === 0 && !picksParam) {
+      const defaultPicks = ['video-nada', 'create-activity'];
+      setPicks(defaultPicks);
+    }
+  }, [picks, picksParam]);
+
   const [recsLoading, setRecsLoading] = useState(true);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [addedRecs, setAddedRecs] = useState<Set<string>>(new Set());
@@ -284,6 +299,19 @@ export function AdaptPage() {
   const [bankLoading, setBankLoading] = useState(false);
   const [bankLoaded, setBankLoaded] = useState(false);
   const [assembleResult, setAssembleResult] = useState<AssembleResult | null>(null);
+
+  const [lessonPlanEnabled, setLessonPlanEnabled] = useState(false);
+  const [lessonPlanLength, setLessonPlanLength] = useState<30 | 60 | 90 | 120>(60);
+  const [lessonPlanLevel, setLessonPlanLevel] = useState<LessonLevel>('introductory');
+  const [lessonPlanAssembleResult, setLessonPlanAssembleResult] = useState<LessonPlan | { error: string } | null>(null);
+
+  // Extras added state (confirmed by user)
+  const [quizAdded, setQuizAdded] = useState(false);
+  const [lessonPlanAdded, setLessonPlanAdded] = useState(false);
+
+  // Preview modal state
+  // const [quizPreviewOpen, setQuizPreviewOpen] = useState(false);
+  // const [lessonPlanPreviewOpen, setLessonPlanPreviewOpen] = useState(false);
 
   const [liveMsg, setLiveMsg] = useState('');
 
@@ -379,6 +407,23 @@ export function AdaptPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bankLoaded, bankItems, quizEnabled, quizType, quizDifficulty, quizCount, picksKey]);
 
+  // Run assembleLessonPlan live whenever options or picks change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!lessonPlanEnabled || allPickIds.length === 0) {
+      setLessonPlanAssembleResult(null);
+      return;
+    }
+    const quizSummary = assembleResult && !assembleResult.error
+      ? { type: quizType, count: assembleResult.itemIds.length }
+      : undefined;
+    setLessonPlanAssembleResult(
+      assembleLessonPlan(allPickIds, { length: lessonPlanLength, level: lessonPlanLevel }, quizSummary)
+    );
+  // picksKey is a stable string proxy for allPickIds
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lessonPlanEnabled, lessonPlanLength, lessonPlanLevel, assembleResult, quizType, picksKey]);
+
   const picksByStage = STAGES
     .map((stage: ComponentStage) => ({
       stage,
@@ -394,6 +439,18 @@ export function AdaptPage() {
   // Summary bar values
   const componentCount = allPickIds.length;
   const minutes = approxMinutes(allPickIds);
+
+  // Max available questions for current quiz type/difficulty across active components
+  const maxAvailableQuestions = assembleResult && !assembleResult.error
+    ? assembleResult.componentAvailability.reduce((sum, ca) => sum + ca.available, 0)
+    : 0;
+
+  // Auto-clamp quizCount when max available changes (no error state on load)
+  useEffect(() => {
+    if (maxAvailableQuestions > 0 && quizCount > maxAvailableQuestions) {
+      setQuizCount(maxAvailableQuestions);
+    }
+  }, [maxAvailableQuestions, quizCount]);
 
   // Enabled: at least 1 pick exists
   const canContinue = allPickIds.length > 0;
@@ -421,6 +478,12 @@ export function AdaptPage() {
       quizEnabled && assembleResult && !assembleResult.error
         ? assembleResult.itemIds
         : [];
+
+    const lessonPlanData =
+      lessonPlanEnabled && lessonPlanAssembleResult && !('error' in lessonPlanAssembleResult)
+        ? { length: lessonPlanLength, level: lessonPlanLevel }
+        : null;
+
     sessionStorage.setItem(
       'adaptOptions',
       JSON.stringify({
@@ -430,6 +493,7 @@ export function AdaptPage() {
         quizCount,
         itemIds: quizItemIds,
         componentIds: allPickIds,
+        lessonPlan: lessonPlanData,
       })
     );
 
@@ -514,6 +578,83 @@ export function AdaptPage() {
                 ))}
               </div>
             ))}
+            {/* Extras (quiz/lesson plan) added to picks */}
+            {(quizAdded || lessonPlanAdded) && (
+              <div className={styles.pickGroup}>
+                <p className={styles.pickGroupLabel}>Extras</p>
+                {quizAdded && (
+                  <div className={styles.pickRow} style={{opacity: quizEnabled ? 1 : 0.5}}>
+                    <div className={styles.pickBody}>
+                      <div className={styles.pickMeta}>
+                        <span className={styles.typeLabel}>Quiz</span>
+                        <span className={`${styles.statusBadge} ${styles.statusAdapted}`}>Extra</span>
+                        <span className={styles.approvedPickBadge}>Added</span>
+                      </div>
+                      <p className={styles.pickTitle}>
+                        Knowledge check · {assembleResult?.itemIds.length ?? quizCount} questions · {quizType === 'mcq' ? 'Multiple choice' : quizType === 'short' ? 'Short answer' : 'Mixed'} · {quizDifficulty.charAt(0).toUpperCase() + quizDifficulty.slice(1)}
+                      </p>
+                    </div>
+                    <div className={styles.pickActions}>
+                      <button
+                        type="button"
+                        className={styles.previewLink}
+                        onClick={() => {
+                          const addedRecDetails = Array.from(addedRecs).map(id => {
+                            const c = getComponent(id);
+                            return { id, title: c?.title ?? id, stage: c?.stage ?? '' };
+                          });
+                          const quizData = {
+                            itemIds: assembleResult?.itemIds ?? [],
+                            componentIds: allPickIds,
+                            picks: addedRecDetails,
+                            quizType,
+                            quizDifficulty,
+                            quizCount,
+                          };
+                          sessionStorage.setItem('previewQuizData', JSON.stringify(quizData));
+                          window.open('/preview/quiz', '_blank');
+                        }}
+                      >
+                        <Eye size={14} aria-hidden="true" />
+                        Preview
+                      </button>
+                      <button type="button" className={styles.editLink} onClick={() => setQuizAdded(false)}>Edit</button>
+                      <button type="button" className={styles.removeLink} onClick={() => { setQuizAdded(false); setQuizEnabled(false); setAssembleResult(null); }}>Remove</button>
+                    </div>
+                  </div>
+                )}
+                {lessonPlanAdded && (
+                  <div className={styles.pickRow} style={{opacity: lessonPlanEnabled ? 1 : 0.5}}>
+                    <div className={styles.pickBody}>
+                      <div className={styles.pickMeta}>
+                        <span className={styles.typeLabel}>Lesson plan</span>
+                        <span className={`${styles.statusBadge} ${styles.statusAdapted}`}>Extra</span>
+                        <span className={styles.approvedPickBadge}>Added</span>
+                      </div>
+                      <p className={styles.pickTitle}>
+                        Lesson plan · {lessonPlanLength} min · {lessonPlanLevel.charAt(0).toUpperCase() + lessonPlanLevel.slice(1)}
+                      </p>
+                    </div>
+                    <div className={styles.pickActions}>
+                      <button
+                        type="button"
+                        className={styles.previewLink}
+                        onClick={() => {
+                          const lessonPlanData = lessonPlanAssembleResult && !('error' in lessonPlanAssembleResult) ? lessonPlanAssembleResult : null;
+                          sessionStorage.setItem('previewLessonPlanData', JSON.stringify(lessonPlanData));
+                          window.open('/preview/lesson', '_blank');
+                        }}
+                      >
+                        <Eye size={14} aria-hidden="true" />
+                        Preview
+                      </button>
+                      <button type="button" className={styles.editLink} onClick={() => setLessonPlanAdded(false)}>Edit</button>
+                      <button type="button" className={styles.removeLink} onClick={() => { setLessonPlanAdded(false); setLessonPlanEnabled(false); setLessonPlanAssembleResult(null); }}>Remove</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </section>
 
@@ -546,6 +687,7 @@ export function AdaptPage() {
                           key={rec.id}
                           recommendation={rec}
                           onAdd={() => handleAddRec(rec.id)}
+                          disabled={rec.id !== 'game' && rec.id !== 'further-reading-unep'}
                         />
                       ))}
                     </div>
@@ -576,7 +718,7 @@ export function AdaptPage() {
                   <p className={styles.extraTitle}>Knowledge check</p>
                 </div>
               </div>
-              <p className={styles.extraDesc}>Questions drawn from the approved question bank, one per activity.</p>
+              <p className={styles.extraDesc}>Questions come only from the OceanX approved question bank.</p>
 
               {quizEnabled && (
                 <div className={styles.quizExpand}>
@@ -633,14 +775,24 @@ export function AdaptPage() {
                       <button
                         type="button"
                         className={styles.countBtn}
-                        onClick={() => setQuizCount(c => Math.min(10, c + 1))}
-                        disabled={quizCount >= 10}
+                        onClick={() => setQuizCount(c => Math.min(maxAvailableQuestions, c + 1))}
+                        disabled={quizCount >= maxAvailableQuestions}
                         aria-label="Increase question count"
                       >
                         +
                       </button>
                     </div>
+                    {maxAvailableQuestions > 0 && (
+                      <span className={styles.maxAvailableNote}>Up to {maxAvailableQuestions} available</span>
+                    )}
                   </div>
+
+                  {/* Zero questions note */}
+                  {assembleResult && assembleResult.zeroQuestionComponents.length > 0 && (
+                    <p className={styles.zeroQuestionsNote}>
+                      No questions yet for: {assembleResult.zeroQuestionComponents.map(z => z.title).join(', ')}.
+                    </p>
+                  )}
 
                   {bankLoading ? (
                     <p className={styles.assembleMsg}>Loading questions...</p>
@@ -658,27 +810,57 @@ export function AdaptPage() {
 
               <div className={styles.extrasCardFooter}>
                 {quizEnabled ? (
-                  <button
-                    type="button"
-                    className={styles.removeLink}
-                    onClick={() => { setQuizEnabled(false); setAssembleResult(null); }}
-                  >
-                    Remove
-                  </button>
+                quizAdded ? (
+                  // Collapsed summary when added
+                  <div className={styles.extrasCardSummary}>
+                    <p className={styles.summaryTitle}>
+                      Knowledge check · {assembleResult?.itemIds.length ?? quizCount} questions · {quizType === 'mcq' ? 'Multiple choice' : quizType === 'short' ? 'Short answer' : 'Mixed'} · {quizDifficulty.charAt(0).toUpperCase() + quizDifficulty.slice(1)}
+                    </p>
+                    <div className={styles.summaryActions}>
+                      <button type="button" className={styles.editLink} onClick={() => setQuizAdded(false)}>Edit</button>
+                      <button type="button" className={styles.removeLink} onClick={() => { setQuizAdded(false); setQuizEnabled(false); setAssembleResult(null); }}>Remove</button>
+                    </div>
+                  </div>
                 ) : (
-                  <button
-                    type="button"
-                    className={styles.addPill}
-                    onClick={() => setQuizEnabled(true)}
-                  >
-                    Add
-                  </button>
-                )}
+                  // Expanded with "Add to my picks" primary + Remove
+                  <>
+                    <div className={styles.extrasCardFooter}>
+                      <button
+                        type="button"
+                        className={styles.addToPicksBtn}
+                        onClick={() => setQuizAdded(true)}
+                        disabled={!!assembleResult?.error}
+                        aria-disabled={!!assembleResult?.error}
+                      >
+                        Add to my picks
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.removeLink}
+                        onClick={() => { setQuizEnabled(false); setAssembleResult(null); }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    {assembleResult?.error && (
+                      <p className={`${styles.assembleMsg} ${styles.assembleMsgError}`}>Cannot add: {assembleResult.error}</p>
+                    )}
+                  </>
+                )
+              ) : (
+                <button
+                  type="button"
+                  className={styles.addPill}
+                  onClick={() => setQuizEnabled(true)}
+                >
+                  Add
+                </button>
+              )}
               </div>
             </div>
 
             {/* Lesson plan card */}
-            <div className={`${styles.extrasCard} ${styles.extrasCardDimmed}`}>
+            <div className={styles.extrasCard}>
               <div className={styles.extrasCardHead}>
                 <div className={styles.extraIcon}>
                   <BookMarked size={20} aria-hidden="true" />
@@ -689,8 +871,106 @@ export function AdaptPage() {
                 </div>
               </div>
               <p className={styles.extraDesc}>A structured plan for your seminar session.</p>
+
+              {lessonPlanEnabled && (
+                <div className={styles.lessonPlanExpand}>
+                  <div className={styles.segGroup}>
+                    <p className={styles.segLabel}>Length</p>
+                    <div className={styles.segBtns}>
+                      {([30, 60, 90, 120] as const).map((val) => (
+                        <button
+                          key={val}
+                          type="button"
+                          className={`${styles.segBtn} ${lessonPlanLength === val ? styles.segBtnActive : ''}`}
+                          aria-pressed={lessonPlanLength === val}
+                          onClick={() => setLessonPlanLength(val)}
+                        >
+                          {val} min
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className={styles.segGroup}>
+                    <p className={styles.segLabel}>Level</p>
+                    <div className={styles.segBtns}>
+                      {(['introductory', 'intermediate', 'advanced'] as LessonLevel[]).map((val) => {
+                        const label = val.charAt(0).toUpperCase() + val.slice(1);
+                        return (
+                          <button
+                            key={val}
+                            type="button"
+                            className={`${styles.segBtn} ${lessonPlanLevel === val ? styles.segBtnActive : ''}`}
+                            aria-pressed={lessonPlanLevel === val}
+                            onClick={() => setLessonPlanLevel(val)}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {lessonPlanAssembleResult && 'error' in lessonPlanAssembleResult ? (
+                    <p className={`${styles.assembleMsg} ${styles.assembleMsgError}`}>{lessonPlanAssembleResult.error}</p>
+                  ) : lessonPlanAssembleResult ? (
+                    <p className={`${styles.assembleMsg} ${styles.assembleMsgOk}`}>
+                      {lessonPlanAssembleResult.timeline.length} activities · {lessonPlanAssembleResult.length} min · {lessonPlanAssembleResult.level}
+                    </p>
+                  ) : (
+                    <p className={styles.assembleMsg}>Building timeline…</p>
+                  )}
+                </div>
+              )}
+
               <div className={styles.extrasCardFooter}>
-                <span className={styles.comingSoonBadge}>Coming soon</span>
+                {lessonPlanEnabled ? (
+                  lessonPlanAdded ? (
+                    // Collapsed summary when added
+                    <div className={styles.extrasCardSummary}>
+                      <p className={styles.summaryTitle}>
+                        Lesson plan · {lessonPlanLength} min · {lessonPlanLevel.charAt(0).toUpperCase() + lessonPlanLevel.slice(1)}
+                      </p>
+                      <div className={styles.summaryActions}>
+                        <button type="button" className={styles.editLink} onClick={() => setLessonPlanAdded(false)}>Edit</button>
+                        <button type="button" className={styles.removeLink} onClick={() => { setLessonPlanAdded(false); setLessonPlanEnabled(false); setLessonPlanAssembleResult(null); }}>Remove</button>
+                      </div>
+                    </div>
+                  ) : (
+                    // Expanded with "Add to my picks" primary + Remove
+                    <>
+                      <div className={styles.extrasCardFooter}>
+                        <button
+                          type="button"
+                          className={styles.addToPicksBtn}
+                          onClick={() => setLessonPlanAdded(true)}
+                          disabled={!!(lessonPlanAssembleResult && 'error' in lessonPlanAssembleResult)}
+                          aria-disabled={!!(lessonPlanAssembleResult && 'error' in lessonPlanAssembleResult)}
+                        >
+                          Add to my picks
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.removeLink}
+                          onClick={() => { setLessonPlanEnabled(false); setLessonPlanAssembleResult(null); }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      {lessonPlanAssembleResult && 'error' in lessonPlanAssembleResult && (
+                        <p className={`${styles.assembleMsg} ${styles.assembleMsgError}`}>Cannot add: {lessonPlanAssembleResult.error}</p>
+                      )}
+                    </>
+                  )
+                ) : (
+                  <button
+                    type="button"
+                    className={styles.addPill}
+                    onClick={() => setLessonPlanEnabled(true)}
+                  >
+                    Add
+                  </button>
+                )}
               </div>
             </div>
           </div>
