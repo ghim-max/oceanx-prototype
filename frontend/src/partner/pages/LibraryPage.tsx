@@ -545,12 +545,23 @@ export function LibraryPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const urlPicks = searchParams.get('picks')?.split(',').filter(Boolean) ?? [];
-    urlPicks.forEach((id) => {
-      if ((DEMO_PICKABLE_IDS as readonly string[]).includes(id)) {
-        const c = story.components.find((comp) => comp.id === id);
-        addPick(id, c?.title);
-      }
-    });
+    if (urlPicks.length > 0) {
+      urlPicks.forEach((id) => {
+        if ((DEMO_PICKABLE_IDS as readonly string[]).includes(id)) {
+          const c = story.components.find((comp) => comp.id === id);
+          addPick(id, c?.title);
+        }
+      });
+    } else {
+      // Default picks: video-nada + create-activity
+      const defaultPicks = ['video-nada', 'create-activity'];
+      defaultPicks.forEach((id) => {
+        if ((DEMO_PICKABLE_IDS as readonly string[]).includes(id)) {
+          const c = story.components.find((comp) => comp.id === id);
+          addPick(id, c?.title);
+        }
+      });
+    }
   }, []); // intentionally empty — runs once on mount
 
   // Sync picks to URL on change (skip the very first render to avoid clearing URL picks

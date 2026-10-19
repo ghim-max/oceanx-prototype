@@ -438,6 +438,144 @@
   color: var(--text-muted);
 }
 
+/* ── Lesson plan ── */
+.lessonPlanCard {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.lpHeader {
+  padding: 16px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.lpMeta {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 10px;
+}
+
+.lpIntention {
+  font-size: 0.875rem;
+  color: var(--text);
+  margin: 0 0 6px;
+  line-height: 1.5;
+}
+
+.lpIntention:last-child {
+  margin-bottom: 0;
+}
+
+.lpIntention strong {
+  font-weight: 600;
+  margin-right: 6px;
+}
+
+.lpTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.lpTable th {
+  padding: 8px 14px;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.lpTable td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.lpTable tr:last-child td {
+  border-bottom: none;
+}
+
+.lpRowSample td {
+  background: color-mix(in srgb, var(--accent) 4%, var(--surface));
+}
+
+.lpColWide {
+  width: 50%;
+}
+
+.lpStage {
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.lpLabel {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.lpTime {
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+
+.lpHowToRun {
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  white-space: pre-line;
+}
+
+.lpPrompts {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lpPrompts li {
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.lpSampleMark {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.lpSampleNote {
+  padding: 10px 14px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  margin: 0;
+  background: var(--surface);
+}
+
+.lpLevelNote {
+  padding: 10px 14px;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  margin: 0;
+  background: var(--surface);
+  font-style: italic;
+}
+
 /* ── Print styles ── */
 @media print {
   .backLink,
@@ -456,5 +594,10 @@
     break-inside: avoid;
     box-shadow: none;
     border: 1px solid #ccc;
+  }
+
+  .lessonPlanCard {
+    break-inside: avoid;
+    box-shadow: none;
   }
 }

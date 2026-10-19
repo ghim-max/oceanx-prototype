@@ -2,6 +2,11 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Printer } from 'lucide-react';
 import { getApprovedBankItems, type BankItem } from '../../shared/services/bankApi';
+import {
+  assembleLessonPlan,
+  type LessonPlan,
+  type LessonLevel,
+} from '../../shared/services/assembleLessonPlan';
 import styles from './PreviewPage.module.css';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -13,6 +18,9 @@ interface AdaptOptions {
   quizCount: number;
   itemIds: string[];
   componentIds: string[];
+  lessonPlanEnabled?: boolean;
+  lessonPlanLength?: 30 | 60 | 90 | 120;
+  lessonPlanLevel?: LessonLevel;
 }
 
 // ─── PreviewPage ─────────────────────────────────────────────────────────────
@@ -22,6 +30,8 @@ export function PreviewPage() {
 
   const [adaptOptions, setAdaptOptions] = useState<AdaptOptions | null>(null);
   const [questions, setQuestions] = useState<BankItem[]>([]);
+  const [lessonPlan, setLessonPlan] = useState<LessonPlan | null>(null);
+  const [lessonPlanError, setLessonPlanError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAnswerKey, setShowAnswerKey] = useState(false);
   const [reportingItemId, setReportingItemId] = useState<string | null>(null);
@@ -47,6 +57,24 @@ export function PreviewPage() {
     }
 
     setAdaptOptions(opts);
+
+    // Assemble lesson plan if enabled
+    if (opts.lessonPlanEnabled && opts.lessonPlanLength && opts.lessonPlanLevel) {
+      const quizSummary =
+        opts.quizEnabled && opts.itemIds.length > 0
+          ? { type: opts.quizType, count: opts.quizCount }
+          : undefined;
+      const result = assembleLessonPlan(
+        opts.componentIds,
+        { length: opts.lessonPlanLength, level: opts.lessonPlanLevel },
+        quizSummary,
+      );
+      if ('error' in result) {
+        setLessonPlanError(result.error);
+      } else {
+        setLessonPlan(result);
+      }
+    }
 
     if (!opts.quizEnabled || opts.itemIds.length === 0) {
       setLoading(false);
@@ -225,6 +253,77 @@ export function PreviewPage() {
             ))
           )}
         </section>
+
+        {/* ── Lesson plan section ── */}
+        {adaptOptions.lessonPlanEnabled && (
+          <section className={styles.section} aria-labelledby="lp-preview-heading">
+            <h2 className={styles.h2} id="lp-preview-heading">Lesson plan</h2>
+
+            {lessonPlanError ? (
+              <div className={styles.noQuizBanner}>
+                <p>{lessonPlanError}</p>
+              </div>
+            ) : lessonPlan ? (
+              <div className={styles.lessonPlanCard}>
+                <div className={styles.lpHeader}>
+                  <p className={styles.lpMeta}>
+                    {lessonPlan.length} min &middot; {lessonPlan.level.charAt(0).toUpperCase() + lessonPlan.level.slice(1)}
+                  </p>
+                  <p className={styles.lpIntention}>
+                    <strong>Learning intention</strong> {lessonPlan.learningIntention}
+                  </p>
+                  <p className={styles.lpIntention}>
+                    <strong>Driving question</strong> {lessonPlan.drivingQuestion}
+                  </p>
+                </div>
+
+                <table className={styles.lpTable}>
+                  <thead>
+                    <tr>
+                      <th>Stage</th>
+                      <th>Activity</th>
+                      <th>Time</th>
+                      <th className={styles.lpColWide}>How to run</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lessonPlan.timeline.map((row, idx) => (
+                      <tr key={idx} className={row.isSample ? styles.lpRowSample : undefined}>
+                        <td className={styles.lpStage}>{row.stage}</td>
+                        <td className={styles.lpLabel}>
+                          {row.label}
+                          {row.isSample && <span className={styles.lpSampleMark}> *</span>}
+                        </td>
+                        <td className={styles.lpTime}>{row.minutes} min</td>
+                        <td className={styles.lpHowToRun}>
+                          {row.howToRun}
+                          {row.prompts && row.prompts.length > 0 && (
+                            <ul className={styles.lpPrompts}>
+                              {row.prompts.map((p, pi) => (
+                                <li key={pi}>
+                                  {p.text}
+                                  {p.sample && <span className={styles.lpSampleMark}> *</span>}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {lessonPlan.hasSampleContent && (
+                  <p className={styles.lpSampleNote}>
+                    * Content marked with an asterisk is a sample or adaptation not included in the OceanX Educator Guide.
+                  </p>
+                )}
+
+                <p className={styles.lpLevelNote}>{lessonPlan.levelNote}</p>
+              </div>
+            ) : null}
+          </section>
+        )}
 
         {/* ── Actions ── */}
         <div className={styles.actions}>

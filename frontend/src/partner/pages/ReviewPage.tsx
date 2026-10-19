@@ -9,6 +9,10 @@ import {
   type PackagePayload,
 } from '../../shared/services/sendPackage';
 import { API_BASE } from '../../shared/services/apiBase';
+import {
+  assembleLessonPlan,
+  type LessonLevel,
+} from '../../shared/services/assembleLessonPlan';
 import styles from './ReviewPage.module.css';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -39,6 +43,9 @@ interface AdaptOptions {
   quizCount: number;
   itemIds: string[];
   componentIds: string[];
+  lessonPlanEnabled?: boolean;
+  lessonPlanLength?: 30 | 60 | 90 | 120;
+  lessonPlanLevel?: LessonLevel;
 }
 
 function readAdaptOptions(): AdaptOptions | null {
@@ -145,6 +152,28 @@ export function ReviewPage() {
       item_ids: adaptOptions?.itemIds ?? [],
     };
 
+    // Assemble lesson plan if requested
+    const lpEnabled = adaptOptions?.lessonPlanEnabled ?? false;
+    let assembledPlan: ReturnType<typeof assembleLessonPlan> | null = null;
+    if (lpEnabled && adaptOptions?.lessonPlanLength && adaptOptions?.lessonPlanLevel) {
+      const quizSummary =
+        quizEnabled && (adaptOptions.itemIds.length ?? 0) > 0
+          ? { type: adaptOptions.quizType, count: adaptOptions.quizCount }
+          : undefined;
+      assembledPlan = assembleLessonPlan(
+        adaptOptions.componentIds,
+        { length: adaptOptions.lessonPlanLength, level: adaptOptions.lessonPlanLevel },
+        quizSummary,
+      );
+      if ('error' in assembledPlan) {
+        setSendState('error');
+        setErrorMessage(`Lesson plan error: ${assembledPlan.error}`);
+        return;
+      }
+    }
+
+    const lessonPlanData = assembledPlan && !('error' in assembledPlan) ? assembledPlan : null;
+
     // First, create the package on the backend to get a slug
     let slug: string | undefined;
     try {
@@ -156,8 +185,9 @@ export function ReviewPage() {
           picks: pkg.picks,
           recommendations: pkg.recommendations,
           quiz_title: quizTitle,
-          lesson_plan_title: undefined,
-          lesson_plan_url: undefined,
+          lesson_plan_title: lessonPlanData ? 'Lesson Plan' : undefined,
+          lesson_plan_url: lessonPlanData ? undefined : undefined,
+          lesson_plan: lessonPlanData ?? undefined,
           educator_email: email.trim(),
           component_ids: quizAssembly.component_ids,
           options: quizAssembly.options,
@@ -176,6 +206,8 @@ export function ReviewPage() {
       return;
     }
 
+    const lessonPlanUrl = lessonPlanData && slug ? `/lesson/p/${slug}` : undefined;
+
     // Then send the email with the slug
     const payload: PackagePayload = {
       email: email.trim(),
@@ -183,8 +215,8 @@ export function ReviewPage() {
       picks: pkg.picks,
       recommendations: pkg.recommendations,
       quizTitle,
-      lessonPlanTitle: undefined,
-      lessonPlanUrl: undefined,
+      lessonPlanTitle: lessonPlanData ? 'Lesson Plan' : undefined,
+      lessonPlanUrl,
       slug,
     };
 
@@ -312,11 +344,22 @@ export function ReviewPage() {
                   <span className={styles.checkValueMuted}>Not included</span>
                 </div>
               )}
-              <div className={styles.checkRowMuted}>
-                <span className={styles.checkIconMuted} aria-hidden="true" />
-                <span className={styles.checkLabel}>Lesson plan</span>
-                <span className={styles.checkValueMuted}>Not included</span>
-              </div>
+              {adaptOpts?.lessonPlanEnabled ? (
+                <CheckRow
+                  label="Lesson plan"
+                  value={`${adaptOpts.lessonPlanLength ?? 60} min, ${
+                    adaptOpts.lessonPlanLevel
+                      ? adaptOpts.lessonPlanLevel.charAt(0).toUpperCase() + adaptOpts.lessonPlanLevel.slice(1)
+                      : 'Intermediate'
+                  }`}
+                />
+              ) : (
+                <div className={styles.checkRowMuted}>
+                  <span className={styles.checkIconMuted} aria-hidden="true" />
+                  <span className={styles.checkLabel}>Lesson plan</span>
+                  <span className={styles.checkValueMuted}>Not included</span>
+                </div>
+              )}
             </div>
             <p className={styles.gateNotice}>
               Your package has entered the OceanX Education Review Gate. Allow up to 1 business day for your links to arrive.

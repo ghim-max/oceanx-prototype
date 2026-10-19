@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: oceanx-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: AI_MODEL
+        value: claude-haiku-5-5
+      - key: TEST_OVERRIDES
+        value: ""
+        sync: false
+      - key: ALLOWED_ORIGIN
+        sync: false
+      - key: ALLOW_GENERATE
+        value: "true"
+      - key: ADMIN_TOKEN
+        sync: false

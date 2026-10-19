@@ -1,0 +1,297 @@
+.page {
+  min-height: 100vh;
+  padding: 0 0 80px;
+  background: var(--bg);
+}
+
+.inner {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ── Header ── */
+.pageHeader {
+  margin: 40px 0 32px;
+  padding-bottom: 24px;
+  border-bottom: 2px solid var(--text);
+}
+
+.orgLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 4px;
+}
+
+.planMeta {
+  font-size: 0.9375rem;
+  color: var(--text-muted);
+  margin: 0 0 16px;
+}
+
+.printBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: 99px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: var(--font-body);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.printBtn:hover {
+  border-color: var(--accent);
+}
+
+/* ── Section ── */
+.section {
+  margin-bottom: 32px;
+}
+
+.h2 {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 14px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.totalTime {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+/* ── Meta grid ── */
+.metaGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 0;
+}
+
+@media (max-width: 560px) {
+  .metaGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.metaItem {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.metaItem dt {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.metaItem dd {
+  font-size: 0.9375rem;
+  color: var(--text);
+  line-height: 1.5;
+  margin: 0;
+  font-style: italic;
+}
+
+/* ── Materials list ── */
+.materialsList {
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.materialsList li {
+  font-size: 0.9375rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+/* ── Session table ── */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.table th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  color: var(--text);
+  line-height: 1.55;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.rowSample td {
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+}
+
+.cellStage {
+  white-space: nowrap;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  width: 70px;
+}
+
+.cellLabel {
+  font-weight: 600;
+  white-space: nowrap;
+  width: 160px;
+}
+
+.cellTime {
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  width: 60px;
+}
+
+.cellHowToRun {
+  font-size: 0.875rem;
+}
+
+.howToRunText {
+  white-space: pre-line;
+  display: block;
+}
+
+.promptList {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.promptList li {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.evidence {
+  margin: 10px 0 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* ── Sample indicator ── */
+.sampleMark {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.sampleNote {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  margin: 0 0 24px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+/* ── Level note ── */
+.levelNote {
+  font-size: 0.9375rem;
+  color: var(--text);
+  line-height: 1.6;
+  font-style: italic;
+}
+
+/* ── Footer ── */
+.footer {
+  margin-top: 40px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.footer p {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.feedbackLink {
+  color: var(--accent);
+}
+
+/* ── States ── */
+.loading {
+  padding: 60px 0;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.errorMsg {
+  margin-top: 48px;
+  color: var(--text-muted);
+}
+
+/* ── Print styles ── */
+@media print {
+  .printBtn {
+    display: none !important;
+  }
+
+  .page {
+    padding: 0;
+  }
+
+  .table {
+    break-inside: auto;
+  }
+
+  .table tr {
+    break-inside: avoid;
+  }
+}

@@ -254,21 +254,7 @@
   margin: 0;
 }
 
-/* ── Lesson plan stub ── */
-.comingSoon {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 16px 20px;
-  font-size: 0.875rem;
-  color: var(--text-muted);
-}
-
-.comingSoon strong {
-  color: var(--text);
-  display: block;
-  margin-bottom: 4px;
-}
+/* (lesson plan stub removed — now uses existing toggle + optionsGrid pattern) */
 
 /* ── Continue button ── */
 .continuePill {

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
 import { getApprovedBankItems } from '../../shared/services/bankApi';
 import { assembleQuiz, type QuizType, type QuizDifficulty } from '../../shared/services/assembleQuiz';
+import type { LessonLevel } from '../../shared/services/assembleLessonPlan';
 import styles from './OptionsPage.module.css';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -36,11 +37,14 @@ export function OptionsPage() {
   const [quizType, setQuizType] = useState<QuizType>('mcq');
   const [quizDifficulty, setQuizDifficulty] = useState<QuizDifficulty>('medium');
   const [quizCount, setQuizCount] = useState(4);
+  const [lessonPlanEnabled, setLessonPlanEnabled] = useState(false);
+  const [lessonPlanLength, setLessonPlanLength] = useState<30 | 60 | 90 | 120>(60);
+  const [lessonPlanLevel, setLessonPlanLevel] = useState<LessonLevel>('intermediate');
   const [assembleError, setAssembleError] = useState<string | null>(null);
   const [proceeding, setProceeding] = useState(false);
 
   useEffect(() => {
-    document.title = 'Set quiz options — OceanX Education';
+    document.title = 'Add extras — OceanX Education';
     const raw = sessionStorage.getItem('adaptPackage');
     if (raw) {
       try {
@@ -55,7 +59,7 @@ export function OptionsPage() {
   // Clear assemble error when options change
   useEffect(() => {
     setAssembleError(null);
-  }, [quizEnabled, quizType, quizDifficulty, quizCount]);
+  }, [quizEnabled, quizType, quizDifficulty, quizCount, lessonPlanEnabled, lessonPlanLength, lessonPlanLevel]);
 
   if (!pkg) {
     return (
@@ -81,6 +85,12 @@ export function OptionsPage() {
     setProceeding(true);
     setAssembleError(null);
 
+    const lessonPlanBase = {
+      lessonPlanEnabled,
+      lessonPlanLength,
+      lessonPlanLevel,
+    };
+
     if (!quizEnabled) {
       sessionStorage.setItem(
         'adaptOptions',
@@ -91,6 +101,7 @@ export function OptionsPage() {
           quizCount,
           itemIds: [],
           componentIds,
+          ...lessonPlanBase,
         }),
       );
       navigate('/partner/adapt/preview');
@@ -121,6 +132,7 @@ export function OptionsPage() {
           quizCount,
           itemIds: result.itemIds,
           componentIds,
+          ...lessonPlanBase,
         }),
       );
       navigate('/partner/adapt/preview');
@@ -142,9 +154,9 @@ export function OptionsPage() {
         </button>
 
         <header className={styles.pageHeader}>
-          <h1 className={styles.h1}>Set quiz options</h1>
+          <h1 className={styles.h1}>Add extras to your package</h1>
           <p className={styles.subtitle}>
-            Choose how the knowledge check is assembled for your learners.
+            Include a knowledge check, lesson plan, or both.
           </p>
         </header>
 
@@ -252,12 +264,70 @@ export function OptionsPage() {
           )}
         </section>
 
-        {/* ── Lesson plan stub ── */}
+        {/* ── Lesson plan ── */}
         <section className={styles.section} aria-labelledby="lesson-plan-heading">
           <h2 className={styles.h2} id="lesson-plan-heading">Lesson plan</h2>
-          <div className={styles.comingSoon}>
-            <strong>Coming in the next step</strong>
-            Lesson plan options will be available in an upcoming update.
+          <div className={styles.toggleRow}>
+            <div>
+              <p className={styles.toggleLabel}>Include a lesson plan</p>
+              <p className={styles.toggleDesc}>
+                A complete session plan assembled from the components you picked.
+              </p>
+            </div>
+            <label className={styles.toggle} aria-label="Include lesson plan">
+              <input
+                type="checkbox"
+                checked={lessonPlanEnabled}
+                onChange={(e) => setLessonPlanEnabled(e.target.checked)}
+              />
+              <span className={styles.toggleSlider} />
+            </label>
+          </div>
+
+          <div className={`${styles.optionsGrid} ${!lessonPlanEnabled ? styles.disabled : ''}`}>
+
+            {/* Length */}
+            <fieldset className={styles.fieldGroup}>
+              <legend className={styles.fieldLabel}>Session length</legend>
+              <div className={styles.pillGroup} role="radiogroup">
+                {([30, 60, 90, 120] as const).map((len) => (
+                  <label key={len} className={styles.pillOption}>
+                    <input
+                      type="radio"
+                      name="lessonPlanLength"
+                      value={len}
+                      checked={lessonPlanLength === len}
+                      disabled={!lessonPlanEnabled}
+                      onChange={() => setLessonPlanLength(len)}
+                    />
+                    <span className={styles.pillText}>{len} min</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            {/* Level */}
+            <fieldset className={styles.fieldGroup}>
+              <legend className={styles.fieldLabel}>Level</legend>
+              <div className={styles.pillGroup} role="radiogroup">
+                {(['introductory', 'intermediate', 'advanced'] as const).map((lvl) => (
+                  <label key={lvl} className={styles.pillOption}>
+                    <input
+                      type="radio"
+                      name="lessonPlanLevel"
+                      value={lvl}
+                      checked={lessonPlanLevel === lvl}
+                      disabled={!lessonPlanEnabled}
+                      onChange={() => setLessonPlanLevel(lvl)}
+                    />
+                    <span className={styles.pillText}>
+                      {lvl.charAt(0).toUpperCase() + lvl.slice(1)}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
           </div>
         </section>
 

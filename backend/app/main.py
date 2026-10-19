@@ -4,14 +4,20 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from app.pipeline import run_pipeline, get_latest_run, get_latest_cards, get_raw_data, COMPONENTS
-from app.config import ALLOWED_ORIGIN, ALLOW_GENERATE
+from app.config import ALLOWED_ORIGIN, ADMIN_TOKEN
 from app.db import supabase
 from app.bank_draft import draft_components, DRAFTABLE_COMPONENTS, load_source
 from app.bank_rules import run_auto_checks
 import uuid
 import secrets
+from fastapi import Header, Depends
 
 app = FastAPI(title="OceanX Pipeline B", version="1.0.0")
+
+# Admin token dependency for AI endpoints
+async def verify_admin_token(x_admin_token: Optional[str] = Header(None, alias="X-Admin-Token")):
+    if x_admin_token != ADMIN_TOKEN:
+        raise HTTPException(status_code=401, detail="Invalid or missing admin token")
 
 # CORS for frontend only
 app.add_middleware(
@@ -57,9 +63,10 @@ def health():
     return {"ok": True}
 
 @app.post("/insights/generate", response_model=GenerateResponse)
-def generate_insights(only: Optional[str] = Query(None, description="Comma separated component ids to (re)generate, e.g. video-nada,learner-organiser")):
-    if not ALLOW_GENERATE:
-        raise HTTPException(status_code=403, detail="Generate is turned off on the hosted version. Run it on the laptop.")
+def generate_insights(
+    only: Optional[str] = Query(None, description="Comma separated component ids to (re)generate, e.g. video-nada,learner-organiser"),
+    _: None = Depends(verify_admin_token),
+):
     only_list = [x.strip() for x in only.split(",") if x.strip()] if only else None
     try:
         result = run_pipeline(only=only_list)
@@ -108,18 +115,14 @@ def draft_bank(
     component_ids: Optional[str] = Query(
         None,
         description="Comma-separated component ids to draft. Defaults to all draftable.",
-    )
+    ),
+    _: None = Depends(verify_admin_token),
 ):
     """
     Draft question bank items using AI.
     Source files in app/sources/{component_id}.md must be filled in first.
     Do not call this until the source files contain real OceanX text.
     """
-    if not ALLOW_GENERATE:
-        raise HTTPException(
-            status_code=403,
-            detail="Generate is disabled on the hosted version. Run on the laptop.",
-        )
     id_list = (
         [x.strip() for x in component_ids.split(",") if x.strip()]
         if component_ids
@@ -254,6 +257,7 @@ class PackageCreate(BaseModel):
     quiz_title: Optional[str] = None
     lesson_plan_title: Optional[str] = None
     lesson_plan_url: Optional[str] = None
+    lesson_plan: Optional[dict] = None        # assembled LessonPlan object
     educator_email: Optional[str] = None  # stored in educator_picks only
     component_ids: Optional[list[str]] = None  # from assembleQuiz
     options: Optional[dict] = None             # quiz options/config
@@ -269,6 +273,7 @@ class PackageResponse(BaseModel):
     quiz_title: Optional[str] = None
     lesson_plan_title: Optional[str] = None
     lesson_plan_url: Optional[str] = None
+    lesson_plan: Optional[dict] = None
     component_ids: list[str] = []
     options: Optional[dict] = None
     item_ids: list[str] = []
@@ -333,6 +338,7 @@ def create_package(body: PackageCreate):
         "quiz_title": body.quiz_title,
         "lesson_plan_title": body.lesson_plan_title,
         "lesson_plan_url": body.lesson_plan_url,
+        "lesson_plan": body.lesson_plan,
         "component_ids": body.component_ids or [],
         "options": body.options or [],
         "item_ids": body.item_ids or [],
@@ -344,22 +350,16 @@ def create_package(body: PackageCreate):
     pkg = result.data[0]
 
     # Store educator picks: one row per component
-    # Determine which components are in quiz/lesson_plan from item_ids
-    quiz_component_ids = set()
-    if body.item_ids:
-        # Fetch question_bank items to get their component_ids
-        item_result = supabase.table("question_bank").select("id, component_id").in_("id", body.item_ids).execute()
-        for item in item_result.data or []:
-            quiz_component_ids.add(item["component_id"])
-
+    quiz_included = bool(body.quiz_title and body.item_ids)
+    lesson_plan_included = body.lesson_plan is not None
     for pick in body.picks:
         comp_id = pick["id"]
         supabase.table("educator_picks").upsert({
             "package_id": pkg["id"],
             "component_id": comp_id,
             "educator_email": body.educator_email or "",
-            "quiz_included": comp_id in quiz_component_ids,
-            "lesson_plan_included": False,  # lesson plan not built yet
+            "quiz_included": quiz_included,
+            "lesson_plan_included": lesson_plan_included,
         }, on_conflict="package_id,component_id").execute()
 
     return pkg
