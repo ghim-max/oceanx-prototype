@@ -7,6 +7,7 @@ import {
   type EducatorPackageFeedbackRowInsert,
 } from '../../shared/services/feedbackService';
 import { isSupabaseConfigured } from '../../shared/services/supabase';
+import { API_BASE } from '../../shared/services/apiBase';
 import styles from './EducatorPackageFeedbackPage.module.css';
 
 const SUBMITTED_KEY = 'oxe-educator-submitted-package-';
@@ -109,7 +110,7 @@ export function EducatorPackageFeedbackPage() {
   // Load package data
   useEffect(() => {
     if (slug) {
-      fetch(`/api/packages/${slug}`)
+      fetch(`${API_BASE}/packages/${slug}`)
         .then((res) => {
           if (!res.ok) throw new Error('Package not found');
           return res.json();

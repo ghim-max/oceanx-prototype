@@ -8,6 +8,8 @@ import {
   submitIssueReport,
 } from '../../shared/services/feedbackService';
 import { isSupabaseConfigured } from '../../shared/services/supabase';
+import { API_BASE } from '../../shared/services/apiBase';
+import { getApprovedBankItems } from '../../shared/services/bankApi';
 import { Flag } from 'lucide-react';
 import styles from './QuizPackagePage.module.css';
 
@@ -118,7 +120,7 @@ export function QuizPackagePage() {
   // Load package data
   useEffect(() => {
     if (slug) {
-      fetch(`/api/packages/${slug}`)
+      fetch(`${API_BASE}/packages/${slug}`)
         .then((res) => {
           if (!res.ok) throw new Error('Package not found');
           return res.json();
@@ -143,7 +145,7 @@ export function QuizPackagePage() {
     try {
       // Fetch all approved and filter client-side since we don't have a batch endpoint
       // In production, add a batch endpoint
-      const allApproved = await fetch('/api/bank/approved').then(r => r.json()) as QuestionBankItem[];
+      const allApproved = await getApprovedBankItems();
       const filtered = allApproved.filter((q) => itemIds.includes(q.id));
       // Sort by the order in item_ids
       const sorted = itemIds.map(id => filtered.find((q) => q.id === id)).filter(Boolean) as QuestionBankItem[];

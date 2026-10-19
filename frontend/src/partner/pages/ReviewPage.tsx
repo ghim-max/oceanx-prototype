@@ -8,6 +8,7 @@ import {
   MissingEnvError,
   type PackagePayload,
 } from '../../shared/services/sendPackage';
+import { API_BASE } from '../../shared/services/apiBase';
 import styles from './ReviewPage.module.css';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -147,7 +148,7 @@ export function ReviewPage() {
     // First, create the package on the backend to get a slug
     let slug: string | undefined;
     try {
-      const createResponse = await fetch('/api/packages', {
+      const createResponse = await fetch(`${API_BASE}/packages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
