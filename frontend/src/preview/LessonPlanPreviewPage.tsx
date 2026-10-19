@@ -73,7 +73,7 @@ export function LessonPlanPreviewPage() {
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <h1 className={styles.title}>Lesson Plan Preview</h1>
+        <h1 className={styles.title}>Lesson plan preview</h1>
         <div className={styles.headerActions}>
           <button className={styles.btnPrint} onClick={handlePrint}>
             <Printer size={16} aria-hidden="true" />
