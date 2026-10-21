@@ -493,7 +493,9 @@ export function AdaptPage() {
         quizCount,
         itemIds: quizItemIds,
         componentIds: allPickIds,
-        lessonPlan: lessonPlanData,
+        lessonPlanEnabled: lessonPlanData !== null,
+        lessonPlanLength: lessonPlanData?.length ?? lessonPlanLength,
+        lessonPlanLevel: lessonPlanData?.level ?? lessonPlanLevel,
       })
     );
 
@@ -765,8 +767,8 @@ export function AdaptPage() {
                       <button
                         type="button"
                         className={styles.countBtn}
-                        onClick={() => setQuizCount(c => Math.max(3, c - 1))}
-                        disabled={quizCount <= 3}
+                        onClick={() => setQuizCount(c => Math.max(1, c - 1))}
+                        disabled={quizCount <= 1}
                         aria-label="Decrease question count"
                       >
                         −

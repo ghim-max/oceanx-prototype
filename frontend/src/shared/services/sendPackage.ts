@@ -15,6 +15,7 @@ const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID as string | undefined
 const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID as string | undefined;
 const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY as string | undefined;
 const BASE_URL = (import.meta.env.VITE_PUBLIC_BASE_URL as string | undefined) ?? '';
+const PUBLIC_BASE_URL = (BASE_URL || window.location.origin).replace(/\/+$/, '');
 
 export const DEMO_EMAIL = (import.meta.env.VITE_DEMO_EMAIL as string | undefined) ?? '';
 
@@ -53,7 +54,7 @@ function buildComponentsText(
   return orderedStages.map(stage => {
     const items = byStage.get(stage)!;
     const rows = items.map(
-      item => `• ${item.title} (${item.status}): ${BASE_URL}/partner/library`,
+      item => `• ${item.title} (${item.status}): ${PUBLIC_BASE_URL}/partner/library`,
     );
     return [stage.toUpperCase(), ...rows].join('\n');
   }).join('\n\n');
@@ -74,9 +75,9 @@ export async function sendPackage(payload: PackagePayload): Promise<void> {
     email: payload.email,
     audience: payload.audience,
     components: buildComponentsText(picks, recommendations),
-    quiz_link: quizTitle ? `${BASE_URL}/quiz${slug ? `/p/${slug}` : '/seagrass-university'}` : 'Not included',
-    lesson_plan_link: lessonPlanUrl ? `${BASE_URL}${lessonPlanUrl}` : 'Not included',
-    feedback_link: `${BASE_URL}/educator${slug ? `/p/${slug}` : '/seagrass-university'}`,
+    quiz_link: quizTitle ? `${PUBLIC_BASE_URL}/quiz${slug ? `/p/${slug}` : '/seagrass-university'}` : 'Not included',
+    lesson_plan_link: lessonPlanUrl ? `${PUBLIC_BASE_URL}${lessonPlanUrl}` : 'Not included',
+    feedback_link: `${PUBLIC_BASE_URL}/educator${slug ? `/p/${slug}` : '/seagrass-university'}`,
   };
 
   await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, { publicKey: PUBLIC_KEY });

@@ -233,8 +233,8 @@ export function OptionsPage() {
                 <button
                   type="button"
                   className={styles.countBtn}
-                  onClick={() => setQuizCount((n) => Math.max(3, n - 1))}
-                  disabled={!quizEnabled || quizCount <= 3}
+                  onClick={() => setQuizCount((n) => Math.max(1, n - 1))}
+                  disabled={!quizEnabled || quizCount <= 1}
                   aria-label="Decrease question count"
                 >
                   −
