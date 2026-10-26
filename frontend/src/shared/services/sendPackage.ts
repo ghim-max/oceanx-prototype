@@ -1,21 +1,24 @@
 import emailjs from '@emailjs/browser';
+import { buildPackageEmail } from '../email/packageEmail';
 
 export interface PackagePayload {
   email: string;
+  educatorName?: string;
   audience: string;
-  picks: { id: string; title: string; status: string; stage: string }[];
-  recommendations: { id: string; title: string; stage: string }[];
-  quizTitle?: string;
-  lessonPlanTitle?: string;
-  lessonPlanUrl?: string;
+  components: { title: string; type: string; minutes: number }[];
+  quizLink?: string;
+  quizQuestionCount?: number;
+  lessonPlanLink?: string;
+  lessonPlanLength?: number;
+  lessonPlanLevel?: string;
+  hadAiReview: boolean;
   slug?: string; // package slug for feedback links
 }
 
 const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID as string | undefined;
 const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID as string | undefined;
 const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY as string | undefined;
-const BASE_URL = (import.meta.env.VITE_PUBLIC_BASE_URL as string | undefined) ?? '';
-const PUBLIC_BASE_URL = (BASE_URL || window.location.origin).replace(/\/+$/, '');
+export const BASE_URL = (import.meta.env.VITE_PUBLIC_BASE_URL as string | undefined) ?? '';
 
 export const DEMO_EMAIL = (import.meta.env.VITE_DEMO_EMAIL as string | undefined) ?? '';
 
@@ -23,45 +26,13 @@ export function emailjsConfigured(): boolean {
   return Boolean(SERVICE_ID && TEMPLATE_ID && PUBLIC_KEY);
 }
 
-// Stage order mirrors seagrass-stories STAGES array.
-const STAGE_ORDER = [
-  'Start here',
-  'Explore',
-  'Investigate',
-  'Reflect',
-  'Create',
-  'Additional support',
-];
-
-function buildComponentsText(
-  picks: PackagePayload['picks'],
-  recs: PackagePayload['recommendations'],
-): string {
-  type Item = { id: string; title: string; status: string; stage: string };
-  const all: Item[] = [
-    ...picks,
-    ...recs.map(r => ({ ...r, status: 'Added' })),
-  ];
-
-  const byStage = new Map<string, Item[]>();
-  for (const item of all) {
-    const s = item.stage || 'Other';
-    if (!byStage.has(s)) byStage.set(s, []);
-    byStage.get(s)!.push(item);
+export class MissingEnvError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'MissingEnvError';
   }
-
-  const orderedStages = [...STAGE_ORDER, 'Other'].filter(s => byStage.has(s));
-  return orderedStages.map(stage => {
-    const items = byStage.get(stage)!;
-    const rows = items.map(
-      item => `• ${item.title} (${item.status}): ${PUBLIC_BASE_URL}/partner/library`,
-    );
-    return [stage.toUpperCase(), ...rows].join('\n');
-  }).join('\n\n');
 }
 
-// Demo shortcut: in the real product this email is sent only after OceanX Education
-// approves the package (within 1 business day). For the demo it sends immediately.
 export async function sendPackage(payload: PackagePayload): Promise<void> {
   if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) {
     throw new MissingEnvError(
@@ -69,23 +40,32 @@ export async function sendPackage(payload: PackagePayload): Promise<void> {
     );
   }
 
-  const { picks, recommendations, quizTitle, lessonPlanUrl, slug } = payload;
+  const feedbackLink = `${BASE_URL}/educator${payload.slug ? `/p/${payload.slug}` : '/seagrass-university'}`;
+
+  const emailInput = {
+    educatorName: payload.educatorName,
+    audience: payload.audience,
+    components: payload.components,
+    quizLink: payload.quizLink,
+    quizQuestionCount: payload.quizQuestionCount,
+    lessonPlanLink: payload.lessonPlanLink,
+    lessonPlanLength: payload.lessonPlanLength,
+    lessonPlanLevel: payload.lessonPlanLevel,
+    feedbackLink,
+    hadAiReview: payload.hadAiReview,
+  };
+
+  const { subject, html } = buildPackageEmail(emailInput);
 
   const templateParams = {
     email: payload.email,
-    audience: payload.audience,
-    components: buildComponentsText(picks, recommendations),
-    quiz_link: quizTitle ? `${PUBLIC_BASE_URL}/quiz${slug ? `/p/${slug}` : '/seagrass-university'}` : 'Not included',
-    lesson_plan_link: lessonPlanUrl ? `${PUBLIC_BASE_URL}${lessonPlanUrl}` : 'Not included',
-    feedback_link: `${PUBLIC_BASE_URL}/educator${slug ? `/p/${slug}` : '/seagrass-university'}`,
+    email_html: html,
+    subject,
+    to_email: payload.email,
+    reply_to: 'noreply@oceanx.org',
   };
 
-  await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, { publicKey: PUBLIC_KEY });
-}
+  console.log('[sendPackage] params keys:', Object.keys(templateParams), 'email_html length:', html.length);
 
-export class MissingEnvError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'MissingEnvError';
-  }
+  await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, { publicKey: PUBLIC_KEY });
 }

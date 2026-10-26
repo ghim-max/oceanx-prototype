@@ -36,12 +36,15 @@ const TYPE_ICONS: Record<ComponentType, React.ComponentType<{ size?: number; 'ar
 // Groups for recommendations: ordered label → component IDs
 const REC_GROUPS: [string, string[]][] = [
   ['Before class', ['further-reading-unep', 'further-reading-seagrass-watch']],
-  ['In class', ['driving-question', 'game', 'video-nada', 'video-changi-point', 'investigate-prompts', 'reflect-prompts']],
+  ['In class', ['driving-question', 'game', 'video-changi-point', 'investigate-prompts', 'reflect-prompts']],
   ['For you', ['educator-guide']],
 ];
 
+// Component IDs that should never appear in recommendations
+const EXCLUDED_REC_IDS = new Set(['video-nada']);
+
 // Rough durations (min) used for summary bar
-const DURATION_MIN: Record<string, number> = {
+export const DURATION_MIN: Record<string, number> = {
   'video-changi-point': 4,
   'create-activity': 15,
   'further-reading-unep': 20,
@@ -678,7 +681,7 @@ export function AdaptPage() {
               REC_GROUPS.map(([groupLabel, ids]) => {
                 const groupRecs = ids
                   .map(id => recommendations.find(r => r.id === id))
-                  .filter((r): r is Recommendation => r !== undefined && !addedRecs.has(r.id));
+                  .filter((r): r is Recommendation => r !== undefined && !addedRecs.has(r.id) && !EXCLUDED_REC_IDS.has(r.id));
                 if (groupRecs.length === 0) return null;
                 return (
                   <div key={groupLabel} className={styles.recGroup}>

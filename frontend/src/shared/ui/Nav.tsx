@@ -11,12 +11,18 @@ import {
   STAGES,
   type ComponentStage,
 } from '../data/seagrass-stories';
+import { getPendingCounts } from '../../team/data/governanceService';
 import styles from './Nav.module.css';
 
-const PARTNER_LINKS = [{ to: '/partner/library', label: 'Browse library' }];
-const TEAM_LINKS: Array<{ to: string; label: string }> = [
+const PARTNER_LINKS: Array<{ to: string; label: string; countKey?: string }> = [
+  { to: '/partner/library', label: 'Browse library' },
+];
+const TEAM_LINKS: Array<{ to: string; label: string; countKey?: string }> = [
+  { to: '/team/overview', label: 'Overview' },
   { to: '/team/insights', label: 'Insights' },
   { to: '/team/bank', label: 'Question bank' },
+  { to: '/team/review', label: 'Review', countKey: 'review' },
+  { to: '/team/log', label: 'Decision log' },
 ];
 
 function stageToAnchor(stage: ComponentStage): string {
@@ -176,6 +182,7 @@ export function Nav() {
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [overHero, setOverHero] = useState(false);
+  const [pendingCounts, setPendingCounts] = useState<Record<string, number>>({});
 
   // Switch nav between transparent-white (over hero) and opaque (everywhere else)
   useEffect(() => {
@@ -194,6 +201,19 @@ export function Nav() {
     return () => obs.disconnect();
   }, [pathname]);
 
+  // Fetch pending counts for team nav badge
+  useEffect(() => {
+    if (pathname.startsWith('/team')) {
+      getPendingCounts().then((counts) => {
+        setPendingCounts({
+          review: counts.ai_adaptation + counts.share_back + counts.issue_report,
+        });
+      }).catch(() => {
+        // ignore
+      });
+    }
+  }, [pathname]);
+
   const effectiveRole =
     role ??
     (pathname.startsWith('/partner') ? 'partner'
@@ -202,7 +222,7 @@ export function Nav() {
 
   const logoTarget =
     effectiveRole === 'partner' ? '/partner'
-    : effectiveRole === 'team' ? '/team/insights'
+    : effectiveRole === 'team' ? '/team/overview'
     : '/';
 
   const isLibraryPage = pathname === '/partner/library';
@@ -268,7 +288,7 @@ export function Nav() {
               id="nav-links"
               className={`${styles.links} ${menuOpen ? styles.open : ''}`}
             >
-              {navLinks.map(({ to, label }) => (
+              {navLinks.map(({ to, label, countKey }) => (
                 <li key={label} className={styles.linkItem}>
                   <NavLink
                     to={to}
@@ -280,6 +300,9 @@ export function Nav() {
                     onClick={() => setMenuOpen(false)}
                   >
                     {label}
+                    {countKey && pendingCounts[countKey] > 0 && (
+                      <span className={styles.teamBadge}>{pendingCounts[countKey]}</span>
+                    )}
                   </NavLink>
                 </li>
               ))}

@@ -1,0 +1,122 @@
+.page {
+  background: var(--color-bg);
+  min-height: 100vh;
+  padding: var(--space-6) var(--space-4);
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: var(--space-8);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: var(--text-h1);
+  font-weight: var(--weight-h1);
+  color: var(--color-heading);
+  margin-bottom: var(--space-2);
+}
+
+.subtitle {
+  font-size: var(--text-body);
+  color: var(--color-text-secondary);
+  font-family: var(--font-body);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  align-items: flex-end;
+  margin-bottom: var(--space-6);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.controlGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 180px;
+}
+
+.label {
+  font-size: var(--text-micro);
+  font-weight: var(--weight-label);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: var(--font-body);
+}
+
+.select,
+.input {
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font: var(--font-body);
+  font-size: var(--text-small);
+}
+
+.select:focus,
+.input:focus {
+  outline: none;
+  border-color: var(--color-link);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-link) 25%, transparent);
+}
+
+.toggleLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-small);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.previewWrapper {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  min-height: 600px;
+}
+
+.emailFrame {
+  width: 100%;
+  min-height: 600px;
+  background: white;
+}
+
+.rawHtml {
+  padding: var(--space-4);
+  max-height: 70vh;
+  overflow: auto;
+}
+
+.rawHtml pre {
+  margin: 0;
+  font-size: var(--text-micro);
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+@media (max-width: 640px) {
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .controlGroup {
+    min-width: 0;
+  }
+}

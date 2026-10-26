@@ -9,6 +9,8 @@ import {
   type PackagePayload,
 } from '../../shared/services/sendPackage';
 import { API_BASE } from '../../shared/services/apiBase';
+import { BASE_URL } from '../../shared/services/sendPackage';
+import { DURATION_MIN } from './AdaptPage';
 import {
   assembleLessonPlan,
   type LessonLevel,
@@ -93,6 +95,7 @@ export function ReviewPage() {
 
   const [pkg, setPkg] = useState<AdaptPackage | null>(null);
   const [adaptOpts, setAdaptOpts] = useState<AdaptOptions | null>(null);
+  const [acceptedRewrites, setAcceptedRewrites] = useState<Array<{ id: string; title: string }>>([]);
   const [checking, setChecking] = useState(true);
   const [email, setEmail] = useState(DEMO_EMAIL);
   const [emailTouched, setEmailTouched] = useState(false);
@@ -121,6 +124,17 @@ export function ReviewPage() {
       }
     }
     setAdaptOpts(readAdaptOptions());
+
+    // Read accepted AI rewrites
+    const rewritesRaw = sessionStorage.getItem('adaptAcceptedRewrites');
+    if (rewritesRaw) {
+      try {
+        setAcceptedRewrites(JSON.parse(rewritesRaw));
+      } catch {
+        // ignore
+      }
+    }
+
     const t = setTimeout(() => setChecking(false), 1000);
     return () => {
       clearTimeout(t);
@@ -208,15 +222,43 @@ export function ReviewPage() {
 
     const lessonPlanUrl = lessonPlanData && slug ? `/lesson/p/${slug}` : undefined;
 
+    // Build component list for email
+    const allComponents = [
+      ...pkg.picks,
+      ...pkg.recommendations,
+    ];
+    const emailComponents = allComponents.map(c => {
+      const hasStatus = 'status' in c && typeof c.status === 'string';
+      return {
+        title: c.title,
+        type: (hasStatus ? c.status : 'Fixed') as string,
+        minutes: DURATION_MIN[c.id] || 0,
+      };
+    });
+
+    // Quiz info
+    const quizLink = quizEnabled && slug ? `${BASE_URL}/quiz/p/${slug}` : undefined;
+    const quizQuestionCount = adaptOptions?.quizCount;
+
+    // Lesson plan info
+    const lessonPlanLength = adaptOptions?.lessonPlanLength;
+    const lessonPlanLevel = adaptOptions?.lessonPlanLevel;
+
+    // AI review flag
+    const hadAiReview = acceptedRewrites.length > 0;
+
     // Then send the email with the slug
     const payload: PackagePayload = {
       email: email.trim(),
+      educatorName: '', // Will use fallback in email template
       audience: pkg.audience,
-      picks: pkg.picks,
-      recommendations: pkg.recommendations,
-      quizTitle,
-      lessonPlanTitle: lessonPlanData ? 'Lesson Plan' : undefined,
-      lessonPlanUrl,
+      components: emailComponents,
+      quizLink,
+      quizQuestionCount,
+      lessonPlanLink: lessonPlanUrl,
+      lessonPlanLength,
+      lessonPlanLevel,
+      hadAiReview,
       slug,
     };
 

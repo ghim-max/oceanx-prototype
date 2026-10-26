@@ -373,6 +373,7 @@ export function BankPage() {
 
   const drafted = items.filter((i) => i.status === 'draft').length;
   const approved = items.filter((i) => i.status === 'approved').length;
+  const rejected = items.filter((i) => i.status === 'rejected').length;
   const flagged = items.filter((i) => i.auto_check_passed === false).length;
 
   const grouped: Record<string, BankItem[]> = {};
@@ -390,6 +391,7 @@ export function BankPage() {
     { label: 'Total', value: items.length },
     { label: 'Drafted', value: drafted },
     { label: 'Approved', value: approved },
+    { label: 'Rejected', value: rejected },
     { label: 'Flagged', value: flagged },
   ];
 
