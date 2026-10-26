@@ -11,8 +11,12 @@ import { LibraryPage } from './partner/pages/LibraryPage';
 import { AdaptPage } from './partner/pages/AdaptPage';
 import { PreviewPage } from './partner/pages/PreviewPage';
 import { ReviewPage } from './partner/pages/ReviewPage';
+import { EmailPreviewPage } from './partner/pages/EmailPreviewPage';
 import { InsightsPage } from './team/pages/InsightsPage';
 import { BankPage } from './team/pages/BankPage';
+import { ReviewPage as TeamReviewPage } from './team/pages/ReviewPage';
+import { LogPage } from './team/pages/LogPage';
+import { OverviewPage } from './team/pages/OverviewPage';
 import { QuizPage } from './learner/pages/QuizPage';
 import { QuizPackagePage } from './learner/pages/QuizPackagePage';
 import { QuizPreviewPage } from './preview/QuizPreviewPage';
@@ -60,9 +64,13 @@ function AppContent() {
           <Route path="/partner/adapt/options" element={<Navigate to="/partner/adapt" replace />} />
           <Route path="/partner/adapt/preview" element={<PreviewPage />} />
           <Route path="/partner/adapt/review" element={<ReviewPage />} />
-          <Route path="/team" element={<Navigate to="/team/insights" replace />} />
+          <Route path="/partner/adapt/email-preview" element={<EmailPreviewPage />} />
+          <Route path="/team" element={<Navigate to="/team/overview" replace />} />
+          <Route path="/team/overview" element={<OverviewPage />} />
           <Route path="/team/insights" element={<InsightsPage />} />
           <Route path="/team/bank" element={<BankPage />} />
+          <Route path="/team/review" element={<TeamReviewPage />} />
+          <Route path="/team/log" element={<LogPage />} />
           <Route path="/kit" element={<KitPage />} />
           <Route path="/quiz/seagrass-university" element={<QuizPage />} />
           <Route path="/quiz/p/:slug" element={<QuizPackagePage />} />

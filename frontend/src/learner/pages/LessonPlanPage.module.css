@@ -1,6 +1,6 @@
 .page {
   min-height: 100vh;
-  padding: 0 0 80px;
+  padding: 0 0 96px;
   background: var(--bg);
 }
 
@@ -183,6 +183,15 @@
   width: 70px;
 }
 
+.cellStart {
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  width: 50px;
+  text-align: right;
+  padding-right: 14px;
+}
+
 .cellLabel {
   font-weight: 600;
   white-space: nowrap;
@@ -283,6 +292,11 @@
     display: none !important;
   }
 
+  .reportLink,
+  .issueForm {
+    display: none !important;
+  }
+
   .page {
     padding: 0;
   }
@@ -294,4 +308,161 @@
   .table tr {
     break-inside: avoid;
   }
+}
+
+/* ── Report Issue Link & Form ── */
+.reportLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 10px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border: 1px solid var(--accent);
+  border-radius: 99px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  text-decoration: none;
+}
+
+.reportLink:hover {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.issueForm {
+  margin-top: 14px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.formGroup label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.required {
+  color: var(--error);
+  margin-left: 2px;
+}
+
+.select,
+.input,
+.textarea {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: var(--font-body);
+  font-size: 0.875rem;
+  transition: border-color 0.15s;
+}
+
+.select:hover,
+.input:hover,
+.textarea:hover {
+  border-color: var(--accent);
+}
+
+.select:focus,
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.error {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--error);
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.btnSecondary,
+.btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  border: 1.5px solid transparent;
+}
+
+.btnSecondary {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.btnSecondary:hover:not(:disabled) {
+  background: var(--surface);
+  border-color: var(--text-muted);
+}
+
+.btnPrimary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 85%, var(--bg));
+}
+
+.btnSecondary:disabled,
+.btnPrimary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.thanks {
+  margin: 10px 0 0;
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--success) 12%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--success) 30%, var(--border));
+  border-radius: 6px;
+  color: var(--success);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: center;
 }

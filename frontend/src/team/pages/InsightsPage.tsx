@@ -5,6 +5,17 @@ import { submitTesterDecision } from '../../shared/services/feedbackService';
 import { DecisionCard } from '../../team/components/DecisionCard';
 import { getComponentThumb, getComponent } from '../../shared/utils/thumbnails';
 import { PROJECT } from '../../team/data/projectContext';
+import {
+  getLibraryState,
+  decideLibrary,
+  getAdaptationTasks,
+  markTaskDone,
+  restoreComponent,
+  getLatestDecision,
+  type LibraryState,
+  type AdaptationTask,
+} from '../../team/data/governanceService';
+import { SUPABASE_IS_SAMPLE } from '../../team/data/dataSource';
 import type { RawInsightsResponse } from '../../shared/types/insights';
 import styles from './InsightsPage.module.css';
 
@@ -94,6 +105,17 @@ function formatDateTime(iso: string): string {
   });
 }
 
+function formatTimeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  if (days > 0) return `${days}d ago`;
+  if (hours > 0) return `${hours}h ago`;
+  if (minutes > 0) return `${minutes}m ago`;
+  return 'Just now';
+}
+
 export function InsightsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [view, setView] = useState<'ai' | 'raw'>('ai');
@@ -104,6 +126,16 @@ export function InsightsPage() {
   const [generating, setGenerating] = useState(false);
   const [generateErrors, setGenerateErrors] = useState<any[]>([]);
   const [approvalState, setApprovalState] = useState<Record<string, 'approve' | 'reject' | null>>({});
+
+  // Team decision state
+  const [teamDecisions, setTeamDecisions] = useState<Record<string, 'Reuse' | 'Adapt' | 'Drop'>>({});
+  const [libraryState, setLibraryState] = useState<LibraryState[]>([]);
+  const [adaptationTasks, setAdaptationTasks] = useState<AdaptationTask[]>([]);
+  const [latestDecisions, setLatestDecisions] = useState<Record<string, { decision: 'Reuse' | 'Adapt' | 'Drop'; why?: string; aiOverride: boolean; createdAt: string }>>({});
+  const [showTasksSection, setShowTasksSection] = useState(true);
+  const [showHiddenSection, setShowHiddenSection] = useState(true);
+  const [restoreReason, setRestoreReason] = useState<Record<string, string>>({});
+  const [showRestoreInput, setShowRestoreInput] = useState<string | null>(null);
 
   // Tester mode state
   const testerCode = searchParams.get('tester');
@@ -121,6 +153,7 @@ export function InsightsPage() {
   const [testerReason, setTesterReason] = useState('');
   const scenarioStartRef = useRef<number>(Date.now());
   const testerPanelRef = useRef<HTMLElement>(null);
+
   // One-click test start: rotates T1 > T2 > T3 so the counterbalancing stays intact
   const startTestSession = () => {
     const order = ['T1', 'T2', 'T3'];
@@ -201,6 +234,30 @@ export function InsightsPage() {
     window.scrollTo({ top: 0, behavior: 'auto' });
     testerPanelRef.current?.scrollTo({ top: 0 });
   }, [isTesterMode, testerPhase, testerProgress?.currentIndex]);
+
+  // Load library state and adaptation tasks on mount
+  useEffect(() => {
+    if (!isTesterMode) {
+      getLibraryState().then(setLibraryState);
+      getAdaptationTasks('open').then(setAdaptationTasks);
+      // Load latest decisions for each component
+      COMPONENT_ORDER.forEach((componentId) => {
+        getLatestDecision(componentId).then((decision) => {
+          if (decision) {
+            setLatestDecisions((prev) => ({
+              ...prev,
+              [componentId]: {
+                decision: decision.action as 'Reuse' | 'Adapt' | 'Drop',
+                why: decision.why,
+                aiOverride: decision.aiOverride,
+                createdAt: decision.createdAt,
+              },
+            }));
+          }
+        });
+      });
+    }
+  }, [isTesterMode]);
 
   // Fetch data (normal mode AND tester mode: testers need the cards and raw data)
   useEffect(() => {
@@ -292,7 +349,7 @@ export function InsightsPage() {
       tester_code: testerCode,
       component_id: currentScenario.component_id,
       view: currentScenario.view,
-      card_recommendation: currentScenario.view === 'ai' 
+      card_recommendation: currentScenario.view === 'ai'
         ? insights?.cards.find((c: any) => c.component_id === currentScenario.component_id)?.recommendation || null
         : null,
       decision,
@@ -347,6 +404,67 @@ export function InsightsPage() {
     }
   };
 
+  // Team decision handler
+  const handleTeamDecision = async (componentId: string, decision: 'Reuse' | 'Adapt' | 'Drop', why?: string, suggestedAction?: string) => {
+    const card = insights?.cards.find((c: any) => c.component_id === componentId);
+    const aiRecommendation = card?.recommendation || 'Reuse';
+
+    try {
+      const newState = await decideLibrary(componentId, decision, aiRecommendation, why, suggestedAction);
+      setLibraryState((prev) => prev.map((s) => (s.componentId === componentId ? newState : s)));
+
+      // Update team decision state
+      setTeamDecisions((prev) => ({ ...prev, [componentId]: decision }));
+
+      // Update latest decision
+      setLatestDecisions((prev) => ({
+        ...prev,
+        [componentId]: {
+          decision,
+          why,
+          aiOverride: decision !== aiRecommendation,
+          createdAt: newState.updatedAt,
+        },
+      }));
+
+      // If Adapt, refresh adaptation tasks
+      if (decision === 'Adapt') {
+        const tasks = await getAdaptationTasks('open');
+        setAdaptationTasks(tasks);
+      }
+
+      // If Drop, refresh hidden components
+      if (decision === 'Drop') {
+        const state = await getLibraryState();
+        setLibraryState(state);
+      }
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  // Mark adaptation task done
+  const handleTaskDone = async (taskId: string) => {
+    await markTaskDone(taskId);
+    const tasks = await getAdaptationTasks('open');
+    setAdaptationTasks(tasks);
+  };
+
+  // Restore hidden component
+  const handleRestore = async (componentId: string, why: string) => {
+    if (!why || why.trim() === '') {
+      throw new Error('Please say why you are restoring this component');
+    }
+    const newState = await restoreComponent(componentId, why);
+    setLibraryState((prev) => prev.map((s) => (s.componentId === componentId ? newState : s)));
+    // Clear team decision for this component
+    setTeamDecisions((prev) => {
+      const next = { ...prev };
+      delete next[componentId];
+      return next;
+    });
+  };
+
   // Render normal mode
   const renderNormalMode = () => {
     if (loading) {
@@ -389,12 +507,12 @@ export function InsightsPage() {
       );
     }
 
-    const cards = [...insights.cards].sort((a: any, b: any) => 
+    const cards = [...insights.cards].sort((a: any, b: any) =>
       COMPONENT_ORDER.indexOf(a.component_id) - COMPONENT_ORDER.indexOf(b.component_id)
     );
 
     const session = insights.session || {};
-    const newestGeneratedAt = cards.length > 0 
+    const newestGeneratedAt = cards.length > 0
       ? cards.reduce((latest: string, c: any) => c.generated_at > latest ? c.generated_at : latest, cards[0].generated_at)
       : null;
 
@@ -423,6 +541,11 @@ export function InsightsPage() {
 
     return (
       <div className={styles.page}>
+        {SUPABASE_IS_SAMPLE && (
+          <div className={styles.dataLabel}>
+            All numbers are prototype sample data until real OceanX sessions are added.
+          </div>
+        )}
         <header className={styles.header}>
           <div className={styles.headerLeft}>
             <h1 className={styles.h1}>Asset dashboard</h1>
@@ -626,8 +749,132 @@ export function InsightsPage() {
                 showActions={true}
                 approvalState={approvalState[card.component_id]}
                 onApprovalChange={(state) => setApprovalState(prev => ({ ...prev, [card.component_id]: state }))}
+                teamDecision={teamDecisions[card.component_id]}
+                onTeamDecision={handleTeamDecision}
+                latestDecision={latestDecisions[card.component_id]}
+                isTesterMode={isTesterMode}
               />
             ))}
+          </section>
+        )}
+
+        {/* Open adaptation tasks section */}
+        {!isTesterMode && adaptationTasks.length > 0 && (
+          <section className={styles.tasksSection} aria-label="Open adaptation tasks">
+            <div className={styles.tasksHeader}>
+              <h2 className={styles.h2}>Open adaptation tasks</h2>
+              <button
+                type="button"
+                className={styles.sectionToggle}
+                onClick={() => setShowTasksSection(!showTasksSection)}
+                aria-expanded={showTasksSection}
+              >
+                {showTasksSection ? 'Hide' : 'Show'}
+              </button>
+            </div>
+            {showTasksSection && (
+              <div className={styles.tasksList}>
+                {adaptationTasks.map((task) => (
+                  <div key={task.id} className={styles.taskItem}>
+                    <div className={styles.taskInfo}>
+                      <span className={styles.taskComponent}>{task.componentTitle}</span>
+                      <span className={styles.taskReason}>{task.reason}</span>
+                      <span className={styles.taskCreated}>Created {formatTimeAgo(task.createdAt)}</span>
+                    </div>
+                    <button
+                      type="button"
+                      className={styles.taskDoneBtn}
+                      onClick={() => handleTaskDone(task.id)}
+                    >
+                      Mark done
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* Hidden from library section */}
+        {!isTesterMode && libraryState.some((s) => s.hidden) && (
+          <section className={styles.hiddenSection} aria-label="Hidden from library">
+            <div className={styles.tasksHeader}>
+              <h2 className={styles.h2}>Hidden from library</h2>
+              <button
+                type="button"
+                className={styles.sectionToggle}
+                onClick={() => setShowHiddenSection(!showHiddenSection)}
+                aria-expanded={showHiddenSection}
+              >
+                {showHiddenSection ? 'Hide' : 'Show'}
+              </button>
+            </div>
+            {showHiddenSection && (
+              <div className={styles.hiddenList}>
+                {libraryState
+                  .filter((s) => s.hidden)
+                  .map((state) => {
+                    const decision = latestDecisions[state.componentId];
+                    return (
+                      <div key={state.componentId} className={styles.hiddenItem}>
+                        <div className={styles.hiddenInfo}>
+                          <span className={styles.hiddenComponent}>{COMPONENT_TITLES[state.componentId] || state.componentId}</span>
+                          {decision && (
+                            <>
+                              <span className={styles.hiddenDecided}>Decided {decision.decision} · {formatTimeAgo(decision.createdAt)}</span>
+                              {decision.why && <span className={styles.hiddenWhy}>Reason: {decision.why}</span>}
+                            </>
+                          )}
+                        </div>
+                        {showRestoreInput === state.componentId ? (
+                          <div className={styles.restoreInputRow}>
+                            <input
+                              type="text"
+                              className={styles.restoreInput}
+                              placeholder="Why are you restoring this component?"
+                              value={restoreReason[state.componentId] || ''}
+                              onChange={(e) => setRestoreReason(prev => ({ ...prev, [state.componentId]: e.target.value }))}
+                              autoFocus
+                            />
+                            <button
+                              type="button"
+                              className={styles.restoreConfirmBtn}
+                              onClick={() => {
+                                const reason = restoreReason[state.componentId];
+                                if (reason && reason.trim()) {
+                                  handleRestore(state.componentId, reason.trim());
+                                  setRestoreReason(prev => ({ ...prev, [state.componentId]: '' }));
+                                  setShowRestoreInput(null);
+                                }
+                              }}
+                            >
+                              Confirm
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.restoreCancelBtn}
+                              onClick={() => {
+                                setShowRestoreInput(null);
+                                setRestoreReason(prev => ({ ...prev, [state.componentId]: '' }));
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            className={styles.restoreBtn}
+                            onClick={() => setShowRestoreInput(state.componentId)}
+                          >
+                            Restore
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
           </section>
         )}
 
@@ -928,6 +1175,7 @@ export function InsightsPage() {
                 <DecisionCard
                   card={card}
                   showActions={false}
+                  isTesterMode={true}
                 />
               )}
 
@@ -1006,7 +1254,6 @@ export function InsightsPage() {
                   )}
                 </div>
               )}
-
           </div>
           <aside ref={testerPanelRef} className={styles.testerPanel} aria-label="Your decision">
               <div className={styles.testerProgress} role="progressbar" aria-valuenow={testerProgress.currentIndex + 1} aria-valuemin={1} aria-valuemax={scenarios.length}>
@@ -1102,3 +1349,21 @@ export function InsightsPage() {
     </article>
   );
 }
+
+// COMPONENT_TITLES for display in hidden section
+const COMPONENT_TITLES: Record<string, string> = {
+  game: 'Seagrass Stories game',
+  'video-nada': 'Meet Nada: a seagrass scientist',
+  'video-changi-point': 'Changi Point: a meadow in trouble',
+  'create-activity': 'Map the chain: choice, consequence, change',
+  'further-reading-unep': 'UNEP: Seagrass meadows',
+  'learner-organiser': 'Learner organiser',
+  'investigate-prompts': 'Investigate prompts',
+  'reflect-prompts': 'Reflect prompts',
+  'learning-intention': 'Learning intentions',
+  'explore-prompts': 'Explore prompts',
+  'driving-question': 'Driving question',
+  'video-ecology-in-action': 'Ecology in action',
+  'further-reading-seagrass-watch': 'Seagrass-Watch: Why seagrass matters',
+  'educator-guide': 'Educator guide',
+};

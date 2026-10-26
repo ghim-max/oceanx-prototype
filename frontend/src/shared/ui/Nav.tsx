@@ -182,7 +182,7 @@ export function Nav() {
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [overHero, setOverHero] = useState(false);
-  const [pendingCounts, setPendingCounts] = useState<Record<string, number>>({});
+const [pendingCounts, setPendingCounts] = useState<Record<string, number>>({});
 
   // Switch nav between transparent-white (over hero) and opaque (everywhere else)
   useEffect(() => {
@@ -201,16 +201,20 @@ export function Nav() {
     return () => obs.disconnect();
   }, [pathname]);
 
-  // Fetch pending counts for team nav badge
+// Fetch pending counts for team nav badge
   useEffect(() => {
     if (pathname.startsWith('/team')) {
+      let cancelled = false;
       getPendingCounts().then((counts) => {
-        setPendingCounts({
-          review: counts.ai_adaptation + counts.share_back + counts.issue_report,
-        });
+        if (!cancelled) {
+          setPendingCounts({
+            review: counts.ai_adaptation + counts.share_back + counts.issue_report,
+          });
+        }
       }).catch(() => {
         // ignore
       });
+      return () => { cancelled = true; };
     }
   }, [pathname]);
 
@@ -235,7 +239,7 @@ export function Nav() {
   const isEducatorPage = pathname.startsWith('/educator');
   const isTeamPage = pathname.startsWith('/team');
 
-  const navLinks =
+  const baseNavLinks =
     isLibraryPage ? []
     : isQuizPage ? []
     : isEducatorPage ? []
@@ -264,7 +268,7 @@ export function Nav() {
 
         {isLibraryPage && <LibraryNavLinks overHero={overHero} />}
 
-        {!isLibraryPage && !isAdaptPage && navLinks.length > 0 && (
+        {!isLibraryPage && !isAdaptPage && baseNavLinks.length > 0 && (
           <>
             <button
               className={styles.menuToggle}
@@ -288,7 +292,7 @@ export function Nav() {
               id="nav-links"
               className={`${styles.links} ${menuOpen ? styles.open : ''}`}
             >
-              {navLinks.map(({ to, label, countKey }) => (
+{baseNavLinks.map(({ to, label, countKey }) => (
                 <li key={label} className={styles.linkItem}>
                   <NavLink
                     to={to}
@@ -300,7 +304,7 @@ export function Nav() {
                     onClick={() => setMenuOpen(false)}
                   >
                     {label}
-                    {countKey && pendingCounts[countKey] > 0 && (
+{countKey && pendingCounts[countKey] > 0 && (
                       <span className={styles.teamBadge}>{pendingCounts[countKey]}</span>
                     )}
                   </NavLink>

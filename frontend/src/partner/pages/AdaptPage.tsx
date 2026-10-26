@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShieldCheck, Play, Gamepad2, MessageCircle, Pencil, BookOpen, BookMarked, ListChecks, Eye } from 'lucide-react';
+import React from 'react';
+import { ArrowLeft, ShieldCheck, Play, Gamepad2, MessageCircle, Pencil, BookOpen, BookMarked, ListChecks, Eye, Sparkles, RotateCcw, CheckCheck, ChevronDown, ChevronUp } from 'lucide-react';
 import { getApprovedBankItems, type BankItem } from '../../shared/services/bankApi';
 import { assembleQuiz, type QuizType, type QuizDifficulty, type AssembleResult } from '../../shared/services/assembleQuiz';
 import { assembleLessonPlan, type LessonLevel, type LessonPlan } from '../../shared/services/assembleLessonPlan';
@@ -17,6 +18,7 @@ import {
 } from '../../shared/services/recommendComponents';
 import { usePicks } from '../../shared/context/PicksContext';
 import { UNIVERSITY_STATUS } from '../../shared/data/university-version';
+import { rewriteWithAI, markAdaptationStarted, getLibraryState } from '../../team/data/governanceService';
 import styles from './AdaptPage.module.css';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -268,6 +270,236 @@ function SummaryBar({
   );
 }
 
+// ─── AIAdaptationSection ──────────────────────────────────────────────────────
+interface AIAdaptationSectionProps {
+  componentId: string;
+  componentTitle: string;
+  acceptedRewrites: Map<string, {
+    componentId: string;
+    componentTitle: string;
+    level: 'secondary' | 'university' | 'postgrad';
+    length: 'shorter' | 'same' | 'longer';
+    originalText: string;
+    rewrittenText: string;
+    sourcesUsed: string[];
+  }>;
+  onAcceptRewrite: (data: {
+    componentId: string;
+    componentTitle: string;
+    level: 'secondary' | 'university' | 'postgrad';
+    length: 'shorter' | 'same' | 'longer';
+    originalText: string;
+    rewrittenText: string;
+    sourcesUsed: string[];
+  }) => void;
+  onRemoveRewrite: (componentId: string) => void;
+  onRewrite: (componentId: string, level: 'secondary' | 'university' | 'postgrad', length: 'shorter' | 'same' | 'longer') => void;
+  aiRewriteState: {
+    componentId: string | null;
+    status: 'idle' | 'loading' | 'result' | 'error';
+    level: 'secondary' | 'university' | 'postgrad';
+    length: 'shorter' | 'same' | 'longer';
+    result: { rewrittenText: string; sourcesUsed: string[] } | null;
+    error: string | null;
+  };
+  setAiRewriteState: React.Dispatch<React.SetStateAction<{
+    componentId: string | null;
+    status: 'idle' | 'loading' | 'result' | 'error';
+    level: 'secondary' | 'university' | 'postgrad';
+    length: 'shorter' | 'same' | 'longer';
+    result: { rewrittenText: string; sourcesUsed: string[] } | null;
+    error: string | null;
+  }>>;
+}
+
+function AIAdaptationSection({
+  componentId,
+  componentTitle,
+  acceptedRewrites,
+  onAcceptRewrite,
+  onRemoveRewrite,
+  onRewrite,
+  aiRewriteState,
+  setAiRewriteState,
+}: AIAdaptationSectionProps) {
+  const isAccepted = acceptedRewrites.has(componentId);
+  const acceptedData = acceptedRewrites.get(componentId);
+  const isActive = aiRewriteState.componentId === componentId;
+  const status = isActive ? aiRewriteState.status : 'idle';
+
+  const handleStartRewrite = (level: 'secondary' | 'university' | 'postgrad', length: 'shorter' | 'same' | 'longer') => {
+    setAiRewriteState({
+      componentId,
+      status: 'loading',
+      level,
+      length,
+      result: null,
+      error: null,
+    });
+    onRewrite(componentId, level, length);
+  };
+
+  const handleUseAI = () => {
+    if (aiRewriteState.result) {
+      onAcceptRewrite({
+        componentId,
+        componentTitle,
+        level: aiRewriteState.level,
+        length: aiRewriteState.length,
+        originalText: acceptedData?.originalText || '',
+        rewrittenText: aiRewriteState.result.rewrittenText,
+        sourcesUsed: aiRewriteState.result.sourcesUsed,
+      });
+      setAiRewriteState({
+        componentId: null,
+        status: 'idle',
+        level: 'university',
+        length: 'same',
+        result: null,
+        error: null,
+      });
+    }
+  };
+
+  const handleDiscard = () => {
+    setAiRewriteState({
+      componentId: null,
+      status: 'idle',
+      level: 'university',
+      length: 'same',
+      result: null,
+      error: null,
+    });
+  };
+
+  const handleTryAgain = () => {
+    if (aiRewriteState.componentId) {
+      handleStartRewrite(aiRewriteState.level, aiRewriteState.length);
+    }
+  };
+
+  const handleRemoveAccepted = () => {
+    onRemoveRewrite(componentId);
+  };
+
+  if (isAccepted && acceptedData) {
+    return (
+      <div className={styles.aiAccepted}>
+        <div className={styles.aiAcceptedBadge}>
+          <CheckCheck size={14} aria-hidden="true" />
+          <span>AI version, needs OceanX review</span>
+        </div>
+        <div className={styles.aiAcceptedPreview}>
+          <div className={styles.aiPreviewCol}>
+            <span className={styles.aiPreviewLabel}>Original</span>
+            <p className={styles.aiPreviewText}>{acceptedData.originalText}</p>
+          </div>
+          <div className={styles.aiPreviewCol}>
+            <span className={styles.aiPreviewLabel}>AI version ({acceptedData.level}, {acceptedData.length})</span>
+            <p className={styles.aiPreviewText}>{acceptedData.rewrittenText}</p>
+          </div>
+        </div>
+        <p className={styles.aiSources}>Sources used: {acceptedData.sourcesUsed.join(', ')}</p>
+        <button type="button" className={styles.aiUndoBtn} onClick={handleRemoveAccepted}>
+          <RotateCcw size={14} aria-hidden="true" />
+          Undo
+        </button>
+        <p className={styles.aiNote}>AI versions are checked by the OceanX team before your email is sent.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.aiSection}>
+      <h4 className={styles.aiSectionTitle}>
+        <Sparkles size={16} aria-hidden="true" />
+        Adapt with AI
+      </h4>
+      <p className={styles.aiSectionDesc}>Rewrite this component for a different level or length using approved OceanX sources.</p>
+
+      <div className={styles.aiControls}>
+        <div className={styles.aiControlGroup}>
+          <label className={styles.aiControlLabel}>Level</label>
+          <select
+            className={styles.aiSelect}
+            value={isActive && aiRewriteState.level || 'university'}
+            onChange={(e) => setAiRewriteState(prev => ({ ...prev, level: e.target.value as 'secondary' | 'university' | 'postgrad' }))}
+            disabled={status === 'loading'}
+          >
+            <option value="secondary">Secondary</option>
+            <option value="university">University</option>
+            <option value="postgrad">Postgraduate</option>
+          </select>
+        </div>
+        <div className={styles.aiControlGroup}>
+          <label className={styles.aiControlLabel}>Length</label>
+          <select
+            className={styles.aiSelect}
+            value={isActive && aiRewriteState.length || 'same'}
+            onChange={(e) => setAiRewriteState(prev => ({ ...prev, length: e.target.value as 'shorter' | 'same' | 'longer' }))}
+            disabled={status === 'loading'}
+          >
+            <option value="shorter">Shorter</option>
+            <option value="same">Same</option>
+            <option value="longer">Longer</option>
+          </select>
+        </div>
+        <button
+          type="button"
+          className={`${styles.aiRewriteBtn} ${status === 'loading' ? styles.aiRewriteBtnLoading : ''}`}
+          onClick={() => handleStartRewrite(isActive ? aiRewriteState.level : 'university', isActive ? aiRewriteState.length : 'same')}
+          disabled={status === 'loading'}
+        >
+          {status === 'loading' ? (
+            <>
+              <span className={styles.loadingDots} aria-hidden="true"><span /><span /><span /></span>
+              Rewriting from approved OceanX sources...
+            </>
+          ) : (
+            'Rewrite with AI'
+          )}
+        </button>
+      </div>
+
+      {status === 'error' && aiRewriteState.error && (
+        <div className={styles.aiError} role="alert">
+          {aiRewriteState.error}
+          <button type="button" className={styles.aiErrorDismiss} onClick={handleDiscard}>Dismiss</button>
+        </div>
+      )}
+
+      {status === 'result' && aiRewriteState.result && (
+        <div className={styles.aiResult}>
+          <div className={styles.aiPreviewCol}>
+            <span className={styles.aiPreviewLabel}>Original</span>
+            <p className={styles.aiPreviewText}>{acceptedData?.originalText || 'Original text not available'}</p>
+          </div>
+          <div className={styles.aiPreviewCol}>
+            <span className={styles.aiPreviewLabel}>AI version ({isActive ? aiRewriteState.level : 'university'}, {isActive ? aiRewriteState.length : 'same'})</span>
+            <p className={styles.aiPreviewText}>{aiRewriteState.result.rewrittenText}</p>
+          </div>
+          <p className={styles.aiSources}>Sources used: {aiRewriteState.result.sourcesUsed.join(', ')}</p>
+          <div className={styles.aiResultActions}>
+            <button type="button" className={styles.aiUseBtn} onClick={handleUseAI}>
+              <CheckCheck size={14} aria-hidden="true" />
+              Use AI version
+            </button>
+            <button type="button" className={styles.aiDiscardBtn} onClick={handleDiscard}>
+              Discard
+            </button>
+            <button type="button" className={styles.aiRetryBtn} onClick={handleTryAgain}>
+              <RotateCcw size={14} aria-hidden="true" />
+              Try again
+            </button>
+          </div>
+        </div>
+      )}
+
+      <p className={styles.aiNote}>AI versions are checked by the OceanX team before your email is sent.</p>
+    </div>
+  );
+}
+
 // ─── AdaptPage ────────────────────────────────────────────────────────────
 
 export function AdaptPage() {
@@ -311,6 +543,68 @@ export function AdaptPage() {
   // Extras added state (confirmed by user)
   const [quizAdded, setQuizAdded] = useState(false);
   const [lessonPlanAdded, setLessonPlanAdded] = useState(false);
+
+  // Need more materials section collapsed state (persisted in sessionStorage)
+  const [extrasCollapsed, setExtrasCollapsed] = useState(() => {
+    try {
+      return sessionStorage.getItem('adapt-extras-collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('adapt-extras-collapsed', String(extrasCollapsed));
+    } catch {
+      // ignore
+    }
+  }, [extrasCollapsed]);
+
+  // AI Adaptation state
+  const [acceptedRewrites, setAcceptedRewrites] = useState<Map<string, {
+    componentId: string;
+    componentTitle: string;
+    level: 'secondary' | 'university' | 'postgrad';
+    length: 'shorter' | 'same' | 'longer';
+    originalText: string;
+    rewrittenText: string;
+    sourcesUsed: string[];
+  }>>(new Map());
+  const [aiRewriteState, setAiRewriteState] = useState<{
+    componentId: string | null;
+    status: 'idle' | 'loading' | 'result' | 'error';
+    level: 'secondary' | 'university' | 'postgrad';
+    length: 'shorter' | 'same' | 'longer';
+    result: { rewrittenText: string; sourcesUsed: string[] } | null;
+    error: string | null;
+  }>({
+    componentId: null,
+    status: 'idle',
+    level: 'university',
+    length: 'same',
+    result: null,
+    error: null,
+  });
+
+  // Library state for hidden/proven items
+  const [libraryState, setLibraryState] = useState<Record<string, { hidden: boolean; proven: boolean }>>({});
+
+  // Load library state on mount
+  useEffect(() => {
+    getLibraryState().then((state) => {
+      const map: Record<string, { hidden: boolean; proven: boolean }> = {};
+      state.forEach((s) => {
+        map[s.componentId] = { hidden: s.hidden, proven: s.proven };
+      });
+      setLibraryState(map);
+    });
+  }, []);
+
+  // Mark adaptation started on page load
+  useEffect(() => {
+    markAdaptationStarted('adapt-session');
+  }, []);
 
   // Preview modal state
   // const [quizPreviewOpen, setQuizPreviewOpen] = useState(false);
@@ -376,6 +670,53 @@ export function AdaptPage() {
     setLiveMsg(`${c?.title ?? id} moved back to recommendations`);
   };
 
+  // AI Rewrite handlers
+  const handleRewrite = useCallback(async (componentId: string, level: 'secondary' | 'university' | 'postgrad', length: 'shorter' | 'same' | 'longer') => {
+    try {
+      const result = await rewriteWithAI(componentId, level, length);
+      setAiRewriteState(prev => ({ ...prev, status: 'result', result }));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to rewrite. Please try again.';
+      setAiRewriteState(prev => ({ ...prev, status: 'error', error: message }));
+    }
+  }, []);
+
+  const handleAcceptRewrite = useCallback((data: {
+    componentId: string;
+    componentTitle: string;
+    level: 'secondary' | 'university' | 'postgrad';
+    length: 'shorter' | 'same' | 'longer';
+    originalText: string;
+    rewrittenText: string;
+    sourcesUsed: string[];
+  }) => {
+    setAcceptedRewrites(prev => {
+      const next = new Map(prev);
+      next.set(data.componentId, {
+        componentId: data.componentId,
+        componentTitle: data.componentTitle,
+        level: data.level,
+        length: data.length,
+        originalText: data.originalText,
+        rewrittenText: data.rewrittenText,
+        sourcesUsed: data.sourcesUsed,
+      });
+      return next;
+    });
+    const c = getComponent(data.componentId);
+    setLiveMsg(`AI version accepted for ${c?.title ?? data.componentId}`);
+  }, []);
+
+  const handleRemoveRewrite = useCallback((componentId: string) => {
+    setAcceptedRewrites(prev => {
+      const next = new Map(prev);
+      next.delete(componentId);
+      return next;
+    });
+    const c = getComponent(componentId);
+    setLiveMsg(`AI version removed for ${c?.title ?? componentId}`);
+  }, []);
+
   const handleBackToLibrary = () => {
     const allCurrentPicks = [...picks, ...Array.from(addedRecs)];
     ctxClearPicks();
@@ -388,7 +729,7 @@ export function AdaptPage() {
   };
 
   // All picks grouped by stage
-  const allPickIds = [...picks, ...Array.from(addedRecs)];
+  const allPickIds = [...picks, ...Array.from(addedRecs)].filter((id) => !libraryState[id]?.hidden);
   const picksKey = allPickIds.join(',');
 
   // Run assembleQuiz live whenever options or picks change
@@ -434,10 +775,13 @@ export function AdaptPage() {
     }))
     .filter(g => g.items.length > 0);
 
+  // Also filter recommendations to exclude hidden items
+  const visibleRecommendations = recommendations.filter((r) => !libraryState[r.id]?.hidden);
+
   // Recs not yet added to picks
   const allRecsAdded =
-    recommendations.length > 0 &&
-    recommendations.every(r => addedRecs.has(r.id));
+    visibleRecommendations.length > 0 &&
+    visibleRecommendations.every(r => addedRecs.has(r.id));
 
   // Summary bar values
   const componentCount = allPickIds.length;
@@ -467,6 +811,19 @@ export function AdaptPage() {
       const c = getComponent(id);
       return { id, title: c?.title ?? id, status: UNIVERSITY_STATUS[id]?.status ?? 'Fixed', stage: c?.stage ?? '' };
     });
+
+    // Store accepted AI rewrites for the review page
+    const acceptedRewritesArray = Array.from(acceptedRewrites.values()).map(r => ({
+      componentId: r.componentId,
+      componentTitle: r.componentTitle,
+      level: r.level,
+      length: r.length,
+      originalText: r.originalText,
+      proposedText: r.rewrittenText,
+      educatorEmail: '', // Will be filled on review page
+      packageId: `pkg-${Date.now()}`,
+    }));
+    sessionStorage.setItem('adaptAcceptedRewrites', JSON.stringify(acceptedRewritesArray));
 
     sessionStorage.setItem(
       'adaptPackage',
@@ -569,18 +926,50 @@ export function AdaptPage() {
             {picksByStage.map(({ stage, items }) => (
               <div key={stage} className={styles.pickGroup}>
                 <p className={styles.pickGroupLabel}>{stage}</p>
-                {items.map(id => (
-                  <PickRow
-                    key={id}
-                    id={id}
-                    isAdded={addedRecs.has(id)}
-                    onRemove={() =>
-                      addedRecs.has(id)
-                        ? handleRemoveAddedRec(id)
-                        : handleRemovePick(id)
-                    }
-                  />
-                ))}
+                {items.map(id => {
+                  const entry = UNIVERSITY_STATUS[id];
+                  const isAdapted = entry?.status === 'Adapted';
+                  const isHidden = libraryState[id]?.hidden;
+                  return (
+                    <React.Fragment key={id}>
+                      {!isHidden ? (
+                        <>
+                          <PickRow
+                            id={id}
+                            isAdded={addedRecs.has(id)}
+                            onRemove={() =>
+                              addedRecs.has(id)
+                                ? handleRemoveAddedRec(id)
+                                : handleRemovePick(id)
+                            }
+                          />
+                          {isAdapted && (
+                            <AIAdaptationSection
+                              componentId={id}
+                              componentTitle={getComponent(id)?.title ?? id}
+                              acceptedRewrites={acceptedRewrites}
+                              onAcceptRewrite={handleAcceptRewrite}
+                              onRemoveRewrite={handleRemoveRewrite}
+                              onRewrite={handleRewrite}
+                              aiRewriteState={aiRewriteState}
+                              setAiRewriteState={setAiRewriteState}
+                            />
+                          )}
+                        </>
+                      ) : (
+                        <div className={styles.pickRow} style={{ opacity: 0.5 }}>
+                          <div className={styles.pickBody}>
+                            <div className={styles.pickMeta}>
+                              <span className={styles.typeLabel}>Hidden</span>
+                              <span className={styles.noLongerAvailable}>No longer available</span>
+                            </div>
+                            <p className={styles.pickTitle}>{getComponent(id)?.title ?? id}</p>
+                          </div>
+                        </div>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </div>
             ))}
             {/* Extras (quiz/lesson plan) added to picks */}
@@ -593,7 +982,6 @@ export function AdaptPage() {
                       <div className={styles.pickMeta}>
                         <span className={styles.typeLabel}>Quiz</span>
                         <span className={`${styles.statusBadge} ${styles.statusAdapted}`}>Extra</span>
-                        <span className={styles.approvedPickBadge}>Added</span>
                       </div>
                       <p className={styles.pickTitle}>
                         Knowledge check · {assembleResult?.itemIds.length ?? quizCount} questions · {quizType === 'mcq' ? 'Multiple choice' : quizType === 'short' ? 'Short answer' : 'Mixed'} · {quizDifficulty.charAt(0).toUpperCase() + quizDifficulty.slice(1)}
@@ -634,7 +1022,6 @@ export function AdaptPage() {
                       <div className={styles.pickMeta}>
                         <span className={styles.typeLabel}>Lesson plan</span>
                         <span className={`${styles.statusBadge} ${styles.statusAdapted}`}>Extra</span>
-                        <span className={styles.approvedPickBadge}>Added</span>
                       </div>
                       <p className={styles.pickTitle}>
                         Lesson plan · {lessonPlanLength} min · {lessonPlanLevel.charAt(0).toUpperCase() + lessonPlanLevel.slice(1)}
@@ -680,8 +1067,8 @@ export function AdaptPage() {
             ) : (
               REC_GROUPS.map(([groupLabel, ids]) => {
                 const groupRecs = ids
-                  .map(id => recommendations.find(r => r.id === id))
-                  .filter((r): r is Recommendation => r !== undefined && !addedRecs.has(r.id) && !EXCLUDED_REC_IDS.has(r.id));
+                  .map(id => visibleRecommendations.find(r => r.id === id))
+                  .filter((r): r is Recommendation => r !== undefined && !addedRecs.has(r.id) && !picks.includes(r.id) && !EXCLUDED_REC_IDS.has(r.id));
                 if (groupRecs.length === 0) return null;
                 return (
                   <div key={groupLabel} className={styles.recGroup}>
@@ -705,13 +1092,24 @@ export function AdaptPage() {
 
         {/* ── Section 3: Need more materials? ── */}
         <section className={styles.section} aria-labelledby="extras-heading">
-          <h2 className={styles.h2} id="extras-heading">
-            Need more materials?
-            <span className={styles.optionalBadge}>Optional</span>
-          </h2>
+          <div className={styles.extrasSectionHead}>
+            <h2 className={styles.h2} id="extras-heading">
+              Need more materials?
+              <span className={styles.optionalBadge}>Optional</span>
+            </h2>
+            <button
+              type="button"
+              className={styles.extrasCollapseBtn}
+              onClick={() => setExtrasCollapsed(!extrasCollapsed)}
+              aria-expanded={!extrasCollapsed}
+              aria-controls="extras-content"
+            >
+              {extrasCollapsed ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
+            </button>
+          </div>
           <p className={styles.extrasSubline}>Add a knowledge check or lesson plan to your package.</p>
 
-          <div className={styles.extrasGrid}>
+          <div id="extras-content" className={styles.extrasGrid} hidden={extrasCollapsed}>
             {/* Knowledge check card */}
             <div className={styles.extrasCard}>
               <div className={styles.extrasCardHead}>
@@ -747,7 +1145,7 @@ export function AdaptPage() {
                     </div>
                   </div>
 
-                  <div className={styles.segGroup}>
+                  <div className={styles.segGroup} style={{ marginTop: '12px' }}>
                     <p className={styles.segLabel}>Difficulty</p>
                     <div className={styles.segBtns}>
                       {(['easy', 'medium', 'hard', 'mixed'] as QuizDifficulty[]).map((val) => (
@@ -764,7 +1162,7 @@ export function AdaptPage() {
                     </div>
                   </div>
 
-                  <div className={styles.segGroup}>
+                  <div className={styles.segGroup} style={{ marginTop: '12px' }}>
                     <p className={styles.segLabel}>Questions</p>
                     <div className={styles.countStepper}>
                       <button
@@ -794,18 +1192,18 @@ export function AdaptPage() {
 
                   {/* Zero questions note */}
                   {assembleResult && assembleResult.zeroQuestionComponents.length > 0 && (
-                    <p className={styles.zeroQuestionsNote}>
+                    <p className={styles.zeroQuestionsNote} style={{ marginTop: '12px' }}>
                       No questions yet for: {assembleResult.zeroQuestionComponents.map(z => z.title).join(', ')}.
                     </p>
                   )}
 
                   {bankLoading ? (
-                    <p className={styles.assembleMsg}>Loading questions...</p>
+                    <p className={styles.assembleMsg} style={{ marginTop: '12px' }}>Loading questions...</p>
                   ) : assembleResult ? (
                     assembleResult.error ? (
-                      <p className={`${styles.assembleMsg} ${styles.assembleMsgError}`}>{assembleResult.error}</p>
+                      <p className={`${styles.assembleMsg} ${styles.assembleMsgError}`} style={{ marginTop: '12px' }}>{assembleResult.error}</p>
                     ) : (
-                      <p className={`${styles.assembleMsg} ${styles.assembleMsgOk}`}>
+                      <p className={`${styles.assembleMsg} ${styles.assembleMsgOk}`} style={{ marginTop: '12px', padding: '12px' }}>
                         {assembleResult.itemIds.length} {assembleResult.itemIds.length === 1 ? 'question' : 'questions'} selected
                       </p>
                     )
@@ -896,7 +1294,7 @@ export function AdaptPage() {
                     </div>
                   </div>
 
-                  <div className={styles.segGroup}>
+                  <div className={styles.segGroup} style={{ marginTop: '12px' }}>
                     <p className={styles.segLabel}>Level</p>
                     <div className={styles.segBtns}>
                       {(['introductory', 'intermediate', 'advanced'] as LessonLevel[]).map((val) => {
@@ -917,13 +1315,13 @@ export function AdaptPage() {
                   </div>
 
                   {lessonPlanAssembleResult && 'error' in lessonPlanAssembleResult ? (
-                    <p className={`${styles.assembleMsg} ${styles.assembleMsgError}`}>{lessonPlanAssembleResult.error}</p>
+                    <p className={`${styles.assembleMsg} ${styles.assembleMsgError}`} style={{ marginTop: '12px' }}>{lessonPlanAssembleResult.error}</p>
                   ) : lessonPlanAssembleResult ? (
-                    <p className={`${styles.assembleMsg} ${styles.assembleMsgOk}`}>
+                    <p className={`${styles.assembleMsg} ${styles.assembleMsgOk}`} style={{ marginTop: '12px', padding: '12px' }}>
                       {lessonPlanAssembleResult.timeline.length} activities · {lessonPlanAssembleResult.length} min · {lessonPlanAssembleResult.level}
                     </p>
                   ) : (
-                    <p className={styles.assembleMsg}>Building timeline…</p>
+                    <p className={styles.assembleMsg} style={{ marginTop: '12px' }}>Building timeline…</p>
                   )}
                 </div>
               )}

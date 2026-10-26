@@ -12,6 +12,8 @@ import {
   ExternalLink,
   SlidersHorizontal,
   Check,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import libraryHeroJpg from '../../assets/library_hero.jpg';
 import {
@@ -26,6 +28,7 @@ import {
 } from '../../shared/data/seagrass-stories';
 import { usePicks } from '../../shared/context/PicksContext';
 import { DEMO_PICKABLE_IDS } from '../../shared/data/adaptConfig';
+import { getLibraryState, getPastFeedback, type PastFeedbackItem } from '../../team/data/governanceService';
 import styles from './LibraryPage.module.css';
 
 // ─── Filter config ─────────────────────────────────────────────────────────
@@ -204,12 +207,39 @@ function DrawerContent({
   const { hasPick, addPick, removePick } = usePicks();
   const isPickable = (DEMO_PICKABLE_IDS as readonly string[]).includes(component.id);
 
+  const [showPastFeedback, setShowPastFeedback] = useState(false);
+  const [pastFeedback, setPastFeedback] = useState<PastFeedbackItem[] | null>(null);
+  const [loadingFeedback, setLoadingFeedback] = useState(false);
+
   const audiencesToShow =
     activeAudiences.length > 0
       ? component.audiences.filter((a) =>
           activeAudiences.some((f) => f.toLowerCase() === a.toLowerCase())
         )
       : component.audiences;
+
+  const loadPastFeedback = useCallback(async () => {
+    setLoadingFeedback(true);
+    try {
+      const feedback = await getPastFeedback(component.id);
+      setPastFeedback(feedback);
+    } catch {
+      setPastFeedback([]);
+    } finally {
+      setLoadingFeedback(false);
+    }
+  }, [component.id]);
+
+  const handleToggleFeedback = () => {
+    if (showPastFeedback) {
+      setShowPastFeedback(false);
+    } else {
+      setShowPastFeedback(true);
+      if (pastFeedback === null) {
+        loadPastFeedback();
+      }
+    }
+  };
 
   return (
     <Dialog.Content className={styles.drawerContent} aria-describedby={undefined}>
@@ -293,6 +323,50 @@ function DrawerContent({
             </div>
           )}
 
+          {/* See past feedback button */}
+          <button
+            type="button"
+            className={styles.pastFeedbackTrigger}
+            onClick={handleToggleFeedback}
+            aria-expanded={showPastFeedback}
+          >
+            {showPastFeedback ? (
+              <>
+                <ChevronUp size={14} aria-hidden="true" />
+                Hide past feedback
+              </>
+            ) : (
+              <>
+                <ChevronDown size={14} aria-hidden="true" />
+                See past feedback
+              </>
+            )}
+          </button>
+
+          {/* Past feedback content */}
+          {showPastFeedback && (
+            <div className={styles.pastFeedbackContent}>
+              {loadingFeedback ? (
+                <div className={styles.pastFeedbackEmpty}>Loading feedback...</div>
+              ) : pastFeedback && pastFeedback.length > 0 ? (
+                pastFeedback.map((item, idx) => (
+                  <div key={idx} className={styles.pastFeedbackItem}>
+                    <div className={styles.pastFeedbackItemMeta}>
+                      <span className={`${styles.pastFeedbackLabel} ${item.source}`}>
+                        {item.source === 'educator' ? 'Educator' : 'Learner'}
+                      </span>
+                    </div>
+                    <p className={styles.pastFeedbackText}>{item.text}</p>
+                  </div>
+                ))
+              ) : (
+                <p className={styles.pastFeedbackEmpty}>
+                  No feedback yet for this resource.
+                </p>
+              )}
+            </div>
+          )}
+
           {isPickable && (
             <div className={styles.pickActionRow}>
               {hasPick(component.id) ? (
@@ -315,7 +389,7 @@ function DrawerContent({
                   className={styles.addToVersionBtn}
                   onClick={() => addPick(component.id, component.title)}
                 >
-                  Add to my version
+                  Add to my cart
                 </button>
               )}
             </div>
@@ -453,8 +527,8 @@ function FloatingTray({
   if (picks.length === 0) return null;
 
   return (
-    <div className={styles.tray} role="region" aria-label="My version summary">
-      <span className={styles.trayLabel}>My version</span>
+    <div className={styles.tray} role="region" aria-label="My cart summary">
+      <span className={styles.trayLabel}>My cart</span>
       <span className={styles.trayCount}>
         {picks.length} {picks.length === 1 ? 'item' : 'items'}
       </span>
@@ -520,6 +594,18 @@ export function LibraryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const story = SEAGRASS_STORIES;
   const { picks, addPick, removePick } = usePicks();
+  const [libraryState, setLibraryState] = useState<Record<string, { hidden: boolean; proven: boolean }>>({});
+
+  // Load library state on mount
+  useEffect(() => {
+    getLibraryState().then((state) => {
+      const map: Record<string, { hidden: boolean; proven: boolean }> = {};
+      state.forEach((s) => {
+        map[s.componentId] = { hidden: s.hidden, proven: s.proven };
+      });
+      setLibraryState(map);
+    });
+  }, []);
 
   // Active filters from URL
   const activeTypes = parseParam(searchParams, 'type');
@@ -530,10 +616,11 @@ export function LibraryPage() {
   const hasFilters =
     activeTypes.length > 0 || activeAudiences.length > 0 || activeStages.length > 0;
 
-  // Filtered component list
-  const filtered = story.components.filter((c) =>
-    matchesFilter(c, activeTypes, activeAudiences, activeStages)
-  );
+  // Filtered component list (exclude hidden)
+  const filtered = story.components.filter((c) => {
+    if (libraryState[c.id]?.hidden) return false;
+    return matchesFilter(c, activeTypes, activeAudiences, activeStages);
+  });
 
   const activeComponent = activeItem
     ? story.components.find((c) => c.id === activeItem) ?? null

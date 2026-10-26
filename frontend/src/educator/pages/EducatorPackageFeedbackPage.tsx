@@ -6,6 +6,7 @@ import {
   submitEducatorPackageFeedback,
   type EducatorPackageFeedbackRowInsert,
 } from '../../shared/services/feedbackService';
+import { submitShareBack } from '../../team/data/governanceService';
 import { isSupabaseConfigured } from '../../shared/services/supabase';
 import { API_BASE } from '../../shared/services/apiBase';
 import styles from './EducatorPackageFeedbackPage.module.css';
@@ -107,6 +108,16 @@ export function EducatorPackageFeedbackPage() {
   const [pkg, setPkg] = useState<PackageData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Share back state
+  const [shareBackForms, setShareBackForms] = useState<Record<string, {
+    changedText: string;
+    whatAndWhy: string;
+    okToReuse: boolean;
+    submitting: boolean;
+    error: string | null;
+    success: boolean;
+  }>>({});
+
   // Load package data
   useEffect(() => {
     if (slug) {
@@ -205,6 +216,74 @@ export function EducatorPackageFeedbackPage() {
       ...prev,
       [componentId]: { ...prev[componentId], note: note.slice(0, 1000) },
     }));
+  };
+
+  // Share back handlers
+  const getShareBackForm = (componentId: string) => {
+    if (!shareBackForms[componentId]) {
+      // Use original text from governanceService if available, fallback to component description
+      const originalComp = SEAGRASS_STORIES.components.find((c) => c.id === componentId);
+      const originalText = originalComp?.description || '';
+      setShareBackForms((prev) => ({
+        ...prev,
+        [componentId]: {
+          changedText: originalText,
+          whatAndWhy: '',
+          okToReuse: true,
+          submitting: false,
+          error: null,
+          success: false,
+        },
+      }));
+      return { changedText: originalText, whatAndWhy: '', okToReuse: true, submitting: false, error: null, success: false };
+    }
+    return shareBackForms[componentId];
+  };
+
+  const updateShareBackField = (componentId: string, field: string, value: any) => {
+    setShareBackForms((prev) => ({
+      ...prev,
+      [componentId]: { ...getShareBackForm(componentId), [field]: value },
+    }));
+  };
+
+  const handleShareBackSubmit = async (componentId: string) => {
+    const form = getShareBackForm(componentId);
+    if (!form.changedText.trim() || !form.whatAndWhy.trim()) {
+      updateShareBackField(componentId, 'error', 'Please fill in both fields');
+      return;
+    }
+
+    updateShareBackField(componentId, 'submitting', true);
+    updateShareBackField(componentId, 'error', null);
+
+    // Get educator email from localStorage or use a placeholder
+    const educatorEmail = 'educator@university.edu'; // In real app, get from auth
+
+    const result = await submitShareBack({
+      packageSlug: slug,
+      componentId,
+      changedText: form.changedText.trim(),
+      whatAndWhy: form.whatAndWhy.trim(),
+      okToReuse: form.okToReuse,
+      educatorEmail,
+    });
+
+    if (result.ok) {
+      updateShareBackField(componentId, 'submitting', false);
+      updateShareBackField(componentId, 'success', true);
+    } else {
+      updateShareBackField(componentId, 'submitting', false);
+      updateShareBackField(componentId, 'error', result.error || 'Failed to submit');
+    }
+  };
+
+  const handleShareBackCancel = (componentId: string) => {
+    setShareBackForms((prev) => {
+      const next = { ...prev };
+      delete next[componentId];
+      return next;
+    });
   };
 
   const isCardComplete = (componentId: string): boolean => {
@@ -464,6 +543,81 @@ export function EducatorPackageFeedbackPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Share back button and form for "Changed" usage */}
+                {a?.usage === 'changed' && (
+                  <div className={styles.shareBackSection}>
+                    {shareBackForms[compId]?.success ? (
+                      <button
+                        type="button"
+                        className={styles.shareBackShared}
+                        disabled
+                      >
+                        Shared
+                      </button>
+                    ) : shareBackForms[compId] && !shareBackForms[compId]?.success ? (
+                      <div className={styles.shareBackForm}>
+                        <label className={styles.shareBackLabel}>
+                          Your changed version <span className={styles.required}>*</span>
+                        </label>
+                        <textarea
+                          value={getShareBackForm(compId).changedText}
+                          onChange={(e) => updateShareBackField(compId, 'changedText', e.target.value)}
+                          rows={4}
+                          className={styles.shareBackTextarea}
+                          placeholder="Paste or edit your changed version here..."
+                        />
+                        <label className={styles.shareBackLabel}>
+                          What did you change and why? <span className={styles.required}>*</span>
+                        </label>
+                        <textarea
+                          value={getShareBackForm(compId).whatAndWhy}
+                          onChange={(e) => updateShareBackField(compId, 'whatAndWhy', e.target.value)}
+                          rows={3}
+                          maxLength={500}
+                          className={styles.shareBackTextarea}
+                          placeholder="Describe your changes and reasoning..."
+                        />
+                        <label className={styles.shareBackCheckboxLabel}>
+                          <input
+                            type="checkbox"
+                            checked={getShareBackForm(compId).okToReuse}
+                            onChange={(e) => updateShareBackField(compId, 'okToReuse', e.target.checked)}
+                            className={styles.shareBackCheckbox}
+                          />
+                          OceanX may reuse this in the library, with credit to me
+                        </label>
+                        {getShareBackForm(compId).error && <p className={styles.shareBackError}>{getShareBackForm(compId).error}</p>}
+                        <div className={styles.shareBackActions}>
+                          <button
+                            type="button"
+                            className={styles.btnSecondary}
+                            onClick={() => handleShareBackCancel(compId)}
+                            disabled={getShareBackForm(compId).submitting}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.btnPrimary}
+                            onClick={() => handleShareBackSubmit(compId)}
+                            disabled={!getShareBackForm(compId).changedText.trim() || !getShareBackForm(compId).whatAndWhy.trim() || getShareBackForm(compId).submitting}
+                          >
+                            {getShareBackForm(compId).submitting ? 'Sending...' : 'Send'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className={styles.shareBackBtn}
+                        onClick={() => getShareBackForm(compId)}
+                      >
+                        Share your changed version
+                      </button>
+                    )}
+                  </div>
+                )}
               </section>
             );
           })}

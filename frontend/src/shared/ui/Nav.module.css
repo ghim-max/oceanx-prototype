@@ -502,3 +502,9 @@
   border-radius: 999px;
   line-height: 1;
 }
+
+/* Over-hero: badge stays accent but text is dark */
+.navOver .teamBadge {
+  background: var(--color-accent, #90e0ef);
+  color: #0f1e28;
+}

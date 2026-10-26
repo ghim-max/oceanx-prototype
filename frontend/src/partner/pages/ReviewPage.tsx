@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Check, AlertCircle } from 'lucide-react';
+import { Check, AlertCircle, Sparkles, Eye, ExternalLink } from 'lucide-react';
 import {
   sendPackage,
   emailjsConfigured,
@@ -10,11 +10,13 @@ import {
 } from '../../shared/services/sendPackage';
 import { API_BASE } from '../../shared/services/apiBase';
 import { BASE_URL } from '../../shared/services/sendPackage';
-import { DURATION_MIN } from './AdaptPage';
 import {
   assembleLessonPlan,
   type LessonLevel,
 } from '../../shared/services/assembleLessonPlan';
+import { submitPackage } from '../../team/data/governanceService';
+import { UNIVERSITY_STATUS } from '../../shared/data/university-version';
+import { DURATION_MIN } from './AdaptPage';
 import styles from './ReviewPage.module.css';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -50,6 +52,17 @@ interface AdaptOptions {
   lessonPlanLevel?: LessonLevel;
 }
 
+interface AcceptedRewrite {
+  componentId: string;
+  componentTitle: string;
+  level: 'secondary' | 'university' | 'postgrad';
+  length: 'shorter' | 'same' | 'longer';
+  originalText: string;
+  proposedText: string;
+  educatorEmail: string;
+  packageId: string;
+}
+
 function readAdaptOptions(): AdaptOptions | null {
   try {
     const raw = sessionStorage.getItem('adaptOptions');
@@ -67,17 +80,163 @@ function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
-// ─── Check row ───────────────────────────────────────────────────────────────
+// ─── Detail row for package summary ────────────────────────────────────────
 
-function CheckRow({ label, value }: { label: string; value: string }) {
+function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className={styles.checkRow}>
-      <span className={styles.checkIcon} aria-hidden="true">
-        <Check size={14} />
-      </span>
-      <span className={styles.checkLabel}>{label}</span>
-      <span className={styles.checkValue}>{value}</span>
+    <div className={styles.detailRow}>
+      <span className={styles.detailLabel}>{label}</span>
+      <span className={styles.detailValue}>{children}</span>
     </div>
+  );
+}
+
+function PackageSummary() {
+  const acceptedRewritesRaw = sessionStorage.getItem('adaptAcceptedRewrites');
+  let acceptedRewrites: AcceptedRewrite[] = [];
+  if (acceptedRewritesRaw) {
+    try {
+      acceptedRewrites = JSON.parse(acceptedRewritesRaw) as AcceptedRewrite[];
+    } catch {
+      // ignore
+    }
+  }
+
+  const pkgRaw = sessionStorage.getItem('adaptPackage');
+  let pkg: { audience: string; picks: Array<{ id: string; title: string; status: string; stage: string }>; recommendations: Array<{ id: string; title: string; stage: string }> } | null = null;
+  if (pkgRaw) {
+    try {
+      pkg = JSON.parse(pkgRaw);
+    } catch {
+      // ignore
+    }
+  }
+
+  const adaptOptionsData = readAdaptOptions();
+  const acceptedRewritesCount = acceptedRewrites.length;
+
+  const totalComponents = (pkg?.picks.length ?? 0) + (pkg?.recommendations.length ?? 0);
+  const hasAIAdaptations = acceptedRewritesCount > 0;
+
+  return (
+    <section className={styles.section} aria-labelledby="summary-heading">
+      <h2 className={styles.h2} id="summary-heading">Package summary</h2>
+
+      <div className={styles.summaryGrid}>
+        {/* Components */}
+        <div className={styles.summaryCard}>
+          <h3 className={styles.summaryCardTitle}>Components</h3>
+          {pkg && totalComponents > 0 ? (
+            <ul className={styles.componentList}>
+              {pkg.picks.map((pick) => (
+                <li key={pick.id} className={styles.componentItem}>
+                  <span className={styles.componentTitle}>{pick.title}</span>
+                  {acceptedRewrites.some((r) => r.componentId === pick.id) && (
+                    <span className={styles.aiTag}>AI version</span>
+                  )}
+                </li>
+              ))}
+              {pkg.recommendations.map((rec) => (
+                <li key={rec.id} className={styles.componentItem}>
+                  <span className={styles.componentTitle}>{rec.title}</span>
+                  {acceptedRewrites.some((r) => r.componentId === rec.id) && (
+                    <span className={styles.aiTag}>AI version</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className={styles.emptyText}>No components selected</p>
+          )}
+        </div>
+
+        {/* Knowledge check */}
+        <div className={styles.summaryCard}>
+          <h3 className={styles.summaryCardTitle}>Knowledge check</h3>
+          {adaptOptionsData?.quizEnabled && (adaptOptionsData?.itemIds.length ?? 0) > 0 ? (
+            <>
+              <DetailRow label="Questions" children={`${adaptOptionsData.itemIds.length} ${adaptOptionsData.quizType === 'mcq' ? 'MCQ' : adaptOptionsData.quizType === 'short' ? 'short answer' : 'mixed'}`} />
+              <DetailRow label="Difficulty" children={adaptOptionsData.quizDifficulty} />
+              <DetailRow
+                label="Preview"
+                children={
+                  <a
+                    href="/preview/quiz"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.previewLink}
+                  >
+                    <Eye size={14} aria-hidden="true" />
+                    Open preview
+                    <ExternalLink size={12} aria-hidden="true" />
+                  </a>
+                }
+              />
+            </>
+          ) : (
+            <p className={styles.notIncluded}>
+              Not included
+              <a href="/partner/adapt" className={styles.addLink}>Add</a>
+            </p>
+          )}
+        </div>
+
+        {/* Lesson plan */}
+        <div className={styles.summaryCard}>
+          <h3 className={styles.summaryCardTitle}>Lesson plan</h3>
+          {adaptOptionsData?.lessonPlanEnabled ? (
+            <>
+              <DetailRow label="Length" children={`${adaptOptionsData.lessonPlanLength ?? 60} min`} />
+              <DetailRow
+                label="Level"
+                children={
+                  adaptOptionsData.lessonPlanLevel
+                    ? adaptOptionsData.lessonPlanLevel.charAt(0).toUpperCase() + adaptOptionsData.lessonPlanLevel.slice(1)
+                    : 'Intermediate'
+                }
+              />
+              <DetailRow
+                label="Preview"
+                children={
+                  <a
+                    href="/preview/lesson"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.previewLink}
+                  >
+                    <Eye size={14} aria-hidden="true" />
+                    Open preview
+                    <ExternalLink size={12} aria-hidden="true" />
+                  </a>
+                }
+              />
+            </>
+          ) : (
+            <p className={styles.notIncluded}>
+              Not included
+              <a href="/partner/adapt" className={styles.addLink}>Add</a>
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* AI adaptations note */}
+      {hasAIAdaptations && (
+        <div className={styles.aiNote}>
+          <Sparkles size={14} aria-hidden="true" />
+          <span>
+            {acceptedRewritesCount} AI version{acceptedRewritesCount > 1 ? 's' : ''} will be checked by the OceanX team. We will email your package to <strong>{readAdaptOptions()?.quizEnabled ? 'your email' : 'the educator'}</strong> after review.
+          </span>
+        </div>
+      )}
+
+      {/* Conditional review gate message */}
+      {hasAIAdaptations && !adaptOptionsData?.quizEnabled && !adaptOptionsData?.lessonPlanEnabled && (
+        <p className={styles.gateNotice}>
+          Includes AI versions. The OceanX team will check them before your email is sent (allow up to 1 business day).
+        </p>
+      )}
+    </section>
   );
 }
 
@@ -94,12 +253,12 @@ export function ReviewPage() {
   }, []);
 
   const [pkg, setPkg] = useState<AdaptPackage | null>(null);
-  const [adaptOpts, setAdaptOpts] = useState<AdaptOptions | null>(null);
-  const [acceptedRewrites, setAcceptedRewrites] = useState<Array<{ id: string; title: string }>>([]);
+  const [acceptedRewrites, setAcceptedRewrites] = useState<AcceptedRewrite[]>([]);
   const [checking, setChecking] = useState(true);
   const [email, setEmail] = useState(DEMO_EMAIL);
   const [emailTouched, setEmailTouched] = useState(false);
   const [sendState, setSendState] = useState<SendState>('idle');
+  const [sentForReview, setSentForReview] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   // Scroll to top when auto-check completes and content appears.
@@ -123,13 +282,12 @@ export function ReviewPage() {
         // malformed — will show no-package state
       }
     }
-    setAdaptOpts(readAdaptOptions());
 
     // Read accepted AI rewrites
     const rewritesRaw = sessionStorage.getItem('adaptAcceptedRewrites');
     if (rewritesRaw) {
       try {
-        setAcceptedRewrites(JSON.parse(rewritesRaw));
+        setAcceptedRewrites(JSON.parse(rewritesRaw) as AcceptedRewrite[]);
       } catch {
         // ignore
       }
@@ -188,6 +346,34 @@ export function ReviewPage() {
 
     const lessonPlanData = assembledPlan && !('error' in assembledPlan) ? assembledPlan : null;
 
+    // If there are accepted AI rewrites, submit them for review instead of sending email directly
+    if (acceptedRewrites.length > 0) {
+      // Update rewrites with the actual educator email
+      const rewritesWithEmail = acceptedRewrites.map(r => ({
+        ...r,
+        educatorEmail: email.trim(),
+      }));
+
+      // Create a package object for submitPackage
+      const pkgForSubmit = {
+        audience: pkg.audience,
+        picks: pkg.picks,
+        recommendations: pkg.recommendations,
+      };
+
+      const result = await submitPackage(pkgForSubmit, rewritesWithEmail);
+
+      if (result.status === 'pending_review') {
+        setSentForReview(true);
+        setSendState('success');
+        sessionStorage.removeItem('adaptPackage');
+        sessionStorage.removeItem('adaptOptions');
+        sessionStorage.removeItem('adaptAcceptedRewrites');
+        return;
+      }
+      // If status is 'sent', fall through to normal email sending
+    }
+
     // First, create the package on the backend to get a slug
     let slug: string | undefined;
     try {
@@ -227,14 +413,11 @@ export function ReviewPage() {
       ...pkg.picks,
       ...pkg.recommendations,
     ];
-    const emailComponents = allComponents.map(c => {
-      const hasStatus = 'status' in c && typeof c.status === 'string';
-      return {
-        title: c.title,
-        type: (hasStatus ? c.status : 'Fixed') as string,
-        minutes: DURATION_MIN[c.id] || 0,
-      };
-    });
+const emailComponents = allComponents.map(c => ({
+      title: c.title,
+      type: UNIVERSITY_STATUS[c.id]?.status || 'Fixed',
+      minutes: DURATION_MIN[c.id] || 0,
+    }));
 
     // Quiz info
     const quizLink = quizEnabled && slug ? `${BASE_URL}/quiz/p/${slug}` : undefined;
@@ -267,6 +450,7 @@ export function ReviewPage() {
       setSendState('success');
       sessionStorage.removeItem('adaptPackage');
       sessionStorage.removeItem('adaptOptions');
+      sessionStorage.removeItem('adaptAcceptedRewrites');
     } catch (err) {
       console.error('[sendPackage error]', err);
       if (err instanceof MissingEnvError) {
@@ -311,10 +495,21 @@ export function ReviewPage() {
             <span className={styles.successIcon} aria-hidden="true">
               <Check size={28} />
             </span>
-            <h1 className={styles.h1} ref={h1Ref} tabIndex={-1}>Your package is on its way.</h1>
-            <p className={styles.successDesc}>
-              Check <strong>{email}</strong> for your seminar links. Allow a few minutes for delivery.
-            </p>
+            {sentForReview ? (
+              <>
+                <h1 className={styles.h1} ref={h1Ref} tabIndex={-1}>Sent for OceanX review.</h1>
+                <p className={styles.successDesc}>
+                  Your package has been submitted for review. You will get your email after approval.
+                </p>
+              </>
+            ) : (
+              <>
+                <h1 className={styles.h1} ref={h1Ref} tabIndex={-1}>Your package is on its way.</h1>
+                <p className={styles.successDesc}>
+                  Check <strong>{email}</strong> for your seminar links. Allow a few minutes for delivery.
+                </p>
+              </>
+            )}
             <div className={styles.successActions}>
               <Link to="/partner/library" className={styles.pill}>
                 Back to library
@@ -324,6 +519,7 @@ export function ReviewPage() {
                 className={styles.pillSecondary}
                 onClick={() => {
                   setSendState('idle');
+                  setSentForReview(false);
                   setEmail('');
                   setEmailTouched(false);
                 }}
@@ -336,8 +532,6 @@ export function ReviewPage() {
       </div>
     );
   }
-
-  const totalComponents = (pkg?.picks.length ?? 0) + (pkg?.recommendations.length ?? 0);
 
   return (
     <div className={styles.page}>
@@ -356,59 +550,8 @@ export function ReviewPage() {
           </p>
         </header>
 
-        {/* ── Auto-check section ── */}
-        <section className={styles.section} aria-labelledby="check-heading" aria-busy={checking}>
-          <h2 className={styles.h2} id="check-heading">Automatic check</h2>
-
-          {checking ? (
-            <div className={styles.checkingRow}>
-              <span className={styles.checkingDots} aria-hidden="true">
-                <span /><span /><span />
-              </span>
-              <p className={styles.checkingLabel}>Reviewing your package...</p>
-            </div>
-          ) : (
-            <>
-            <div className={styles.checkList}>
-              <CheckRow
-                label="Components selected"
-                value={`${totalComponents} (${pkg?.picks.length ?? 0} ${(pkg?.picks.length ?? 0) === 1 ? 'pick' : 'picks'}, ${pkg?.recommendations.length ?? 0} ${(pkg?.recommendations.length ?? 0) === 1 ? 'recommendation' : 'recommendations'})`}
-              />
-              {adaptOpts?.quizEnabled && (adaptOpts?.itemIds.length ?? 0) > 0 ? (
-                <CheckRow
-                  label="Knowledge check"
-                  value={`${adaptOpts.itemIds.length} ${adaptOpts.quizType === 'mcq' ? 'MCQ' : adaptOpts.quizType === 'short' ? 'short answer' : 'mixed'} questions, ${adaptOpts.quizDifficulty} difficulty`}
-                />
-              ) : (
-                <div className={styles.checkRowMuted}>
-                  <span className={styles.checkIconMuted} aria-hidden="true" />
-                  <span className={styles.checkLabel}>Knowledge check</span>
-                  <span className={styles.checkValueMuted}>Not included</span>
-                </div>
-              )}
-              {adaptOpts?.lessonPlanEnabled ? (
-                <CheckRow
-                  label="Lesson plan"
-                  value={`${adaptOpts.lessonPlanLength ?? 60} min, ${
-                    adaptOpts.lessonPlanLevel
-                      ? adaptOpts.lessonPlanLevel.charAt(0).toUpperCase() + adaptOpts.lessonPlanLevel.slice(1)
-                      : 'Intermediate'
-                  }`}
-                />
-              ) : (
-                <div className={styles.checkRowMuted}>
-                  <span className={styles.checkIconMuted} aria-hidden="true" />
-                  <span className={styles.checkLabel}>Lesson plan</span>
-                  <span className={styles.checkValueMuted}>Not included</span>
-                </div>
-              )}
-            </div>
-            <p className={styles.gateNotice}>
-              Your package has entered the OceanX Education Review Gate. Allow up to 1 business day for your links to arrive.
-            </p>
-            </>
-          )}
-        </section>
+        {/* ── Package summary ── */}
+        <PackageSummary />
 
         {/* ── Email section ── */}
         <section className={styles.section} aria-labelledby="email-heading">

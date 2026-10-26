@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Printer, Flag, X, Clock } from 'lucide-react';
+import { Printer, Flag, X } from 'lucide-react';
 import styles from './LessonPlanPreviewPage.module.css';
 
 interface TimelineRow {
@@ -50,6 +50,16 @@ export function LessonPlanPreviewPage() {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  // Calculate start minutes for each timeline row
+  const getStartMinute = (index: number): number => {
+    if (!plan) return 0;
+    let total = 0;
+    for (let i = 0; i < index; i++) {
+      total += plan.timeline[i].minutes;
+    }
+    return total;
   };
 
   if (loading) {
@@ -125,7 +135,7 @@ export function LessonPlanPreviewPage() {
             <tbody>
               {plan.timeline.map((row, idx) => (
                 <tr key={idx}>
-                  <td>{row.isOpening ? '0' : row.isClose ? '—' : '—'}</td>
+                  <td>{getStartMinute(idx)}</td>
                   <td>{row.stage}</td>
                   <td>{row.label}</td>
                   <td>{row.minutes} min</td>
@@ -151,21 +161,6 @@ export function LessonPlanPreviewPage() {
           </div>
         )}
       </main>
-
-      <footer className={styles.footer}>
-        <button className={styles.btnPrint} onClick={() => window.print()}>
-          <Clock size={16} aria-hidden="true" />
-          Print
-        </button>
-        <button className={styles.btnIssue} onClick={() => alert('Report an issue - not implemented yet')}>
-          <Flag size={16} aria-hidden="true" />
-          Report an issue
-        </button>
-        <button className={styles.btnClose} onClick={() => window.close()}>
-          <X size={16} aria-hidden="true" />
-          Close
-        </button>
-      </footer>
     </div>
   );
 }

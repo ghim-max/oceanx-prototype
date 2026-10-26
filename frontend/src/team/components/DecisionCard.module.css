@@ -56,31 +56,6 @@
   margin: 0;
 }
 
-.recommendationPillWrapper {
-  display: flex;
-  justify-content: flex-start;
-}
-
-.recommendationPill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 8px 16px;
-  border-radius: var(--radius-pill);
-  font-size: 15px;
-  font-weight: var(--weight-label);
-  font-family: var(--font-body);
-  letter-spacing: 0.02em;
-}
-
-.cardActions {
-  display: flex;
-  gap: var(--space-3);
-  margin-top: auto;
-  padding-top: var(--space-4);
-}
-
 /* Thumbnail */
 .thumbWrapper {
   position: relative;
@@ -129,77 +104,6 @@
   border-radius: 999px;
   white-space: nowrap;
   font-family: var(--font-body);
-}
-
-.cardActions {
-  display: flex;
-  gap: var(--space-3);
-  margin-top: auto;
-  padding-top: var(--space-4);
-}
-
-.approveBtn {
-  min-height: 44px;
-  padding: 0 var(--space-6);
-  border: none;
-  border-radius: var(--radius-pill);
-  background: var(--color-accent);
-  color: var(--color-text-on-accent);
-  font-size: var(--text-body);
-  font-weight: var(--weight-label);
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.approveBtn:hover {
-  background: var(--color-accent-dim);
-}
-
-.approveBtn:focus-visible {
-  outline: 2px solid var(--color-link);
-  outline-offset: 2px;
-}
-
-.rejectBtn {
-  min-height: 44px;
-  padding: 0 var(--space-6);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-pill);
-  background: var(--color-bg);
-  color: var(--color-text-primary);
-  font-size: var(--text-body);
-  font-weight: var(--weight-label);
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-}
-
-.rejectBtn:hover {
-  border-color: var(--color-accent);
-  background: var(--color-surface-raised);
-}
-
-.rejectBtn:focus-visible {
-  outline: 2px solid var(--color-link);
-  outline-offset: 2px;
-}
-
-.approved,
-.rejected {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 44px;
-  padding: 0 var(--space-4);
-  font-size: var(--text-body);
-  font-weight: var(--weight-label);
-  color: var(--color-text-secondary);
-}
-
-.approved a,
-.rejected a {
-  color: var(--color-link);
-  text-decoration: underline;
-  font-weight: 350;
 }
 
 /* Column 2: Numbers */
@@ -343,76 +247,360 @@
   color: var(--color-text-muted);
 }
 
-/* Card actions */
-.cardActions {
+/* ── Top row: Recommended + Approve/Reject ──────────────────────────────── */
+.recRow {
   display: flex;
-  gap: var(--space-3);
-  margin-top: auto;
-  padding-top: var(--space-4);
+  align-items: center;
+  justify-content: space-between;
+  min-height: 36px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border-subtle);
 }
 
-.approveBtn {
-  min-height: 44px;
-  padding: 0 var(--space-6);
-  border: none;
+.recLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  line-height: 1;
+}
+
+.recDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.recValue {
+  font-size: 16px;
+  font-weight: 600;
+  font-family: var(--font-body);
+}
+
+.recActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.recActions button {
+  margin: 0;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Approve / Reject buttons (in recRow) */
+.recActions .approveBtn,
+.recActions .rejectBtn {
+  min-height: 32px;
+  padding: 0 var(--space-4);
+  font-size: var(--text-small);
+  font-weight: var(--weight-label);
+  font-family: var(--font-body);
   border-radius: var(--radius-pill);
+}
+
+.recActions .approveBtn {
+  border: none;
   background: var(--color-accent);
   color: var(--color-text-on-accent);
-  font-size: var(--text-body);
-  font-weight: var(--weight-label);
-  cursor: pointer;
-  transition: background 0.15s;
 }
 
-.approveBtn:hover {
+.recActions .approveBtn:hover {
   background: var(--color-accent-dim);
 }
 
-.approveBtn:focus-visible {
-  outline: 2px solid var(--color-link);
-  outline-offset: 2px;
-}
-
-.rejectBtn {
-  min-height: 44px;
-  padding: 0 var(--space-6);
+.recActions .rejectBtn {
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-pill);
   background: var(--color-bg);
   color: var(--color-text-primary);
-  font-size: var(--text-body);
-  font-weight: var(--weight-label);
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
 }
 
-.rejectBtn:hover {
+.recActions .rejectBtn:hover {
   border-color: var(--color-accent);
   background: var(--color-surface-raised);
 }
 
-.rejectBtn:focus-visible {
-  outline: 2px solid var(--color-link);
-  outline-offset: 2px;
-}
-
-.approved,
-.rejected {
+.recActions .approved,
+.recActions .rejected {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  min-height: 44px;
-  padding: 0 var(--space-4);
-  font-size: var(--text-body);
+  height: 32px;
+  padding: 0 var(--space-3);
+  font-size: var(--text-small);
   font-weight: var(--weight-label);
   color: var(--color-text-secondary);
 }
 
-.approved a,
-.rejected a {
+.recActions .approved a,
+.recActions .rejected a {
   color: var(--color-link);
   text-decoration: underline;
   font-weight: 350;
+}
+
+/* ── Team Decision Row: Reuse | Adapt | Drop + Confirm ───────────────────── */
+.teamDecisionRow {
+  /* No top border/padding - sits inline in right column */
+}
+
+.decisionRowTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-3);
+  min-height: 32px;
+}
+
+.segmentedControl {
+  display: flex;
+  gap: var(--space-2);
+  flex: 1;
+}
+
+.segmentBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  height: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-size: var(--text-small);
+  font-weight: 500;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.segmentBtn:hover:not(.segmentBtnDisabled) {
+  border-color: var(--color-accent);
+  background: var(--color-surface-raised);
+}
+
+.segmentBtnActive {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-text-on-accent);
+}
+
+.segmentBtnDisabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.aiRecBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: #0f1e28;
+  font-size: 10px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  line-height: 1;
+}
+
+.confirmBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 var(--space-4);
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
+  font-size: var(--text-small);
+  font-weight: var(--weight-label);
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.confirmBtn:hover:not(:disabled) {
+  background: var(--color-accent-dim);
+}
+
+.confirmBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.confirmBtnLoading {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+/* Why box and override tag - full width below the row */
+.whyBox {
+  margin-top: var(--space-4);
+  width: 100%;
+}
+
+.whyLabel {
+  display: block;
+  font-size: var(--text-small);
+  font-weight: var(--weight-label);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  margin-bottom: var(--space-2);
+}
+
+.required {
+  color: var(--color-danger);
+}
+
+.whyTextarea {
+  width: 100%;
+  min-height: 72px;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-small);
+  font-family: var(--font-body);
+  line-height: 1.5;
+  resize: vertical;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+}
+
+.whyTextarea:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 1px;
+  border-color: var(--color-link);
+}
+
+.whyTextarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.overrideTagRow {
+  margin-top: var(--space-2);
+  width: 100%;
+}
+
+.overrideTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: #fbec8;
+  color: #8b5a00;
+  font-size: var(--text-micro);
+  font-weight: 600;
+  font-family: var(--font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.error {
+  color: var(--color-danger);
+  font-size: var(--text-small);
+  font-weight: 500;
+  margin-top: var(--space-2);
+}
+
+/* Decided state - single line, no extra divider */
+.teamDecisionDecided {
+  /* No top border/padding - sits inline in right column */
+}
+
+.decidedLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.decidedLine span {
+  font-size: var(--text-small);
+  font-weight: 500;
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+}
+
+.changeLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-small);
+  font-family: var(--font-body);
+  font-weight: var(--weight-label);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.changeLink:hover {
+  border-color: var(--color-text-primary);
+  color: var(--color-text-primary);
+  background: var(--color-surface-raised);
+}
+
+.changeLink:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 2px;
+}
+
+/* Decided actions */
+.decidedActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: var(--space-3);
+}
+
+.decidedSeparator {
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+}
+
+.historyLink {
+  color: var(--color-link);
+  font-size: var(--text-small);
+  font-family: var(--font-body);
+  font-weight: var(--weight-label);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  transition: color 0.15s;
+}
+
+.historyLink:hover {
+  color: var(--color-link-hover);
+  text-decoration-thickness: 2px;
+}
+
+/* Quotes section in middle column */
+.quotesSection {
+  margin-top: var(--space-8);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--color-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 /* Responsive for Decision Card */
@@ -431,164 +619,4 @@
     padding-left: 0;
     padding-top: 12px;
   }
-}
-/* ── Layout v2: decision bar on top of the explanation column ── */
-.thumbPlaceholder::after {
-  content: none;
-}
-
-.decisionBar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  padding-bottom: 16px;
-  margin-bottom: 4px;
-  border-bottom: 1px solid #E5E9EE;
-}
-
-.decisionBar .recommendationPillWrapper {
-  margin: 0;
-}
-
-.decisionBar .recommendationPill {
-  font-size: 15px;
-  font-weight: 570;
-  padding: 8px 16px;
-}
-
-.decisionBar .cardActions {
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.decisionBar .approveBtn,
-.decisionBar .rejectBtn {
-  font-size: 14px;
-  font-weight: 500;
-  padding: 6px 14px;
-  min-height: 34px;
-}
-
-.cardCol1 .thumbWrapper {
-  margin-bottom: 4px;
-}
-
-/* ── Layout v3: lighter card, recommendation as text (no container) ── */
-.aiCard {
-  padding: 24px 28px;
-}
-
-.cardGrid {
-  align-items: start;
-}
-
-.thumbWrapper {
-  max-width: 168px;
-  border-radius: 10px;
-}
-
-.thumbBadge {
-  font-size: 11px;
-  padding: 2px 8px;
-}
-
-.cardTitle {
-  font-size: 22px;
-}
-
-.decisionBar {
-  padding-bottom: 12px;
-}
-
-.decisionBar .recommendationPill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: none;
-  padding: 0;
-  border-radius: 0;
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.recDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.recLabel {
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgb(91, 103, 112);
-}
-
-.recValue {
-  font-size: 18px;
-  font-weight: 600;
-}
-
-/* ── v4: one font, one size for the recommendation line ── */
-.recLabel,
-.recValue {
-  font-family: var(--font-body);
-  font-size: 16px;
-  letter-spacing: 0;
-  text-transform: none;
-}
-
-.recLabel {
-  font-weight: 400;
-  color: rgb(91, 103, 112);
-}
-
-.recValue {
-  font-weight: 600;
-}
-
-/* ── v5: balance the card. Left and middle columns sit in the vertical
-   middle of the (taller) explanation column; bigger thumbnail. ── */
-.cardCol1,
-.cardCol2 {
-  align-self: center;
-}
-
-.thumbWrapper {
-  max-width: 280px;
-  border-radius: 12px;
-}
-
-.thumbBadge {
-  font-size: 12px;
-  padding: 3px 10px;
-}
-
-@media (max-width: 1100px) {
-  .cardCol1,
-  .cardCol2 {
-    align-self: start;
-  }
-}
-
-/* ── v6: more breathing room between thumbnail and numbers ── */
-.cardCol2 {
-  padding-left: 40px;
-}
-
-@media (max-width: 1100px) {
-  .cardCol2 {
-    padding-left: 0;
-  }
-}
-
-/* Suffixes (pts, /5, %) in black so they are readable */
-.statSuffix {
-  color: #000000;
 }

@@ -89,7 +89,7 @@
 }
 
 .main {
-  padding: var(--space-6) var(--space-6);
+  padding: var(--space-6) var(--space-6) 96px;
   max-width: 1000px;
   margin: 0 auto;
   flex: 1;
@@ -239,19 +239,9 @@
   color: var(--color-text-secondary);
 }
 
-.footer {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-3);
-  padding: var(--space-4) var(--space-6);
-  background: var(--color-surface);
-  border-top: 1px solid var(--color-border);
-}
-
+/* ── Print styles ── */
 @media print {
-  .header,
-  .footer {
+  .header {
     display: none;
   }
 
