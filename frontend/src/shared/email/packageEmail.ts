@@ -180,7 +180,7 @@ export function buildPackageEmail(input: PackageEmailInput): { subject: string; 
                     <td style="padding:20px 24px;">
                       <div style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#4A6072;font-weight:bold;margin-bottom:6px;">After class</div>
                       <p style="margin:0 0 16px 0;font-size:15px;line-height:24px;">Tell us how the session went. It takes about 3 minutes and helps us improve every future version of Seagrass Stories.</p>
-                      ${buildButton({ href: feedbackLink, label: 'Share your feedback', variant: 'dark' })}
+                      <a href="${feedbackLink}" style="color:#0B6E85;text-decoration:underline;font-size:15px;font-weight:bold;">Share your feedback</a>
                     </td>
                   </tr>
                 </table>
