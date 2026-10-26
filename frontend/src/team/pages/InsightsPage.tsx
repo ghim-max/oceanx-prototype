@@ -15,7 +15,6 @@ import {
   type LibraryState,
   type AdaptationTask,
 } from '../../team/data/governanceService';
-import { SUPABASE_IS_SAMPLE } from '../../team/data/dataSource';
 import type { RawInsightsResponse } from '../../shared/types/insights';
 import styles from './InsightsPage.module.css';
 
@@ -541,11 +540,6 @@ export function InsightsPage() {
 
     return (
       <div className={styles.page}>
-        {SUPABASE_IS_SAMPLE && (
-          <div className={styles.dataLabel}>
-            All numbers are prototype sample data until real OceanX sessions are added.
-          </div>
-        )}
         <header className={styles.header}>
           <div className={styles.headerLeft}>
             <h1 className={styles.h1}>Asset dashboard</h1>

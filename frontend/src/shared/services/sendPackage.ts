@@ -19,6 +19,8 @@ const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID as string | undefined
 const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID as string | undefined;
 const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY as string | undefined;
 export const BASE_URL = (import.meta.env.VITE_PUBLIC_BASE_URL as string | undefined) ?? '';
+// Email asset base URL - defaults to production Vercel URL, never localhost
+export const EMAIL_ASSET_BASE_URL = (import.meta.env.VITE_EMAIL_ASSET_BASE_URL as string | undefined) ?? 'https://oceanx-prototype.vercel.app';
 export const DEMO_EMAIL = (import.meta.env.VITE_DEMO_EMAIL as string | undefined) ?? '';
 
 export function emailjsConfigured(): boolean {
@@ -64,7 +66,7 @@ export async function sendPackage(payload: PackagePayload): Promise<void> {
     reply_to: 'noreply@oceanx.org',
   };
 
-console.log('[sendPackage] params keys:', Object.keys(templateParams), 'email_html length:', html.length);
+  console.log('[sendPackage] params keys:', Object.keys(templateParams), 'email_html length:', html.length);
 
   await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, { publicKey: PUBLIC_KEY });
 }

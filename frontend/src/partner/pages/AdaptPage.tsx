@@ -1109,6 +1109,15 @@ export function AdaptPage() {
           </div>
           <p className={styles.extrasSubline}>Add a knowledge check or lesson plan to your package.</p>
 
+          {/* Collapsed summary line */}
+          {extrasCollapsed && (
+            <p className={styles.extrasCollapsedSummary}>
+              {quizAdded || lessonPlanAdded
+                ? `${quizAdded ? 'Knowledge check added' : ''}${quizAdded && lessonPlanAdded ? ' · ' : ''}${lessonPlanAdded ? 'Lesson plan added' : ''}`
+                : 'Nothing added'}
+            </p>
+          )}
+
           <div id="extras-content" className={styles.extrasGrid} hidden={extrasCollapsed}>
             {/* Knowledge check card */}
             <div className={styles.extrasCard}>

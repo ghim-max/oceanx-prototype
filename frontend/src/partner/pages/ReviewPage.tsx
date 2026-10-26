@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Check, AlertCircle, Sparkles, Eye, ExternalLink } from 'lucide-react';
+import { Check, AlertCircle } from 'lucide-react';
 import {
   sendPackage,
   emailjsConfigured,
@@ -82,11 +82,14 @@ function isValidEmail(email: string): boolean {
 
 // ─── Detail row for package summary ────────────────────────────────────────
 
-function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
+function CheckRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className={styles.detailRow}>
-      <span className={styles.detailLabel}>{label}</span>
-      <span className={styles.detailValue}>{children}</span>
+    <div className={styles.checkRow}>
+      <span className={styles.checkIcon} aria-hidden="true">
+        <Check size={14} />
+      </span>
+      <span className={styles.checkLabel}>{label}</span>
+      <span className={styles.checkValue}>{children}</span>
     </div>
   );
 }
@@ -113,129 +116,87 @@ function PackageSummary() {
   }
 
   const adaptOptionsData = readAdaptOptions();
-  const acceptedRewritesCount = acceptedRewrites.length;
 
   const totalComponents = (pkg?.picks.length ?? 0) + (pkg?.recommendations.length ?? 0);
-  const hasAIAdaptations = acceptedRewritesCount > 0;
 
   return (
     <section className={styles.section} aria-labelledby="summary-heading">
       <h2 className={styles.h2} id="summary-heading">Package summary</h2>
 
-      <div className={styles.summaryGrid}>
-        {/* Components */}
-        <div className={styles.summaryCard}>
-          <h3 className={styles.summaryCardTitle}>Components</h3>
-          {pkg && totalComponents > 0 ? (
-            <ul className={styles.componentList}>
-              {pkg.picks.map((pick) => (
-                <li key={pick.id} className={styles.componentItem}>
-                  <span className={styles.componentTitle}>{pick.title}</span>
-                  {acceptedRewrites.some((r) => r.componentId === pick.id) && (
-                    <span className={styles.aiTag}>AI version</span>
-                  )}
-                </li>
-              ))}
-              {pkg.recommendations.map((rec) => (
-                <li key={rec.id} className={styles.componentItem}>
-                  <span className={styles.componentTitle}>{rec.title}</span>
-                  {acceptedRewrites.some((r) => r.componentId === rec.id) && (
-                    <span className={styles.aiTag}>AI version</span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className={styles.emptyText}>No components selected</p>
-          )}
-        </div>
+      <div className={styles.checkList}>
+        {/* Components selected */}
+        <CheckRow
+          label="Components selected"
+          children={
+            <>
+              {pkg && totalComponents > 0 ? (
+                `${totalComponents}: ${[
+                  ...pkg.picks.map((pick) => `${pick.title}${acceptedRewrites.some((r) => r.componentId === pick.id) ? ' (AI version)' : ''}`),
+                  ...pkg.recommendations.map((rec) => `${rec.title}${acceptedRewrites.some((r) => r.componentId === rec.id) ? ' (AI version)' : ''}`)
+                ].join(', ')}`
+              ) : (
+                'None'
+              )}
+            </>
+          }
+        />
 
         {/* Knowledge check */}
-        <div className={styles.summaryCard}>
-          <h3 className={styles.summaryCardTitle}>Knowledge check</h3>
-          {adaptOptionsData?.quizEnabled && (adaptOptionsData?.itemIds.length ?? 0) > 0 ? (
-            <>
-              <DetailRow label="Questions" children={`${adaptOptionsData.itemIds.length} ${adaptOptionsData.quizType === 'mcq' ? 'MCQ' : adaptOptionsData.quizType === 'short' ? 'short answer' : 'mixed'}`} />
-              <DetailRow label="Difficulty" children={adaptOptionsData.quizDifficulty} />
-              <DetailRow
-                label="Preview"
-                children={
-                  <a
-                    href="/preview/quiz"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={styles.previewLink}
-                  >
-                    <Eye size={14} aria-hidden="true" />
-                    Open preview
-                    <ExternalLink size={12} aria-hidden="true" />
+        {adaptOptionsData?.quizEnabled && (adaptOptionsData?.itemIds.length ?? 0) > 0 ? (() => {
+          const itemIds = adaptOptionsData!.itemIds;
+          const quizType = adaptOptionsData!.quizType;
+          const quizDifficulty = adaptOptionsData!.quizDifficulty;
+          return (
+            <CheckRow
+              label="Knowledge check"
+              children={
+                <>
+                  {itemIds.length} {quizType === 'mcq' ? 'MCQ' : quizType === 'short' ? 'short answer' : 'mixed'}, {quizDifficulty}
+                  <a href="/preview/quiz" target="_blank" rel="noopener noreferrer" className={styles.addLink} style={{ marginLeft: 'var(--space-2)' }}>
+                    Preview
                   </a>
-                }
-              />
-            </>
-          ) : (
-            <p className={styles.notIncluded}>
-              Not included
-              <a href="/partner/adapt" className={styles.addLink}>Add</a>
-            </p>
-          )}
-        </div>
+                </>
+              }
+            />
+          );
+        })() : (
+          <div className={styles.checkRowMuted}>
+            <span className={styles.checkIconMuted} aria-hidden="true" />
+            <span className={styles.checkLabel}>Knowledge check</span>
+            <span className={styles.checkValueMuted}>Not included · <a href="/partner/adapt" className={styles.addLink}>Add</a></span>
+          </div>
+        )}
 
         {/* Lesson plan */}
-        <div className={styles.summaryCard}>
-          <h3 className={styles.summaryCardTitle}>Lesson plan</h3>
-          {adaptOptionsData?.lessonPlanEnabled ? (
-            <>
-              <DetailRow label="Length" children={`${adaptOptionsData.lessonPlanLength ?? 60} min`} />
-              <DetailRow
-                label="Level"
-                children={
-                  adaptOptionsData.lessonPlanLevel
-                    ? adaptOptionsData.lessonPlanLevel.charAt(0).toUpperCase() + adaptOptionsData.lessonPlanLevel.slice(1)
-                    : 'Intermediate'
-                }
-              />
-              <DetailRow
-                label="Preview"
-                children={
-                  <a
-                    href="/preview/lesson"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={styles.previewLink}
-                  >
-                    <Eye size={14} aria-hidden="true" />
-                    Open preview
-                    <ExternalLink size={12} aria-hidden="true" />
+        {adaptOptionsData?.lessonPlanEnabled ? (() => {
+          const lp = adaptOptionsData!;
+          const level = lp.lessonPlanLevel ? lp.lessonPlanLevel.charAt(0).toUpperCase() + lp.lessonPlanLevel.slice(1) : 'Intermediate';
+          return (
+            <CheckRow
+              label="Lesson plan"
+              children={
+                <>
+                  {lp.lessonPlanLength ?? 60} min, {level}
+                  <a href="/preview/lesson" target="_blank" rel="noopener noreferrer" className={styles.addLink} style={{ marginLeft: 'var(--space-2)' }}>
+                    Preview
                   </a>
-                }
-              />
-            </>
-          ) : (
-            <p className={styles.notIncluded}>
-              Not included
-              <a href="/partner/adapt" className={styles.addLink}>Add</a>
-            </p>
-          )}
-        </div>
+                </>
+              }
+            />
+          );
+        })() : (
+          <div className={styles.checkRowMuted}>
+            <span className={styles.checkIconMuted} aria-hidden="true" />
+            <span className={styles.checkLabel}>Lesson plan</span>
+            <span className={styles.checkValueMuted}>Not included · <a href="/partner/adapt" className={styles.addLink}>Add</a></span>
+          </div>
+        )}
       </div>
 
-      {/* AI adaptations note */}
-      {hasAIAdaptations && (
-        <div className={styles.aiNote}>
-          <Sparkles size={14} aria-hidden="true" />
-          <span>
-            {acceptedRewritesCount} AI version{acceptedRewritesCount > 1 ? 's' : ''} will be checked by the OceanX team. We will email your package to <strong>{readAdaptOptions()?.quizEnabled ? 'your email' : 'the educator'}</strong> after review.
-          </span>
-        </div>
-      )}
-
-      {/* Conditional review gate message */}
-      {hasAIAdaptations && !adaptOptionsData?.quizEnabled && !adaptOptionsData?.lessonPlanEnabled && (
-        <p className={styles.gateNotice}>
-          Includes AI versions. The OceanX team will check them before your email is sent (allow up to 1 business day).
-        </p>
-      )}
+      {/* Always shown review gate message */}
+      <p className={styles.gateNotice}>
+        Your package will go through the OceanX Education Review Gate. Allow up to 1 business day for your links to arrive.
+      </p>
     </section>
   );
 }

@@ -1981,6 +1981,17 @@
   display: none;
 }
 
+/* Collapsed summary line */
+.extrasCollapsedSummary {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-small);
+  color: var(--color-text-secondary);
+}
+
 @media (max-width: 767px) {
   .extrasSectionHead {
     flex-direction: column;

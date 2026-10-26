@@ -1,4 +1,4 @@
-import { BASE_URL } from '../services/sendPackage';
+import { EMAIL_ASSET_BASE_URL } from '../services/sendPackage';
 
 export interface PackageEmailInput {
   educatorName?: string;
@@ -21,12 +21,24 @@ function escapeHtml(text: string): string {
     .replace(/&/g, '&')
     .replace(/</g, '<')
     .replace(/>/g, '>')
-    .replace(/"/g, '"')
+    .replace(/\"/g, '"')
     .replace(/'/g, '&apos;');
 }
 
 /**
+ * Helper to build a consistent email button.
+ */
+function buildButton({ href, label, variant = 'dark' }: { href: string; label: string; variant?: 'dark' | 'outline' }): string {
+  const baseStyle = 'display:inline-block;width:220px;box-sizing:border-box;text-align:center;padding:12px 0;font-size:14px;font-weight:bold;border-radius:999px;text-decoration:none;';
+  const darkStyle = 'background:#0B1F33;color:#FFFFFF;border:1px solid #0B1F33;';
+  const outlineStyle = 'background:#FFFFFF;color:#0B1F33;border:1px solid #0B1F33;';
+  const style = variant === 'outline' ? baseStyle + outlineStyle : baseStyle + darkStyle;
+  return `<a href="${escapeHtml(href)}" style="${style}">${escapeHtml(label)}</a>`;
+}
+
+/**
  * Build a component row table for the email.
+ * Shows activity type (Watch, Create, Read, Play) instead of Fixed/Adapted.
  */
 function buildComponentRow(component: { title: string; type: string; minutes: number }): string {
   const safeTitle = escapeHtml(component.title);
@@ -64,7 +76,7 @@ function buildLessonPlanBlock(input: PackageEmailInput): string {
   <td style="padding:28px 40px 0 40px;">
     <div style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#4A6072;font-weight:bold;margin-bottom:6px;">Before class</div>
     <p style="margin:0 0 16px 0;font-size:15px;line-height:24px;">Your lesson plan: ${safeLength} min, ${safeLevel}. Open it to print or save as PDF.</p>
-    <a href="${safeLink}" style="display:inline-block;background:#0B1F33;color:#FFFFFF;border:1px solid #0B1F33;text-decoration:none;font-size:14px;font-weight:bold;padding:12px 22px;border-radius:999px;">Open lesson plan</a>
+    ${buildButton({ href: safeLink, label: 'Open lesson plan', variant: 'dark' })}
   </td>
 </tr>`;
 }
@@ -84,7 +96,7 @@ function buildQuizBlock(input: PackageEmailInput): string {
   <td style="padding:28px 40px 0 40px;">
     <div style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#4A6072;font-weight:bold;margin-bottom:6px;">During class</div>
     <p style="margin:0 0 16px 0;font-size:15px;line-height:24px;">Share this quiz link with your learners. They open it at the start of class and again at the end (${safeCount} questions, about 3 minutes each time).</p>
-    <a href="${safeLink}" style="display:inline-block;background:#FFFFFF;color:#0B1F33;border:1px solid #0B1F33;text-decoration:none;font-size:14px;font-weight:bold;padding:12px 22px;border-radius:999px;">Open learner quiz</a>
+    ${buildButton({ href: safeLink, label: 'Open learner quiz', variant: 'outline' })}
     <p style="margin:12px 0 0 0;font-size:13px;line-height:20px;color:#6B7F8E;">Or copy the link: <a href="${safeLink}" style="color:#0B6E85;">${linkText}</a></p>
   </td>
 </tr>`;
@@ -100,8 +112,10 @@ export function buildPackageEmail(input: PackageEmailInput): { subject: string; 
   const audience = escapeHtml(input.audience);
   const feedbackLink = escapeHtml(input.feedbackLink);
   const hadAiReview = input.hadAiReview;
-  const headerImageUrl = `${BASE_URL}/email/oceanx-email-header.jpg`;
-  const resourcesLink = `${BASE_URL}/partner/library`;
+  const headerImageUrl = `${EMAIL_ASSET_BASE_URL}/email/oceanx-email-header.jpg`;
+  const resourcesLink = `${EMAIL_ASSET_BASE_URL}/partner/library`;
+
+  console.log('[buildPackageEmail] header image src:', headerImageUrl);
 
   const intro = hadAiReview
     ? `Here is everything for your ${audience} session. Each part has been checked by the OceanX Education team.`
@@ -154,7 +168,7 @@ export function buildPackageEmail(input: PackageEmailInput): { subject: string; 
             </tr>
             <tr>
               <td style="padding:16px 40px 0 40px;">
-                <p style="margin:16px 0 0 0;"><a href="${resourcesLink}" style="display:inline-block;background:#0B1F33;color:#FFFFFF;text-decoration:none;font-size:14px;font-weight:bold;padding:12px 22px;border-radius:999px;">Open your resources</a></p>
+                <p style="margin:16px 0 0 0;">${buildButton({ href: resourcesLink, label: 'Open your resources', variant: 'dark' })}</p>
               </td>
             </tr>
             ${lessonPlanBlock}
@@ -166,7 +180,7 @@ export function buildPackageEmail(input: PackageEmailInput): { subject: string; 
                     <td style="padding:20px 24px;">
                       <div style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#4A6072;font-weight:bold;margin-bottom:6px;">After class</div>
                       <p style="margin:0 0 16px 0;font-size:15px;line-height:24px;">Tell us how the session went. It takes about 3 minutes and helps us improve every future version of Seagrass Stories.</p>
-                      <a href="${feedbackLink}" style="display:inline-block;background:#0B1F33;color:#FFFFFF;text-decoration:none;font-size:14px;font-weight:bold;padding:12px 22px;border-radius:999px;">Share your feedback</a>
+                      ${buildButton({ href: feedbackLink, label: 'Share your feedback', variant: 'dark' })}
                     </td>
                   </tr>
                 </table>
