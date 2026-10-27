@@ -5,34 +5,43 @@ import {
   ASSUMED_REDUCTION,
   OCEANX_REPORT_MONTH,
 } from '../data/oceanxMetrics';
+import { SectionHeader } from './SectionHeader';
 import styles from './TimePanel.module.css';
 
 export function TimePanel() {
   const [show, setShow] = useState(true);
 
-  // Total team hours YTD
+  // Total team hours YTD (exact, unrounded)
   const totalHoursYTD = Object.values(TEAM_HOURS_YTD).reduce((a, b) => a + b, 0);
 
-  // Hours by category
-  const contentReviewHours = Math.round(totalHoursYTD * HOURS_BREAKDOWN.contentReview);
-  const contentAdaptationHours = Math.round(totalHoursYTD * HOURS_BREAKDOWN.contentAdaptation);
+  // Hours by category (exact, unrounded)
+  const contentReviewHoursExact = totalHoursYTD * HOURS_BREAKDOWN.contentReview;
+  const contentAdaptationHoursExact = totalHoursYTD * HOURS_BREAKDOWN.contentAdaptation;
 
-  // Estimated hours saved
-  const reviewSaved = Math.round(contentReviewHours * ASSUMED_REDUCTION.review);
-  const adaptationSaved = Math.round(contentAdaptationHours * ASSUMED_REDUCTION.adaptation);
+  // Rounded for display
+  const contentReviewHours = Math.round(contentReviewHoursExact);
+  const contentAdaptationHours = Math.round(contentAdaptationHoursExact);
+
+  // Estimated hours saved (compute with exact, round final)
+  const reviewSaved = Math.round(contentReviewHoursExact * ASSUMED_REDUCTION.review);
+  const adaptationSaved = Math.round(contentAdaptationHoursExact * ASSUMED_REDUCTION.adaptation);
   const totalSaved = reviewSaved + adaptationSaved;
 
   const formatNumber = (num: number): string => num.toLocaleString();
 
+  const handleToggle = () => setShow(!show);
+
   return (
     <section className={styles.strip} aria-label="Team time">
-      <div className={styles.header}>
-        <button type="button" className={styles.sectionToggle} onClick={() => setShow(!show)} aria-expanded={show}>
-          <span className={styles.title}>Team time</span>
-          {show ? 'Hide' : 'Show'}
-        </button>
-        <a href="/team/review" className={styles.link}>Go to Review</a>
-      </div>
+      <SectionHeader
+        title="Team time"
+        subtitle="Year to date, 3 staff"
+        goToLabel="Go to Review"
+        goToHref="/team/review"
+        isExpanded={show}
+        onToggle={handleToggle}
+        sectionId="team-time"
+      />
       {show && (
         <div className={styles.stats}>
           <div className={styles.stat}>
@@ -75,7 +84,7 @@ export function TimePanel() {
             </div>
             <p className={styles.sentence}>Year to date</p>
           </div>
-          <div className={`${styles.stat} ${styles.statHighlighted}`}>
+          <div className={styles.stat}>
             <div className={styles.statInner}>
               <div className={styles.labelRow}>
                 <span className={styles.accentSquare} aria-hidden="true" />
@@ -85,7 +94,7 @@ export function TimePanel() {
                 <span className={styles.bigNumber}>{formatNumber(totalSaved)} h</span>
               </div>
             </div>
-            <p className={styles.savedTooltip}>
+            <p className={styles.sentence}>
               Assumes review and adaptation time drop by 50% with the prototype. Prototype estimate.
             </p>
           </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MONTHLY, OCEANX_REPORT_MONTH } from '../data/oceanxMetrics';
+import { SectionHeader } from './SectionHeader';
 import styles from './ReachStrip.module.css';
 
 export function ReachStrip() {
@@ -7,14 +8,19 @@ export function ReachStrip() {
 
   const formatNumber = (num: number): string => num.toLocaleString();
 
+  const handleToggle = () => setShow(!show);
+
   return (
     <section className={styles.strip} aria-label="Reach">
-      <div className={styles.header}>
-        <button type="button" className={styles.sectionToggle} onClick={() => setShow(!show)} aria-expanded={show}>
-          <span className={styles.title}>Reach ({OCEANX_REPORT_MONTH})</span>
-          {show ? 'Hide' : 'Show'}
-        </button>
-      </div>
+      <SectionHeader
+        title="Reach"
+        subtitle={OCEANX_REPORT_MONTH}
+        goToLabel=""
+        goToHref="#"
+        isExpanded={show}
+        onToggle={handleToggle}
+        sectionId="reach"
+      />
       {show && (
         <div className={styles.stats}>
           <div className={styles.stat}>

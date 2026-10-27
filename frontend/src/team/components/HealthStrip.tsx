@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LIBRARY_YTD, OCEANX_REPORT_MONTH } from '../data/oceanxMetrics';
+import { SectionHeader } from './SectionHeader';
 import styles from './HealthStrip.module.css';
 
 export function HealthStrip() {
@@ -21,15 +22,19 @@ export function HealthStrip() {
     navigate('/team/insights', { state: { scrollToSection: 'hidden' } });
   };
 
+  const handleToggle = () => setShow(!show);
+
   return (
     <section className={styles.strip} aria-label="Library health">
-      <div className={styles.header}>
-        <button type="button" className={styles.sectionToggle} onClick={() => setShow(!show)} aria-expanded={show}>
-          <span className={styles.title}>Library health</span>
-          {show ? 'Hide' : 'Show'}
-        </button>
-        <a href="/team/insights" className={styles.link}>Go to Insights</a>
-      </div>
+      <SectionHeader
+        title="Library health"
+        subtitle="Year to date"
+        goToLabel="Go to Insights"
+        goToHref="/team/insights"
+        isExpanded={show}
+        onToggle={handleToggle}
+        sectionId="library-health"
+      />
       {show && (
         <div className={styles.stats}>
           <div className={styles.stat}>

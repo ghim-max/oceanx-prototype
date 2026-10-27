@@ -88,9 +88,8 @@
   padding-left: 0;
 }
 
-/* Highlight for hours saved column */
 .statHighlighted {
-  border-left: 3px solid #90E0EF;
+  /* No special highlight - same 1px divider as other stats */
 }
 
 .statInner {
