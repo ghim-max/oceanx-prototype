@@ -381,18 +381,18 @@ export function EducatorPackageFeedbackPage() {
 
                 <fieldset className={styles.fieldGroup}>
                   <legend className={styles.fieldLegend}>What did you do with it?</legend>
-                  <div className={styles.pillGroup}>
+                  <div className={styles.segBtns} role="radiogroup" aria-label="What did you do with it">
                     {usageOptions.map((opt) => (
-                      <label key={opt.value} className={styles.pillLabel}>
+                      <label key={opt.value} className={`${styles.segBtn} ${a?.usage === opt.value ? styles.segBtnActive : ''}`}>
                         <input
                           type="radio"
                           name={`usage-${compId}`}
                           value={opt.value}
                           checked={a?.usage === opt.value}
                           onChange={() => handleUsageChange(compId, opt.value)}
-                          className={styles.pillInput}
+                          className={styles.visuallyHidden}
                         />
-                        <span className={styles.pillText}>{opt.label}</span>
+                        <span>{opt.label}</span>
                       </label>
                     ))}
                   </div>
@@ -402,23 +402,23 @@ export function EducatorPackageFeedbackPage() {
                   <div className={styles.impactReveal}>
                     <fieldset className={styles.fieldGroup}>
                       <legend className={styles.fieldLegend}>How much did it help learners understand the topic?</legend>
-                      <div className={styles.pillGroup}>
+                      <div className={styles.ratingScale} role="radiogroup" aria-label="How much did it help learners understand the topic">
                         {[1, 2, 3, 4, 5].map((n) => (
-                          <label key={n} className={`${styles.pillLabel} ${styles.ratingPill}`}>
+                          <label key={n} className={`${styles.segBtn} ${a?.rating === n ? styles.segBtnActive : ''}`}>
                             <input
                               type="radio"
                               name={`rating-${compId}`}
                               value={n}
                               checked={a?.rating === n}
                               onChange={() => handleRatingChange(compId, n)}
-                              className={styles.pillInput}
+                              className={styles.visuallyHidden}
                               aria-label={n === 1 ? '1, not at all' : n === 5 ? '5, a lot' : String(n)}
                             />
-                            <span className={styles.pillText}>{n}</span>
+                            <span>{n}</span>
                           </label>
                         ))}
                       </div>
-                      <div className={styles.pillLabelText} aria-hidden="true">
+                      <div className={styles.ratingLabels} aria-hidden="true">
                         <span>1 = Not at all</span>
                         <span>5 = A lot</span>
                       </div>
@@ -426,23 +426,23 @@ export function EducatorPackageFeedbackPage() {
 
                     <fieldset className={styles.fieldGroup}>
                       <legend className={styles.fieldLegend}>How engaged were learners?</legend>
-                      <div className={styles.pillGroup}>
+                      <div className={styles.ratingScale} role="radiogroup" aria-label="How engaged were learners">
                         {[1, 2, 3, 4, 5].map((n) => (
-                          <label key={n} className={`${styles.pillLabel} ${styles.ratingPill}`}>
+                          <label key={n} className={`${styles.segBtn} ${a?.engagement === n ? styles.segBtnActive : ''}`}>
                             <input
                               type="radio"
                               name={`engagement-${compId}`}
                               value={n}
                               checked={a?.engagement === n}
                               onChange={() => handleEngagementChange(compId, n)}
-                              className={styles.pillInput}
+                              className={styles.visuallyHidden}
                               aria-label={n === 1 ? '1, not engaged' : n === 5 ? '5, very engaged' : String(n)}
                             />
-                            <span className={styles.pillText}>{n}</span>
+                            <span>{n}</span>
                           </label>
                         ))}
                       </div>
-                      <div className={styles.pillLabelText} aria-hidden="true">
+                      <div className={styles.ratingLabels} aria-hidden="true">
                         <span>1 = Not engaged</span>
                         <span>5 = Very engaged</span>
                       </div>
@@ -450,22 +450,22 @@ export function EducatorPackageFeedbackPage() {
 
                     <fieldset className={styles.fieldGroup}>
                       <legend className={styles.fieldLegend}>Did it fit the time you planned?</legend>
-                      <div className={styles.pillGroup}>
+                      <div className={styles.segBtns} role="radiogroup" aria-label="Did it fit the time you planned">
                         {[
                           { value: 'right', label: 'About right' },
                           { value: 'too_long', label: 'Too long' },
                           { value: 'too_short', label: 'Too short' },
                         ].map((opt) => (
-                          <label key={opt.value} className={styles.pillLabel}>
+                          <label key={opt.value} className={`${styles.segBtn} ${a?.time_fit === opt.value ? styles.segBtnActive : ''}`}>
                             <input
                               type="radio"
                               name={`time-fit-${compId}`}
                               value={opt.value}
                               checked={a?.time_fit === opt.value}
                               onChange={() => handleTimeFitChange(compId, opt.value as 'right' | 'too_long' | 'too_short')}
-                              className={styles.pillInput}
+                              className={styles.visuallyHidden}
                             />
-                            <span className={styles.pillText}>{opt.label}</span>
+                            <span>{opt.label}</span>
                           </label>
                         ))}
                       </div>
@@ -474,23 +474,23 @@ export function EducatorPackageFeedbackPage() {
                     {isAdapted && (
                       <fieldset className={styles.fieldGroup}>
                         <legend className={styles.fieldLegend}>Did the university adaptation help your teaching?</legend>
-                        <div className={styles.pillGroup}>
+                        <div className={styles.ratingScale} role="radiogroup" aria-label="Did the university adaptation help your teaching">
                           {[1, 2, 3, 4, 5].map((n) => (
-                            <label key={n} className={`${styles.pillLabel} ${styles.ratingPill}`}>
+                            <label key={n} className={`${styles.segBtn} ${a?.adaptation_helped === n ? styles.segBtnActive : ''}`}>
                               <input
                                 type="radio"
                                 name={`adaptation-helped-${compId}`}
                                 value={n}
                                 checked={a?.adaptation_helped === n}
                                 onChange={() => handleAdaptationHelpedChange(compId, n)}
-                                className={styles.pillInput}
+                                className={styles.visuallyHidden}
                                 aria-label={n === 1 ? '1, not at all' : n === 5 ? '5, a lot' : String(n)}
                               />
-                              <span className={styles.pillText}>{n}</span>
+                              <span>{n}</span>
                             </label>
                           ))}
                         </div>
-                        <div className={styles.pillLabelText} aria-hidden="true">
+                        <div className={styles.ratingLabels} aria-hidden="true">
                           <span>1 = Not at all</span>
                           <span>5 = A lot</span>
                         </div>
@@ -501,23 +501,23 @@ export function EducatorPackageFeedbackPage() {
 
                 <fieldset className={styles.fieldGroup}>
                   <legend className={styles.fieldLegend}>How well did it match your course goals?</legend>
-                  <div className={styles.pillGroup}>
+                  <div className={styles.ratingScale} role="radiogroup" aria-label="How well did it match your course goals">
                     {[1, 2, 3, 4, 5].map((n) => (
-                      <label key={n} className={`${styles.pillLabel} ${styles.ratingPill}`}>
+                      <label key={n} className={`${styles.segBtn} ${a?.curriculum_fit === n ? styles.segBtnActive : ''}`}>
                         <input
                           type="radio"
                           name={`curriculum-fit-${compId}`}
                           value={n}
                           checked={a?.curriculum_fit === n}
                           onChange={() => handleCurriculumFitChange(compId, n)}
-                          className={styles.pillInput}
+                          className={styles.visuallyHidden}
                           aria-label={n === 1 ? '1, not at all' : n === 5 ? '5, very well' : String(n)}
                         />
-                        <span className={styles.pillText}>{n}</span>
+                        <span>{n}</span>
                       </label>
                     ))}
                   </div>
-                  <div className={styles.pillLabelText} aria-hidden="true">
+                  <div className={styles.ratingLabels} aria-hidden="true">
                     <span>1 = Not at all</span>
                     <span>5 = Very well</span>
                   </div>

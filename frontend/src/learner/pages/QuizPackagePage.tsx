@@ -439,7 +439,7 @@ export function QuizPackagePage() {
                     value={idx}
                     checked={preAnswers[item.id] === idx}
                     onChange={() => setPreAnswers((prev) => ({ ...prev, [item.id]: idx }))}
-                    className={styles.optionInput}
+                    className={styles.visuallyHidden}
                   />
                   <span className={styles.optionText}>{option}</span>
                 </label>
@@ -448,30 +448,30 @@ export function QuizPackagePage() {
           </fieldset>
         ))}
         <fieldset className={styles.questionCard}>
-          <legend className={styles.questionLegend}>
-            <span className={styles.questionNumber}>Confidence</span>
-            How confident are you in the topics covered today?
-          </legend>
-          <div className={styles.confidencePillGroup} role="radiogroup" aria-label="Confidence">
-            {[1, 2, 3, 4, 5].map((n) => (
-              <label key={n} className={styles.pillLabel}>
-                <input
-                  type="radio"
-                  name="confidence_pre"
-                  value={n}
-                  checked={preConfidence === n}
-                  onChange={() => setPreConfidence(n)}
-                  className={styles.pillInput}
-                />
-                <span className={styles.pillText}>{n}</span>
-              </label>
-            ))}
-            <div className={styles.confidenceScale} aria-hidden="true">
-              <span>1 = Not at all</span>
-              <span>5 = Very confident</span>
-            </div>
-          </div>
-        </fieldset>
+                  <legend className={styles.questionLegend}>
+                    <span className={styles.questionNumber}>Confidence</span>
+                    How confident are you in the topics covered today?
+                  </legend>
+                  <div className={styles.ratingScale} role="radiogroup" aria-label="Confidence">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <label key={n} className={`${styles.segBtn} ${preConfidence === n ? styles.segBtnActive : ''}`}>
+                        <input
+                          type="radio"
+                          name="confidence_pre"
+                          value={n}
+                          checked={preConfidence === n}
+                          onChange={() => setPreConfidence(n)}
+                          className={styles.visuallyHidden}
+                        />
+                        <span>{n}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <div className={styles.ratingLabels} aria-hidden="true">
+                    <span>1 = Not at all</span>
+                    <span>5 = Very confident</span>
+                  </div>
+                </fieldset>
         <div className={styles.actions}>
           <button
             type="button"
@@ -544,7 +544,7 @@ export function QuizPackagePage() {
                         value={optIdx}
                         checked={postAnswers[q.id] === optIdx}
                         onChange={() => handlePostQuizChange(q.id, optIdx)}
-                        className={styles.optionInput}
+                        className={styles.visuallyHidden}
                       />
                       <span className={styles.optionText}>{option}</span>
                     </label>
@@ -571,29 +571,29 @@ export function QuizPackagePage() {
           <p>Your feedback helps us improve. All questions below are required except the last one.</p>
 
           <fieldset className={styles.feedbackFieldset}>
-            <legend className={styles.feedbackLegend}>
-              How confident are you in the topics covered today?
-            </legend>
-            <div className={styles.confidencePillGroup} role="radiogroup" aria-label="Confidence">
-              {[1, 2, 3, 4, 5].map((n) => (
-                <label key={n} className={styles.pillLabel}>
-                  <input
-                    type="radio"
-                    name="confidence_post"
-                    value={n}
-                    checked={feedbackAnswers.confidence_post === n}
-                    onChange={() => handleFeedbackChange('confidence_post', n)}
-                    className={styles.pillInput}
-                  />
-                  <span className={styles.pillText}>{n}</span>
-                </label>
-              ))}
-              <div className={styles.confidenceScale} aria-hidden="true">
-                <span>1 = Not at all</span>
-                <span>5 = Very confident</span>
-              </div>
-            </div>
-          </fieldset>
+                      <legend className={styles.feedbackLegend}>
+                        How confident are you in the topics covered today?
+                      </legend>
+                      <div className={styles.ratingScale} role="radiogroup" aria-label="Confidence">
+                        {[1, 2, 3, 4, 5].map((n) => (
+                          <label key={n} className={`${styles.segBtn} ${feedbackAnswers.confidence_post === n ? styles.segBtnActive : ''}`}>
+                            <input
+                              type="radio"
+                              name="confidence_post"
+                              value={n}
+                              checked={feedbackAnswers.confidence_post === n}
+                              onChange={() => handleFeedbackChange('confidence_post', n)}
+                              className={styles.visuallyHidden}
+                            />
+                            <span>{n}</span>
+                          </label>
+                        ))}
+                      </div>
+                      <div className={styles.ratingLabels} aria-hidden="true">
+                        <span>1 = Not at all</span>
+                        <span>5 = Very confident</span>
+                      </div>
+                    </fieldset>
 
 
           <fieldset className={styles.feedbackFieldset}>
@@ -609,7 +609,7 @@ export function QuizPackagePage() {
                     value={title}
                     checked={feedbackAnswers.helpedMost === title}
                     onChange={() => handleFeedbackChange('helpedMost', title)}
-                    className={styles.helpedInput}
+                    className={styles.visuallyHidden}
                   />
                   <span className={styles.helpedText}>{title}</span>
                 </label>
@@ -633,7 +633,7 @@ export function QuizPackagePage() {
                       checked={feedbackAnswers.least_useful === title}
                       onChange={() => !isDisabled && handleFeedbackChange('least_useful', title)}
                       disabled={isDisabled}
-                      className={styles.helpedInput}
+                      className={styles.visuallyHidden}
                     />
                     <span className={styles.helpedText}>{title}</span>
                   </label>
@@ -646,20 +646,24 @@ export function QuizPackagePage() {
             <legend className={styles.feedbackLegend}>
               How satisfied were you with today's session?
             </legend>
-            <div className={styles.pillGroup} role="radiogroup" aria-label="Satisfaction">
+            <div className={styles.ratingScale} role="radiogroup" aria-label="Satisfaction">
               {[1, 2, 3, 4, 5].map((n) => (
-                <label key={n} className={styles.pillLabel}>
+                <label key={n} className={`${styles.segBtn} ${feedbackAnswers.satisfaction === n ? styles.segBtnActive : ''}`}>
                   <input
                     type="radio"
                     name="satisfaction"
                     value={n}
                     checked={feedbackAnswers.satisfaction === n}
                     onChange={() => handleFeedbackChange('satisfaction', n)}
-                    className={styles.pillInput}
+                    className={styles.visuallyHidden}
                   />
-                  <span className={styles.pillText}>{n}</span>
+                  <span>{n}</span>
                 </label>
               ))}
+            </div>
+            <div className={styles.ratingLabels} aria-hidden="true">
+              <span>1 = Not at all</span>
+              <span>5 = Very satisfied</span>
             </div>
           </fieldset>
 
@@ -667,28 +671,28 @@ export function QuizPackagePage() {
             <legend className={styles.feedbackLegend}>
               Would you recommend this session to a friend?
             </legend>
-            <div className={styles.pillGroup} role="radiogroup" aria-label="Recommend">
-              <label className={styles.pillLabel}>
+            <div className={styles.segBtns} role="radiogroup" aria-label="Recommend">
+              <label className={`${styles.segBtn} ${feedbackAnswers.wouldRecommend === true ? styles.segBtnActive : ''}`}>
                 <input
                   type="radio"
                   name="wouldRecommend"
                   value="yes"
                   checked={feedbackAnswers.wouldRecommend === true}
                   onChange={() => handleFeedbackChange('wouldRecommend', true)}
-                  className={styles.pillInput}
+                  className={styles.visuallyHidden}
                 />
-                <span className={styles.pillText}>Yes</span>
+                <span>Yes</span>
               </label>
-              <label className={styles.pillLabel}>
+              <label className={`${styles.segBtn} ${feedbackAnswers.wouldRecommend === false ? styles.segBtnActive : ''}`}>
                 <input
                   type="radio"
                   name="wouldRecommend"
                   value="no"
                   checked={feedbackAnswers.wouldRecommend === false}
                   onChange={() => handleFeedbackChange('wouldRecommend', false)}
-                  className={styles.pillInput}
+                  className={styles.visuallyHidden}
                 />
-                <span className={styles.pillText}>No</span>
+                <span>No</span>
               </label>
             </div>
           </fieldset>
