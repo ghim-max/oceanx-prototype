@@ -27,7 +27,7 @@ export function EntryPage() {
           </div>
           <div role="listitem">
             <ImageCard
-              to="/team/insights"
+              to="/team/overview"
               title="OceanX Education team"
               description="Review content performance and recommendations."
               imagePath={teamImg}
