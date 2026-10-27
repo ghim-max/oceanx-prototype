@@ -34,6 +34,7 @@ export interface StoryComponent {
   videoId?: string;
   links?: ComponentLink[];
   thumbnail?: string;
+  originalText?: string;
 }
 
 export interface Story {
@@ -225,6 +226,7 @@ export const SEAGRASS_STORIES: Story = {
       isExternal: false,
       isWorking: true,
       thumbnail: seagrassMapThumb,
+      originalText: "Groups of 2 to 3 learners design an experience that helps someone else understand an idea about ocean restoration. Each group uses 6 to 10 Post-its to build a causal chain: Choice or Action, then Consequence, then Habitat Response, then Change Over Time. Groups connect their Post-its with arrows to show how one change leads to the next.",
     },
 
     // ── Additional support ─────────────────────────────────────────────────

@@ -18,7 +18,7 @@ import {
 } from '../../shared/services/recommendComponents';
 import { usePicks } from '../../shared/context/PicksContext';
 import { UNIVERSITY_STATUS } from '../../shared/data/university-version';
-import { rewriteWithAI, markAdaptationStarted, getLibraryState } from '../../team/data/governanceService';
+import { rewriteWithAI, markAdaptationStarted, getLibraryState, COMPONENT_SOURCES } from '../../team/data/governanceService';
 import styles from './AdaptPage.module.css';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -327,6 +327,11 @@ function AIAdaptationSection({
   const isActive = aiRewriteState.componentId === componentId;
   const status = isActive ? aiRewriteState.status : 'idle';
 
+  // Get original text and sources from component data
+  const component = SEAGRASS_STORIES.components.find((c) => c.id === componentId);
+  const originalText = component?.originalText || acceptedData?.originalText || '';
+  const sourcesUsed = component ? COMPONENT_SOURCES[componentId] || ['seagrass_sources.md'] : (acceptedData?.sourcesUsed || ['seagrass_sources.md']);
+
   const handleStartRewrite = (level: 'secondary' | 'university' | 'postgrad', length: 'shorter' | 'same' | 'longer') => {
     setAiRewriteState({
       componentId,
@@ -370,12 +375,6 @@ function AIAdaptationSection({
       result: null,
       error: null,
     });
-  };
-
-  const handleTryAgain = () => {
-    if (aiRewriteState.componentId) {
-      handleStartRewrite(aiRewriteState.level, aiRewriteState.length);
-    }
   };
 
   const handleRemoveAccepted = () => {
@@ -422,7 +421,7 @@ function AIAdaptationSection({
           <label className={styles.aiControlLabel}>Level</label>
           <select
             className={styles.aiSelect}
-            value={isActive && aiRewriteState.level || 'university'}
+            value={aiRewriteState.level}
             onChange={(e) => setAiRewriteState(prev => ({ ...prev, level: e.target.value as 'secondary' | 'university' | 'postgrad' }))}
             disabled={status === 'loading'}
           >
@@ -435,7 +434,7 @@ function AIAdaptationSection({
           <label className={styles.aiControlLabel}>Length</label>
           <select
             className={styles.aiSelect}
-            value={isActive && aiRewriteState.length || 'same'}
+            value={aiRewriteState.length}
             onChange={(e) => setAiRewriteState(prev => ({ ...prev, length: e.target.value as 'shorter' | 'same' | 'longer' }))}
             disabled={status === 'loading'}
           >
@@ -447,7 +446,7 @@ function AIAdaptationSection({
         <button
           type="button"
           className={`${styles.aiRewriteBtn} ${status === 'loading' ? styles.aiRewriteBtnLoading : ''}`}
-          onClick={() => handleStartRewrite(isActive ? aiRewriteState.level : 'university', isActive ? aiRewriteState.length : 'same')}
+          onClick={() => handleStartRewrite(aiRewriteState.level, aiRewriteState.length)}
           disabled={status === 'loading'}
         >
           {status === 'loading' ? (
@@ -468,34 +467,80 @@ function AIAdaptationSection({
         </div>
       )}
 
-      {status === 'result' && aiRewriteState.result && (
-        <div className={styles.aiResult}>
+      {/* Side-by-side Original | AI version - always visible when component has originalText */}
+      {originalText && (
+        <div className={styles.aiPreviewRow}>
           <div className={styles.aiPreviewCol}>
             <span className={styles.aiPreviewLabel}>Original</span>
-            <p className={styles.aiPreviewText}>{acceptedData?.originalText || 'Original text not available'}</p>
+            <p className={styles.aiPreviewText}>{originalText}</p>
           </div>
           <div className={styles.aiPreviewCol}>
-            <span className={styles.aiPreviewLabel}>AI version ({isActive ? aiRewriteState.level : 'university'}, {isActive ? aiRewriteState.length : 'same'})</span>
-            <p className={styles.aiPreviewText}>{aiRewriteState.result.rewrittenText}</p>
-          </div>
-          <p className={styles.aiSources}>Sources used: {aiRewriteState.result.sourcesUsed.join(', ')}</p>
-          <div className={styles.aiResultActions}>
-            <button type="button" className={styles.aiUseBtn} onClick={handleUseAI}>
-              <CheckCheck size={14} aria-hidden="true" />
-              Use AI version
-            </button>
-            <button type="button" className={styles.aiDiscardBtn} onClick={handleDiscard}>
-              Discard
-            </button>
-            <button type="button" className={styles.aiRetryBtn} onClick={handleTryAgain}>
-              <RotateCcw size={14} aria-hidden="true" />
-              Try again
-            </button>
+            <span className={styles.aiPreviewLabel}>
+              AI version ({aiRewriteState.level}, {aiRewriteState.length})
+            </span>
+            <p className={styles.aiPreviewText}>
+              {status === 'result' && aiRewriteState.result
+                ? aiRewriteState.result.rewrittenText
+                : 'Select Level and Length, then click "Rewrite with AI" to generate a version.'}
+            </p>
           </div>
         </div>
       )}
 
-      <p className={styles.aiNote}>AI versions are checked by the OceanX team before your email is sent.</p>
+      {!originalText && (
+        <p className={styles.aiNoOriginal}>
+          This component does not have an original text available for AI adaptation.
+        </p>
+      )}
+
+      {/* Buttons row under the boxes */}
+      {originalText && (
+        <div className={styles.aiActionRow}>
+          {status === 'result' && aiRewriteState.result ? (
+            <>
+              <button type="button" className={styles.aiUseBtn} onClick={handleUseAI}>
+                <CheckCheck size={14} aria-hidden="true" />
+                Use AI version
+              </button>
+              <button type="button" className={styles.aiDiscardBtn} onClick={handleDiscard}>
+                Undo
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className={styles.aiUseBtn}
+                onClick={() => handleStartRewrite(aiRewriteState.level, aiRewriteState.length)}
+                disabled={status === 'loading'}
+              >
+                <CheckCheck size={14} aria-hidden="true" />
+                Use AI version
+              </button>
+              <button type="button" className={styles.aiDiscardBtn} onClick={handleDiscard}>
+                Discard
+              </button>
+              <button
+                type="button"
+                className={styles.aiRetryBtn}
+                onClick={() => handleStartRewrite(aiRewriteState.level, aiRewriteState.length)}
+                disabled={status === 'loading'}
+              >
+                <RotateCcw size={14} aria-hidden="true" />
+                Try again
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {originalText && (
+        <p className={styles.aiNote}>AI versions are checked by the OceanX team before your email is sent.</p>
+      )}
+
+      <p className={styles.aiSources}>
+        Sources used: {sourcesUsed.join(', ')}
+      </p>
     </div>
   );
 }

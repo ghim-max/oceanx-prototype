@@ -113,8 +113,8 @@ export const COMPONENT_TITLES: Record<string, string> = {
 };
 
 // Original texts for AI rewriting (from seagrass-stories.ts)
-const COMPONENT_ORIGINAL_TEXTS: Record<string, string> = {
-  'create-activity': 'Groups use sticky notes to trace how one decision ripples through a seagrass ecosystem over time.',
+export const COMPONENT_ORIGINAL_TEXTS: Record<string, string> = {
+  'create-activity': "Groups of 2 to 3 learners design an experience that helps someone else understand an idea about ocean restoration. Each group uses 6 to 10 Post-its to build a causal chain: Choice or Action, then Consequence, then Habitat Response, then Change Over Time. Groups connect their Post-its with arrows to show how one change leads to the next.",
   'investigate-prompts': 'Discussion prompts to use during and after the game: what restoration decisions did you face, what trade-offs arose, and what would you change?',
   'reflect-prompts': 'A structured conversation about the human and political dimensions of conservation decisions.',
   'learning-intention': 'What learners will explore in this story and how they will share what they learn.',
@@ -122,7 +122,7 @@ const COMPONENT_ORIGINAL_TEXTS: Record<string, string> = {
 };
 
 // Source files for each component (from backend/app/sources/)
-const COMPONENT_SOURCES: Record<string, string[]> = {
+export const COMPONENT_SOURCES: Record<string, string[]> = {
   'create-activity': ['seagrass_systems.md', 'ecosystem_cascades.md'],
   'investigate-prompts': ['game_decisions.md', 'tradeoffs.md'],
   'reflect-prompts': ['conservation_politics.md', 'human_dimensions.md'],
@@ -927,7 +927,34 @@ export async function rewriteWithAI(
 
   let rewrittenText = '';
 
-  // Generate level-appropriate text
+  // Mock rewrites for "Map the chain: choice, consequence, change" (create-activity)
+  if (componentId === 'create-activity') {
+    const levelTexts: Record<string, string> = {
+      secondary:
+        "In groups of 2 or 3, use 6 to 10 Post-its to show how one choice changes a seagrass meadow. Write the choice first, then what happens next, how the seagrass responds, and what changes over time. Draw arrows to connect each step.",
+      university:
+        "Groups of 2 to 3 learners map a causal chain for one seagrass restoration decision. Using 6 to 10 Post-its, each group links a Choice or Action to its Consequence, the Habitat Response and the Change Over Time, then connects them with arrows. Each group explains one link in their chain and the evidence from the session that supports it.",
+      postgrad:
+        "In groups of 2 to 3, build a causal chain for one restoration intervention using 6 to 10 Post-its: Choice or Action, Consequence, Habitat Response, Change Over Time. Connect each link with arrows, then mark the link you are least certain about and discuss what evidence would be needed to confirm it.",
+    };
+
+    rewrittenText = levelTexts[level];
+
+    // Apply length modifier
+    if (length === 'shorter') {
+      // First 2 sentences of the level's text
+      const sentences = rewrittenText.split('. ');
+      rewrittenText = sentences.slice(0, 2).join('. ') + '.';
+    } else if (length === 'longer') {
+      // Level's text + new paragraph
+      rewrittenText +=
+        ' Discuss: Which link in your chain would be hardest to measure in a real meadow, and why?';
+    }
+
+    return { rewrittenText, sourcesUsed };
+  }
+
+  // Fallback for other components (should not happen for now)
   switch (level) {
     case 'secondary':
       rewrittenText = `For secondary learners: ${originalText} This version uses simpler language and breaks the activity into clear steps with guided prompts.`;
@@ -940,7 +967,6 @@ export async function rewriteWithAI(
       break;
   }
 
-  // Apply length modifier
   if (length === 'shorter') {
     rewrittenText = rewrittenText.split('. ').slice(0, Math.ceil(rewrittenText.split('. ').length / 2)).join('. ') + '.';
   } else if (length === 'longer') {
