@@ -33,5 +33,5 @@ export const HOURS_BREAKDOWN = {
 
 export const ASSUMED_REDUCTION = {
   review: 0.5,
-  adaptation: 0.4,
+  adaptation: 0.5,
 };

@@ -13,8 +13,6 @@ export function HealthStrip() {
   const obsoleteItems = LIBRARY_YTD.obsolete;
 
   // Proven from governanceService (prototype)
-  // We'll keep it dynamic from localStorage for now, but could also hardcode
-  // For now, we'll use a static value from the October report context
   const provenItems = 42; // prototype value
 
   const formatNumber = (num: number): string => num.toLocaleString();
@@ -101,7 +99,7 @@ export function HealthStrip() {
           </div>
         </div>
       )}
-      <p className={styles.sourceLine}>
+      <p className={styles.sectionNote}>
         Library, year to date. Source: OceanX Digital Content Management, {OCEANX_REPORT_MONTH}.
       </p>
     </section>

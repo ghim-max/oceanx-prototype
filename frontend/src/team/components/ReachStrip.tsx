@@ -39,7 +39,7 @@ export function ReachStrip() {
                 <span className={styles.bigNumber}>{formatNumber(MONTHLY.otherInstitutions)}</span>
               </div>
             </div>
-            <p className={styles.sentence}>Museums and other organisations</p>
+            <p className={styles.sentence}>Universities and other organisations</p>
           </div>
           <div className={styles.stat}>
             <div className={styles.statInner}>
@@ -51,7 +51,7 @@ export function ReachStrip() {
                 <span className={styles.bigNumber}>{formatNumber(MONTHLY.countries)}</span>
               </div>
             </div>
-            <p className={styles.sentence}>Countries with OceanX learners</p>
+            <p className={styles.sentence}>Countries OceanX content was shared to</p>
           </div>
           <div className={styles.stat}>
             <div className={styles.statInner}>
@@ -67,7 +67,7 @@ export function ReachStrip() {
           </div>
         </div>
       )}
-      <p className={styles.sourceLine}>
+      <p className={styles.sectionNote}>
         Shared this month: {MONTHLY.websitesShared} websites, {MONTHLY.digitalMediaShared} digital media files.
       </p>
     </section>

@@ -34,54 +34,66 @@ export function TimePanel() {
         <a href="/team/review" className={styles.link}>Go to Review</a>
       </div>
       {show && (
-        <div className={styles.content}>
-          <div className={styles.row}>
-            <div className={styles.item}>
-              <div className={styles.label}>Total team hours (year to date)</div>
-              <div className={styles.values}>
+        <div className={styles.stats}>
+          <div className={styles.stat}>
+            <div className={styles.statInner}>
+              <div className={styles.labelRow}>
+                <span className={styles.accentSquare} aria-hidden="true" />
+                <span className={styles.labelText}>Total team hours</span>
+              </div>
+              <div className={styles.numberRow}>
                 <span className={styles.bigNumber}>{formatNumber(totalHoursYTD)} h</span>
               </div>
-              <p className={styles.sentence}>
-                3 staff: S.T. {formatNumber(TEAM_HOURS_YTD["S.T."])} h, P.H. {formatNumber(TEAM_HOURS_YTD["P.H."])} h, A.N. {formatNumber(TEAM_HOURS_YTD["A.N."])} h
-              </p>
             </div>
-            <div className={styles.item}>
-              <div className={styles.label}>Content review</div>
-              <div className={styles.values}>
+            <p className={styles.sentence}>
+              3 staff: S.T. {formatNumber(TEAM_HOURS_YTD["S.T."])} h, P.H. {formatNumber(TEAM_HOURS_YTD["P.H."])} h, A.N. {formatNumber(TEAM_HOURS_YTD["A.N."])} h
+            </p>
+          </div>
+          <div className={styles.stat}>
+            <div className={styles.statInner}>
+              <div className={styles.labelRow}>
+                <span className={styles.accentSquare} aria-hidden="true" />
+                <span className={styles.labelText}>Content review</span>
+              </div>
+              <div className={styles.numberRow}>
                 <span className={styles.bigNumber}>{formatNumber(contentReviewHours)} h</span>
                 <span className={styles.percentage}>({Math.round(HOURS_BREAKDOWN.contentReview * 100)}%)</span>
               </div>
             </div>
-            <div className={styles.item}>
-              <div className={styles.label}>Content adaptation</div>
-              <div className={styles.values}>
+            <p className={styles.sentence}>Year to date</p>
+          </div>
+          <div className={styles.stat}>
+            <div className={styles.statInner}>
+              <div className={styles.labelRow}>
+                <span className={styles.accentSquare} aria-hidden="true" />
+                <span className={styles.labelText}>Content adaptation</span>
+              </div>
+              <div className={styles.numberRow}>
                 <span className={styles.bigNumber}>{formatNumber(contentAdaptationHours)} h</span>
                 <span className={styles.percentage}>({Math.round(HOURS_BREAKDOWN.contentAdaptation * 100)}%)</span>
               </div>
             </div>
-            <div className={styles.itemSaved}>
-              <div className={styles.label}>Estimated hours saved (year to date)</div>
-              <div className={styles.savedValue}>
-                {formatNumber(totalSaved)} h
+            <p className={styles.sentence}>Year to date</p>
+          </div>
+          <div className={`${styles.stat} ${styles.statHighlighted}`}>
+            <div className={styles.statInner}>
+              <div className={styles.labelRow}>
+                <span className={styles.accentSquare} aria-hidden="true" />
+                <span className={styles.labelText}>Estimated hours saved</span>
               </div>
-              <p className={styles.savedTooltip}>
-                Assumes review time drops by 50% and adaptation time by 40% with the prototype. Prototype estimate.
-              </p>
+              <div className={styles.numberRow}>
+                <span className={styles.bigNumber}>{formatNumber(totalSaved)} h</span>
+              </div>
             </div>
+            <p className={styles.savedTooltip}>
+              Assumes review and adaptation time drop by 50% with the prototype. Prototype estimate.
+            </p>
           </div>
-          <div className={styles.breakdownRow}>
-            <span className={styles.breakdownLabel}>Full breakdown:</span>
-            <span className={styles.breakdownItem}>Review {Math.round(HOURS_BREAKDOWN.contentReview * 100)}%</span>
-            <span className={styles.breakdownItem}>Support {Math.round(HOURS_BREAKDOWN.userSupport * 100)}%</span>
-            <span className={styles.breakdownItem}>Adaptation {Math.round(HOURS_BREAKDOWN.contentAdaptation * 100)}%</span>
-            <span className={styles.breakdownItem}>Admin {Math.round(HOURS_BREAKDOWN.administration * 100)}%</span>
-            <span className={styles.breakdownItem}>Maintenance {Math.round(HOURS_BREAKDOWN.maintenance * 100)}%</span>
-          </div>
-          <p className={styles.sourceLine}>
-            Team time, year to date. Source: OceanX Operations, {OCEANX_REPORT_MONTH}.
-          </p>
         </div>
       )}
+      <p className={styles.sectionNote}>
+        Team time, year to date. Source: OceanX Operations, {OCEANX_REPORT_MONTH}.
+      </p>
     </section>
   );
 }
