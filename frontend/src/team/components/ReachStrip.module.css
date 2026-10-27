@@ -7,43 +7,6 @@
   overflow: hidden;
 }
 
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-4) var(--space-6);
-  border-bottom: 1px solid var(--color-border-subtle);
-  background: var(--color-bg);
-}
-
-.title {
-  font-family: var(--font-display);
-  font-size: var(--text-h3);
-  font-weight: var(--weight-h3);
-  color: var(--color-heading);
-  text-decoration: none;
-}
-
-.sectionToggle {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: 0;
-  border: none;
-  background: none;
-  font-family: inherit;
-  font-size: var(--text-small);
-  font-weight: 500;
-  color: var(--color-link);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-}
-
-.sectionToggle:hover {
-  color: var(--color-link-hover);
-}
-
 /* Stats row - flexbox for equal columns */
 .stats {
   display: flex;

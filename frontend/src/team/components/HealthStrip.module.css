@@ -7,63 +7,6 @@
   overflow: hidden;
 }
 
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-4) var(--space-6);
-  border-bottom: 1px solid var(--color-border-subtle);
-  background: var(--color-bg);
-}
-
-.title {
-  font-family: var(--font-display);
-  font-size: var(--text-h3);
-  font-weight: var(--weight-h3);
-  color: var(--color-heading);
-  text-decoration: none;
-}
-
-.link {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: 0;
-  border: none;
-  background: none;
-  font-family: inherit;
-  font-size: var(--space-4);
-  font-weight: 500;
-  color: var(--color-link);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-}
-
-.link:hover {
-  color: var(--color-link-hover);
-}
-
-.sectionToggle {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: 0;
-  border: none;
-  background: none;
-  font-family: inherit;
-  font-size: var(--text-small);
-  font-weight: 500;
-  color: var(--color-link);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-}
-
-.sectionToggle:hover {
-  color: var(--color-link-hover);
-}
-
 /* Stats row - flexbox for equal columns */
 .stats {
   display: flex;
@@ -152,15 +95,6 @@
   margin: 0;
 }
 
-.sourceLine {
-  font-size: 12px;
-  font-weight: 350;
-  color: var(--color-text-muted);
-  margin-top: var(--space-4);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--color-border-subtle);
-}
-
 /* Shared footnote style */
 .sectionNote {
   padding: 12px 24px 16px 24px;
@@ -169,22 +103,6 @@
   color: #6B7F8E;
   line-height: 18px;
   border-top: 1px solid var(--color-border-subtle);
-}
-
-.prototypeBadge {
-  display: inline-flex;
-  align-items: center;
-  margin-top: var(--space-2);
-  padding: 2px 8px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-pill);
-  background: var(--color-surface);
-  color: var(--color-text-muted);
-  font-size: var(--text-micro);
-  font-weight: 600;
-  font-family: var(--font-body);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .obsoleteLink {
@@ -203,11 +121,6 @@
 
 .obsoleteLink:hover {
   color: var(--color-link-hover);
-}
-
-/* Highlight border for hours saved column */
-.statHighlighted {
-  border-left: 3px solid #90E0EF;
 }
 
 /* Responsive */

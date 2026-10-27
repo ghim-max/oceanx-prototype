@@ -1,77 +1,38 @@
-.header {
+.sectionHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px;
   border-bottom: 1px solid #E3E9ED;
-  background: var(--color-bg);
 }
 
-.left {
-  flex: 1;
-}
-
-.right {
+.sectionHeaderText {
   display: flex;
-  align-items: center;
-  gap: 16px;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.titleRow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.title {
+.sectionTitle {
+  margin: 0;
   font-size: 18px;
   font-weight: 600;
+  line-height: 24px;
   color: #0B1F33;
-  margin: 0;
   text-decoration: none;
 }
 
-.subtitle {
+.sectionSubtitle {
+  margin: 0;
   font-size: 13px;
+  line-height: 18px;
   color: #6B7F8E;
-  margin-top: 2px;
-  display: block;
-}
-
-.sectionToggle {
-  display: inline-flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 0;
-  border: none;
-  background: none;
-  font-family: inherit;
-  font-size: var(--text-small);
-  font-weight: 500;
-  color: var(--color-link);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-  text-align: left;
-}
-
-.sectionToggle:hover {
-  color: var(--color-link-hover);
 }
 
 .goToLink {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: 0;
-  border: none;
-  background: none;
-  font-family: inherit;
   font-size: 13px;
   font-weight: 500;
   color: #0B6E85;
   text-decoration: none;
-  cursor: pointer;
   white-space: nowrap;
 }
 
@@ -79,46 +40,11 @@
   text-decoration: underline;
 }
 
-.collapseBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: transparent;
-  border-radius: var(--radius-md);
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  transition: background 150ms ease, color 150ms ease;
-  flex-shrink: 0;
-}
-
-.collapseBtn:hover {
-  background: var(--color-surface);
-  color: var(--color-heading);
-}
-
-.collapseBtn:focus-visible {
-  outline: 2px solid var(--color-link);
-  outline-offset: 2px;
-}
-
-.chevron {
-  transition: transform 200ms ease;
-}
-
-.chevronRotated {
-  transform: rotate(180deg);
-}
-
 /* Responsive */
 @media (max-width: 600px) {
-  .header {
+  .sectionHeader {
     padding: 16px 16px;
-  }
-
-  .right {
+    flex-wrap: wrap;
     gap: 12px;
   }
 
