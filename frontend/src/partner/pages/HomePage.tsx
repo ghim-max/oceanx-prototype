@@ -180,23 +180,6 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* ── Team landing ───────────────────────────────────────── */}
-      <section data-reveal className={styles.teamLanding} aria-labelledby="team-landing-heading">
-        <div className={styles.wideInner}>
-          <div className={styles.teamLandingCard}>
-            <div className={styles.teamLandingContent}>
-              <h2 className={styles.teamLandingTitle} id="team-landing-heading">OceanX Education team</h2>
-              <p className={styles.teamLandingDesc}>
-                Review library decisions, view insights and manage the question bank.
-              </p>
-            </div>
-            <LinkButton to="/team/overview" variant="dark">
-              Open team dashboard
-            </LinkButton>
-          </div>
-        </div>
-      </section>
-
       {/* ── 4. Browse by audience ───────────────────────────── */}
       <section data-reveal className={styles.audienceSection} aria-labelledby="audience-heading">
         <div className={styles.wideInner}>

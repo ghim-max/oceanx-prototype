@@ -348,68 +348,6 @@
 }
 
 /* ──────────────────────────────────────────────────────────────
-   Team landing
-   ────────────────────────────────────────────────────────────── */
-.teamLanding {
-  padding-block: var(--space-16);
-  background: var(--color-surface);
-}
-
-.teamLandingCard {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: var(--space-6);
-  padding: var(--space-8);
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  max-width: 640px;
-  margin: 0 auto;
-}
-
-@media (min-width: 640px) {
-  .teamLandingCard {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-  }
-}
-
-.teamLandingContent {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.teamLandingTitle {
-  font-family: var(--font-display);
-  font-size: var(--text-h3);
-  font-weight: var(--weight-h2);
-  color: var(--color-heading);
-  letter-spacing: -0.01em;
-  margin: 0;
-}
-
-.teamLandingDesc {
-  font-size: var(--text-body);
-  color: var(--color-text-secondary);
-  line-height: 1.6;
-  margin: 0;
-  max-width: 40ch;
-}
-
-@media (max-width: 768px) {
-  .teamLanding {
-    padding-block: var(--space-12);
-  }
-
-  .teamLandingCard {
-    padding: var(--space-6);
-  }
-}
-
-/* ──────────────────────────────────────────────────────────────
    Responsive
    ────────────────────────────────────────────────────────────── */
 
