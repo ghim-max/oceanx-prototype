@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import React from 'react';
-import { ArrowLeft, ShieldCheck, Play, Gamepad2, MessageCircle, Pencil, BookOpen, BookMarked, ListChecks, Eye, Sparkles, RotateCcw, CheckCheck, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, Play, Gamepad2, MessageCircle, Pencil, BookOpen, BookMarked, ListChecks, Eye, Sparkles, RotateCcw, CheckCheck } from 'lucide-react';
 import { getApprovedBankItems, type BankItem } from '../../shared/services/bankApi';
 import { assembleQuiz, type QuizType, type QuizDifficulty, type AssembleResult } from '../../shared/services/assembleQuiz';
 import { assembleLessonPlan, type LessonLevel, type LessonPlan } from '../../shared/services/assembleLessonPlan';
@@ -19,6 +19,7 @@ import {
 import { usePicks } from '../../shared/context/PicksContext';
 import { UNIVERSITY_STATUS } from '../../shared/data/university-version';
 import { rewriteWithAI, markAdaptationStarted, getLibraryState, COMPONENT_SOURCES } from '../../team/data/governanceService';
+import { CollapsibleSection } from '../../shared/ui/CollapsibleSection';
 import styles from './AdaptPage.module.css';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -271,6 +272,7 @@ function SummaryBar({
 }
 
 // ─── AIAdaptationSection ──────────────────────────────────────────────────────
+
 interface AIAdaptationSectionProps {
   componentId: string;
   componentTitle: string;
@@ -383,11 +385,14 @@ function AIAdaptationSection({
 
   if (isAccepted && acceptedData) {
     return (
-      <div className={styles.aiAccepted}>
-        <div className={styles.aiAcceptedBadge}>
-          <CheckCheck size={14} aria-hidden="true" />
-          <span>AI version, needs OceanX review</span>
-        </div>
+      <CollapsibleSection
+        title="Adapt with AI"
+        subtitle={<span className={styles.aiAcceptedBadge}><CheckCheck size={14} aria-hidden="true" /> AI version, needs OceanX review</span>}
+        summary={`AI version added (${acceptedData.level}, ${acceptedData.length}) · needs OceanX review`}
+        defaultOpen={true}
+        storageKey={`adapt-ai-${componentId}`}
+        autoCollapse={true}
+      >
         <div className={styles.aiAcceptedPreview}>
           <div className={styles.aiPreviewCol}>
             <span className={styles.aiPreviewLabel}>Original</span>
@@ -404,144 +409,147 @@ function AIAdaptationSection({
           Undo
         </button>
         <p className={styles.aiNote}>AI versions are checked by the OceanX team before your email is sent.</p>
-      </div>
+      </CollapsibleSection>
     );
   }
 
   return (
-    <div className={styles.aiSection}>
-      <h4 className={styles.aiSectionTitle}>
-        <Sparkles size={16} aria-hidden="true" />
-        Adapt with AI
-      </h4>
-      <p className={styles.aiSectionDesc}>Rewrite this component for a different level or length using approved OceanX sources.</p>
-
-      <div className={styles.aiControls}>
-        <div className={styles.aiControlGroup}>
-          <label className={styles.aiControlLabel}>Level</label>
-          <select
-            className={styles.aiSelect}
-            value={aiRewriteState.level}
-            onChange={(e) => setAiRewriteState(prev => ({ ...prev, level: e.target.value as 'secondary' | 'university' | 'postgrad' }))}
+    <CollapsibleSection
+      title="Adapt with AI"
+      subtitle={<><Sparkles size={16} aria-hidden="true" /> Rewrite this component for a different level or length using approved OceanX sources.</>}
+      summary={acceptedData ? `AI version added (${acceptedData.level}, ${acceptedData.length}) · needs OceanX review` : 'Not used'}
+      defaultOpen={true}
+      storageKey={`adapt-ai-${componentId}`}
+      autoCollapse={status === 'result' && !!aiRewriteState.result}
+    >
+      <div className={styles.aiSection}>
+        <div className={styles.aiControls}>
+          <div className={styles.aiControlGroup}>
+            <label className={styles.aiControlLabel}>Level</label>
+            <select
+              className={styles.aiSelect}
+              value={aiRewriteState.level}
+              onChange={(e) => setAiRewriteState(prev => ({ ...prev, level: e.target.value as 'secondary' | 'university' | 'postgrad' }))}
+              disabled={status === 'loading'}
+            >
+              <option value="secondary">Secondary</option>
+              <option value="university">University</option>
+              <option value="postgrad">Postgraduate</option>
+            </select>
+          </div>
+          <div className={styles.aiControlGroup}>
+            <label className={styles.aiControlLabel}>Length</label>
+            <select
+              className={styles.aiSelect}
+              value={aiRewriteState.length}
+              onChange={(e) => setAiRewriteState(prev => ({ ...prev, length: e.target.value as 'shorter' | 'same' | 'longer' }))}
+              disabled={status === 'loading'}
+            >
+              <option value="shorter">Shorter</option>
+              <option value="same">Same</option>
+              <option value="longer">Longer</option>
+            </select>
+          </div>
+          <button
+            type="button"
+            className={`${styles.aiRewriteBtn} ${status === 'loading' ? styles.aiRewriteBtnLoading : ''}`}
+            onClick={() => handleStartRewrite(aiRewriteState.level, aiRewriteState.length)}
             disabled={status === 'loading'}
           >
-            <option value="secondary">Secondary</option>
-            <option value="university">University</option>
-            <option value="postgrad">Postgraduate</option>
-          </select>
+            {status === 'loading' ? (
+              <>
+                <span className={styles.loadingDots} aria-hidden="true"><span /><span /><span /></span>
+                Rewriting from approved OceanX sources...
+              </>
+            ) : (
+              'Rewrite with AI'
+            )}
+          </button>
         </div>
-        <div className={styles.aiControlGroup}>
-          <label className={styles.aiControlLabel}>Length</label>
-          <select
-            className={styles.aiSelect}
-            value={aiRewriteState.length}
-            onChange={(e) => setAiRewriteState(prev => ({ ...prev, length: e.target.value as 'shorter' | 'same' | 'longer' }))}
-            disabled={status === 'loading'}
-          >
-            <option value="shorter">Shorter</option>
-            <option value="same">Same</option>
-            <option value="longer">Longer</option>
-          </select>
-        </div>
-        <button
-          type="button"
-          className={`${styles.aiRewriteBtn} ${status === 'loading' ? styles.aiRewriteBtnLoading : ''}`}
-          onClick={() => handleStartRewrite(aiRewriteState.level, aiRewriteState.length)}
-          disabled={status === 'loading'}
-        >
-          {status === 'loading' ? (
-            <>
-              <span className={styles.loadingDots} aria-hidden="true"><span /><span /><span /></span>
-              Rewriting from approved OceanX sources...
-            </>
-          ) : (
-            'Rewrite with AI'
-          )}
-        </button>
-      </div>
 
-      {status === 'error' && aiRewriteState.error && (
-        <div className={styles.aiError} role="alert">
-          {aiRewriteState.error}
-          <button type="button" className={styles.aiErrorDismiss} onClick={handleDiscard}>Dismiss</button>
-        </div>
-      )}
-
-      {/* Side-by-side Original | AI version - always visible when component has originalText */}
-      {originalText && (
-        <div className={styles.aiPreviewRow}>
-          <div className={styles.aiPreviewCol}>
-            <span className={styles.aiPreviewLabel}>Original</span>
-            <p className={styles.aiPreviewText}>{originalText}</p>
+        {status === 'error' && aiRewriteState.error && (
+          <div className={styles.aiError} role="alert">
+            {aiRewriteState.error}
+            <button type="button" className={styles.aiErrorDismiss} onClick={handleDiscard}>Dismiss</button>
           </div>
-          <div className={styles.aiPreviewCol}>
-            <span className={styles.aiPreviewLabel}>
-              AI version ({aiRewriteState.level}, {aiRewriteState.length})
-            </span>
-            <p className={styles.aiPreviewText}>
-              {status === 'result' && aiRewriteState.result
-                ? aiRewriteState.result.rewrittenText
-                : 'Select Level and Length, then click "Rewrite with AI" to generate a version.'}
-            </p>
-          </div>
-        </div>
-      )}
+        )}
 
-      {!originalText && (
-        <p className={styles.aiNoOriginal}>
-          This component does not have an original text available for AI adaptation.
+        {/* Side-by-side Original | AI version - always visible when component has originalText */}
+        {originalText && (
+          <div className={styles.aiPreviewRow}>
+            <div className={styles.aiPreviewCol}>
+              <span className={styles.aiPreviewLabel}>Original</span>
+              <p className={styles.aiPreviewText}>{originalText}</p>
+            </div>
+            <div className={styles.aiPreviewCol}>
+              <span className={styles.aiPreviewLabel}>
+                AI version ({aiRewriteState.level}, {aiRewriteState.length})
+              </span>
+              <p className={styles.aiPreviewText}>
+                {status === 'result' && aiRewriteState.result
+                  ? aiRewriteState.result.rewrittenText
+                  : 'Select Level and Length, then click "Rewrite with AI" to generate a version.'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {!originalText && (
+          <p className={styles.aiNoOriginal}>
+            This component does not have an original text available for AI adaptation.
+          </p>
+        )}
+
+        {/* Buttons row under the boxes */}
+        {originalText && (
+          <div className={styles.aiActionRow}>
+            {status === 'result' && aiRewriteState.result ? (
+              <>
+                <button type="button" className={styles.aiUseBtn} onClick={handleUseAI}>
+                  <CheckCheck size={14} aria-hidden="true" />
+                  Use AI version
+                </button>
+                <button type="button" className={styles.aiDiscardBtn} onClick={handleDiscard}>
+                  Undo
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className={styles.aiUseBtn}
+                  onClick={() => handleStartRewrite(aiRewriteState.level, aiRewriteState.length)}
+                  disabled={status === 'loading'}
+                >
+                  <CheckCheck size={14} aria-hidden="true" />
+                  Use AI version
+                </button>
+                <button type="button" className={styles.aiDiscardBtn} onClick={handleDiscard}>
+                  Discard
+                </button>
+                <button
+                  type="button"
+                  className={styles.aiRetryBtn}
+                  onClick={() => handleStartRewrite(aiRewriteState.level, aiRewriteState.length)}
+                  disabled={status === 'loading'}
+                >
+                  <RotateCcw size={14} aria-hidden="true" />
+                  Try again
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
+        {originalText && (
+          <p className={styles.aiNote}>AI versions are checked by the OceanX team before your email is sent.</p>
+        )}
+
+        <p className={styles.aiSources}>
+          Sources used: {sourcesUsed.join(', ')}
         </p>
-      )}
-
-      {/* Buttons row under the boxes */}
-      {originalText && (
-        <div className={styles.aiActionRow}>
-          {status === 'result' && aiRewriteState.result ? (
-            <>
-              <button type="button" className={styles.aiUseBtn} onClick={handleUseAI}>
-                <CheckCheck size={14} aria-hidden="true" />
-                Use AI version
-              </button>
-              <button type="button" className={styles.aiDiscardBtn} onClick={handleDiscard}>
-                Undo
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                className={styles.aiUseBtn}
-                onClick={() => handleStartRewrite(aiRewriteState.level, aiRewriteState.length)}
-                disabled={status === 'loading'}
-              >
-                <CheckCheck size={14} aria-hidden="true" />
-                Use AI version
-              </button>
-              <button type="button" className={styles.aiDiscardBtn} onClick={handleDiscard}>
-                Discard
-              </button>
-              <button
-                type="button"
-                className={styles.aiRetryBtn}
-                onClick={() => handleStartRewrite(aiRewriteState.level, aiRewriteState.length)}
-                disabled={status === 'loading'}
-              >
-                <RotateCcw size={14} aria-hidden="true" />
-                Try again
-              </button>
-            </>
-          )}
-        </div>
-      )}
-
-      {originalText && (
-        <p className={styles.aiNote}>AI versions are checked by the OceanX team before your email is sent.</p>
-      )}
-
-      <p className={styles.aiSources}>
-        Sources used: {sourcesUsed.join(', ')}
-      </p>
-    </div>
+      </div>
+    </CollapsibleSection>
   );
 }
 
@@ -588,23 +596,6 @@ export function AdaptPage() {
   // Extras added state (confirmed by user)
   const [quizAdded, setQuizAdded] = useState(false);
   const [lessonPlanAdded, setLessonPlanAdded] = useState(false);
-
-  // Need more materials section collapsed state (persisted in sessionStorage)
-  const [extrasCollapsed, setExtrasCollapsed] = useState(() => {
-    try {
-      return sessionStorage.getItem('adapt-extras-collapsed') === 'true';
-    } catch {
-      return false;
-    }
-  });
-
-  useEffect(() => {
-    try {
-      sessionStorage.setItem('adapt-extras-collapsed', String(extrasCollapsed));
-    } catch {
-      // ignore
-    }
-  }, [extrasCollapsed]);
 
   // AI Adaptation state
   const [acceptedRewrites, setAcceptedRewrites] = useState<Map<string, {
@@ -1136,34 +1127,21 @@ export function AdaptPage() {
         )}
 
         {/* ── Section 3: Need more materials? ── */}
-        <section className={styles.section} aria-labelledby="extras-heading">
-          <div className={styles.extrasSectionHead}>
-            <h2 className={styles.h2} id="extras-heading">
-              Need more materials?
-              <span className={styles.optionalBadge}>Optional</span>
-            </h2>
-            <button
-              type="button"
-              className={styles.extrasCollapseBtn}
-              onClick={() => setExtrasCollapsed(!extrasCollapsed)}
-              aria-expanded={!extrasCollapsed}
-              aria-controls="extras-content"
-            >
-              {extrasCollapsed ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
-            </button>
-          </div>
+        <CollapsibleSection
+          title="Need more materials?"
+          subtitle={<span className={styles.optionalBadge}>Optional</span>}
+          summary={
+            quizAdded || lessonPlanAdded
+              ? `${quizAdded ? 'Knowledge check added' : ''}${quizAdded && lessonPlanAdded ? ' · ' : ''}${lessonPlanAdded ? 'Lesson plan added' : ''}`
+              : 'Nothing added'
+          }
+          defaultOpen={true}
+          storageKey="adapt-extras-collapsed"
+          autoCollapse={quizAdded && lessonPlanAdded}
+        >
           <p className={styles.extrasSubline}>Add a knowledge check or lesson plan to your package.</p>
 
-          {/* Collapsed summary line */}
-          {extrasCollapsed && (
-            <p className={styles.extrasCollapsedSummary}>
-              {quizAdded || lessonPlanAdded
-                ? `${quizAdded ? 'Knowledge check added' : ''}${quizAdded && lessonPlanAdded ? ' · ' : ''}${lessonPlanAdded ? 'Lesson plan added' : ''}`
-                : 'Nothing added'}
-            </p>
-          )}
-
-          <div id="extras-content" className={styles.extrasGrid} hidden={extrasCollapsed}>
+          <div className={styles.extrasGrid}>
             {/* Knowledge check card */}
             <div className={styles.extrasCard}>
               <div className={styles.extrasCardHead}>
@@ -1267,52 +1245,50 @@ export function AdaptPage() {
 
               <div className={styles.extrasCardFooter}>
                 {quizEnabled ? (
-                quizAdded ? (
-                  // Collapsed summary when added
-                  <div className={styles.extrasCardSummary}>
-                    <p className={styles.summaryTitle}>
-                      Knowledge check · {assembleResult?.itemIds.length ?? quizCount} questions · {quizType === 'mcq' ? 'Multiple choice' : quizType === 'short' ? 'Short answer' : 'Mixed'} · {quizDifficulty.charAt(0).toUpperCase() + quizDifficulty.slice(1)}
-                    </p>
-                    <div className={styles.summaryActions}>
-                      <button type="button" className={styles.editLink} onClick={() => setQuizAdded(false)}>Edit</button>
-                      <button type="button" className={styles.removeLink} onClick={() => { setQuizAdded(false); setQuizEnabled(false); setAssembleResult(null); }}>Remove</button>
+                  quizAdded ? (
+                    <div className={styles.extrasCardSummary}>
+                      <p className={styles.summaryTitle}>
+                        Knowledge check · {assembleResult?.itemIds.length ?? quizCount} questions · {quizType === 'mcq' ? 'Multiple choice' : quizType === 'short' ? 'Short answer' : 'Mixed'} · {quizDifficulty.charAt(0).toUpperCase() + quizDifficulty.slice(1)}
+                      </p>
+                      <div className={styles.summaryActions}>
+                        <button type="button" className={styles.editLink} onClick={() => setQuizAdded(false)}>Edit</button>
+                        <button type="button" className={styles.removeLink} onClick={() => { setQuizAdded(false); setQuizEnabled(false); setAssembleResult(null); }}>Remove</button>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <>
+                      <div className={styles.extrasCardFooter}>
+                        <button
+                          type="button"
+                          className={styles.addToPicksBtn}
+                          onClick={() => setQuizAdded(true)}
+                          disabled={!!assembleResult?.error}
+                          aria-disabled={!!assembleResult?.error}
+                        >
+                          Add to my picks
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.removeLink}
+                          onClick={() => { setQuizEnabled(false); setAssembleResult(null); }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      {assembleResult?.error && (
+                        <p className={`${styles.assembleMsg} ${styles.assembleMsgError}`}>Cannot add: {assembleResult.error}</p>
+                      )}
+                    </>
+                  )
                 ) : (
-                  // Expanded with "Add to my picks" primary + Remove
-                  <>
-                    <div className={styles.extrasCardFooter}>
-                      <button
-                        type="button"
-                        className={styles.addToPicksBtn}
-                        onClick={() => setQuizAdded(true)}
-                        disabled={!!assembleResult?.error}
-                        aria-disabled={!!assembleResult?.error}
-                      >
-                        Add to my picks
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.removeLink}
-                        onClick={() => { setQuizEnabled(false); setAssembleResult(null); }}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                    {assembleResult?.error && (
-                      <p className={`${styles.assembleMsg} ${styles.assembleMsgError}`}>Cannot add: {assembleResult.error}</p>
-                    )}
-                  </>
-                )
-              ) : (
-                <button
-                  type="button"
-                  className={styles.addPill}
-                  onClick={() => setQuizEnabled(true)}
-                >
-                  Add
-                </button>
-              )}
+                  <button
+                    type="button"
+                    className={styles.addPill}
+                    onClick={() => setQuizEnabled(true)}
+                  >
+                    Add
+                  </button>
+                )}
               </div>
             </div>
 
@@ -1383,7 +1359,6 @@ export function AdaptPage() {
               <div className={styles.extrasCardFooter}>
                 {lessonPlanEnabled ? (
                   lessonPlanAdded ? (
-                    // Collapsed summary when added
                     <div className={styles.extrasCardSummary}>
                       <p className={styles.summaryTitle}>
                         Lesson plan · {lessonPlanLength} min · {lessonPlanLevel.charAt(0).toUpperCase() + lessonPlanLevel.slice(1)}
@@ -1394,7 +1369,6 @@ export function AdaptPage() {
                       </div>
                     </div>
                   ) : (
-                    // Expanded with "Add to my picks" primary + Remove
                     <>
                       <div className={styles.extrasCardFooter}>
                         <button
@@ -1431,7 +1405,7 @@ export function AdaptPage() {
               </div>
             </div>
           </div>
-        </section>
+        </CollapsibleSection>
 
       </div>
 
