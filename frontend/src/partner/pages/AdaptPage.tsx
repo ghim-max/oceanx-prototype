@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import React from 'react';
 import { ArrowLeft, ShieldCheck, Play, Gamepad2, MessageCircle, Pencil, BookOpen, BookMarked, ListChecks, Eye, Sparkles, RotateCcw, CheckCheck } from 'lucide-react';
@@ -334,6 +334,30 @@ function AIAdaptationSection({
   const originalText = component?.originalText || acceptedData?.originalText || '';
   const sourcesUsed = component ? COMPONENT_SOURCES[componentId] || ['seagrass_sources.md'] : (acceptedData?.sourcesUsed || ['seagrass_sources.md']);
 
+  const [isExpanded, setIsExpanded] = useState(() => {
+    try {
+      const stored = sessionStorage.getItem(`adapt-ai-${componentId}-expanded`);
+      return stored === 'true';
+    } catch {
+      return true;
+    }
+  });
+
+  // Persist expanded state
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(`adapt-ai-${componentId}-expanded`, String(isExpanded));
+    } catch {}
+  }, [isExpanded]);
+
+  // Scroll to AI version when result appears
+  const aiPreviewRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (status === 'result' && aiRewriteState.result && aiPreviewRef.current) {
+      aiPreviewRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [status, aiRewriteState.result]);
+
   const handleStartRewrite = (level: 'secondary' | 'university' | 'postgrad', length: 'shorter' | 'same' | 'longer') => {
     setAiRewriteState({
       componentId,
@@ -365,6 +389,7 @@ function AIAdaptationSection({
         result: null,
         error: null,
       });
+      setIsExpanded(false); // Auto-collapse after accepting
     }
   };
 
@@ -381,42 +406,69 @@ function AIAdaptationSection({
 
   const handleRemoveAccepted = () => {
     onRemoveRewrite(componentId);
+    setIsExpanded(true); // Expand again when undo
   };
 
   if (isAccepted && acceptedData) {
     return (
       <CollapsibleSection
-        title="Adapt with AI"
+        title={<>
+          <Sparkles size={16} aria-hidden="true" />
+          <span>Adapt with AI</span>
+        </>}
         subtitle={<span className={styles.aiAcceptedBadge}><CheckCheck size={14} aria-hidden="true" /> AI version, needs OceanX review</span>}
         summary={`AI version added (${acceptedData.level}, ${acceptedData.length}) · needs OceanX review`}
         defaultOpen={true}
         storageKey={`adapt-ai-${componentId}`}
-        autoCollapse={true}
       >
-        <div className={styles.aiAcceptedPreview}>
-          <div className={styles.aiPreviewCol}>
-            <span className={styles.aiPreviewLabel}>Original</span>
-            <p className={styles.aiPreviewText}>{acceptedData.originalText}</p>
+        <div className={styles.aiSection}>
+          <div className={styles.aiAcceptedPreview}>
+            <div className={styles.aiPreviewCol}>
+              <span className={styles.aiPreviewLabel}>Original</span>
+              <p className={styles.aiPreviewText}>{acceptedData.originalText}</p>
+            </div>
+            <div className={styles.aiPreviewCol}>
+              <span className={styles.aiPreviewLabel}>AI version ({acceptedData.level}, {acceptedData.length})</span>
+              <p className={styles.aiPreviewText}>{acceptedData.rewrittenText}</p>
+            </div>
           </div>
-          <div className={styles.aiPreviewCol}>
-            <span className={styles.aiPreviewLabel}>AI version ({acceptedData.level}, {acceptedData.length})</span>
-            <p className={styles.aiPreviewText}>{acceptedData.rewrittenText}</p>
-          </div>
+          <p className={styles.aiSources}>Sources used: {acceptedData.sourcesUsed.join(', ')}</p>
+          <button type="button" className={styles.aiUndoBtn} onClick={handleRemoveAccepted}>
+            <RotateCcw size={14} aria-hidden="true" />
+            Undo
+          </button>
+          <p className={styles.aiNote}>AI versions are checked by the OceanX team before your email is sent.</p>
         </div>
-        <p className={styles.aiSources}>Sources used: {acceptedData.sourcesUsed.join(', ')}</p>
-        <button type="button" className={styles.aiUndoBtn} onClick={handleRemoveAccepted}>
-          <RotateCcw size={14} aria-hidden="true" />
-          Undo
-        </button>
-        <p className={styles.aiNote}>AI versions are checked by the OceanX team before your email is sent.</p>
       </CollapsibleSection>
     );
   }
 
+  // Render the rewritten text with paragraph breaks for "longer" results
+  const renderRewrittenText = (text: string) => {
+    if (!text) return <span>Select Level and Length, then click "Rewrite with AI" to generate a version.</span>;
+    
+    // Split by "Discuss:" to create separate paragraphs
+    if (text.includes('Discuss:')) {
+      const parts = text.split('Discuss:');
+      return (
+        <>
+          <p>{parts[0].trim()}.</p>
+          <p style={{ marginTop: '12px' }}>
+            <strong>Discuss:</strong> Discuss:{parts[1]}
+          </p>
+        </>
+      );
+    }
+    return <p>{text}</p>;
+  };
+
   return (
     <CollapsibleSection
-      title="Adapt with AI"
-      subtitle={<><Sparkles size={16} aria-hidden="true" /> Rewrite this component for a different level or length using approved OceanX sources.</>}
+      title={<>
+        <Sparkles size={16} aria-hidden="true" />
+        <span>Adapt with AI</span>
+      </>}
+      subtitle={<>Rewrite this component for a different level or length using approved OceanX sources.</>}
       summary={acceptedData ? `AI version added (${acceptedData.level}, ${acceptedData.length}) · needs OceanX review` : 'Not used'}
       defaultOpen={true}
       storageKey={`adapt-ai-${componentId}`}
@@ -481,15 +533,11 @@ function AIAdaptationSection({
               <span className={styles.aiPreviewLabel}>Original</span>
               <p className={styles.aiPreviewText}>{originalText}</p>
             </div>
-            <div className={styles.aiPreviewCol}>
+            <div className={styles.aiPreviewCol} ref={aiPreviewRef}>
               <span className={styles.aiPreviewLabel}>
                 AI version ({aiRewriteState.level}, {aiRewriteState.length})
               </span>
-              <p className={styles.aiPreviewText}>
-                {status === 'result' && aiRewriteState.result
-                  ? aiRewriteState.result.rewrittenText
-                  : 'Select Level and Length, then click "Rewrite with AI" to generate a version.'}
-              </p>
+              {renderRewrittenText(status === 'result' && aiRewriteState.result ? aiRewriteState.result.rewrittenText : '')}
             </div>
           </div>
         )}
@@ -554,7 +602,6 @@ function AIAdaptationSection({
 }
 
 // ─── AdaptPage ────────────────────────────────────────────────────────────
-
 export function AdaptPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -641,10 +688,6 @@ export function AdaptPage() {
   useEffect(() => {
     markAdaptationStarted('adapt-session');
   }, []);
-
-  // Preview modal state
-  // const [quizPreviewOpen, setQuizPreviewOpen] = useState(false);
-  // const [lessonPlanPreviewOpen, setLessonPlanPreviewOpen] = useState(false);
 
   const [liveMsg, setLiveMsg] = useState('');
 
@@ -913,7 +956,6 @@ export function AdaptPage() {
       </div>
     );
   }
-
 
   return (
     <div className={styles.page}>
