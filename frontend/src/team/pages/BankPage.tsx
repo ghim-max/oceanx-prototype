@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getBankItems, patchBankItem } from '../../shared/services/bankApi';
 import type { BankItem, BankPatch } from '../../shared/services/bankApi';
+import { StatsStrip } from '../components/StatsStrip';
 import styles from './BankPage.module.css';
 
 const COMPONENT_LABELS: Record<string, string> = {
@@ -376,6 +377,14 @@ export function BankPage() {
   const rejected = items.filter((i) => i.status === 'rejected').length;
   const flagged = items.filter((i) => i.auto_check_passed === false).length;
 
+  const stats = [
+    { label: 'Total', value: items.length },
+    { label: 'Drafted', value: drafted },
+    { label: 'Approved', value: approved },
+    { label: 'Flagged', value: flagged },
+    { label: 'Rejected', value: rejected },
+  ];
+
   const grouped: Record<string, BankItem[]> = {};
   for (const id of COMPONENT_ORDER) {
     grouped[id] = items.filter((i) => i.component_id === id);
@@ -386,14 +395,6 @@ export function BankPage() {
       grouped[item.component_id].push(item);
     }
   }
-
-  const STAT_COLS = [
-    { label: 'Total', value: items.length },
-    { label: 'Drafted', value: drafted },
-    { label: 'Approved', value: approved },
-    { label: 'Rejected', value: rejected },
-    { label: 'Flagged', value: flagged },
-  ];
 
   return (
     <article className={styles.page}>
@@ -407,21 +408,7 @@ export function BankPage() {
 
         {error && <div className={styles.error}>{error}</div>}
 
-        {!loading && (
-          <div className={styles.statsStrip}>
-            {STAT_COLS.map(({ label, value }) => (
-              <div key={label} className={styles.statColumn}>
-                <div className={styles.statColumnInner}>
-                  <div className={styles.statLabelRow}>
-                    <span className={styles.accentSquare} />
-                    <span className={styles.statLabelText}>{label}</span>
-                  </div>
-                  <div className={styles.statBigNumber}>{value}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        {!loading && <StatsStrip stats={stats} />}
 
         {loading && <p className={styles.empty}>Loading…</p>}
 

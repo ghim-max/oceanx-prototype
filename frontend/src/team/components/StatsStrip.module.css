@@ -1,0 +1,128 @@
+/* Stats row - flexbox for equal columns, matches Overview strips (HealthStrip, TimePanel, ReachStrip) */
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  padding: var(--space-8) var(--space-6);
+  border-left: 1px solid var(--color-border);
+}
+
+.stat {
+  flex: 1 1 0;
+  min-width: 0;
+  position: relative;
+  padding-left: var(--space-8);
+  border-left: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+}
+
+.stat:first-child {
+  border-left: none;
+  padding-left: 0;
+}
+
+.statInner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  height: 100%;
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.labelText {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0F1E28;
+}
+
+.accentSquare {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  background: var(--color-accent);
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.numberRow {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.bigNumber {
+  font-family: var(--font-numbers);
+  font-size: clamp(48px, 4.5vw, 72px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: #000000;
+  font-variant-numeric: tabular-nums;
+}
+
+.sentence {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 350;
+  color: rgb(91, 103, 112);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Responsive - matches Overview strips */
+@media (max-width: 1100px) {
+  .stats {
+    flex-wrap: wrap;
+  }
+  .stat {
+    flex-basis: 50%;
+    border-left: none;
+    border-top: 1px solid var(--color-border);
+    padding-left: 0;
+    padding-top: var(--space-6);
+  }
+  .stat:first-child,
+  .stat:nth-child(2) {
+    border-top: none;
+    padding-top: 0;
+  }
+  .stat:nth-child(3),
+  .stat:nth-child(4),
+  .stat:nth-child(5) {
+    border-top: 1px solid var(--color-border);
+  }
+}
+
+@media (max-width: 900px) {
+  .stats {
+    flex-wrap: wrap;
+  }
+  .stat {
+    flex-basis: 50%;
+  }
+  .stat:nth-child(3) {
+    border-top: 1px solid var(--color-border);
+  }
+}
+
+@media (max-width: 600px) {
+  .stat {
+    flex-basis: 100%;
+  }
+  .stat:nth-child(2),
+  .stat:nth-child(3),
+  .stat:nth-child(4),
+  .stat:nth-child(5) {
+    border-top: 1px solid var(--color-border);
+  }
+}
