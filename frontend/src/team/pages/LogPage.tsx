@@ -220,7 +220,7 @@ export function LogPage() {
         entry.why || '',
         aiRec,
         override,
-      ].map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',');
+      ].map((cell) => `\"${String(cell).replace(/\"/g, '\"\"')}\"`).join(',');
     });
     const csv = [headers.join(','), ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -254,168 +254,168 @@ export function LogPage() {
           </div>
         </header>
 
-      {/* Summary strip */}
-      <div className={styles.summaryStrip}>
-        <div className={styles.summaryItem}>
-          <span className={styles.summaryValue}>{summary.total}</span>
-          <span className={styles.summaryLabel}>Total decisions</span>
-        </div>
-        <div className={styles.summaryItem}>
-          <span className={styles.summaryValue}>
-            {summary.aiOverrides} ({summary.overridePct}%)
-          </span>
-          <span className={styles.summaryLabel}>AI overrides</span>
-        </div>
-        <div className={styles.summaryItem}>
-          <span className={styles.summaryValue}>{summary.rejectedReviews}</span>
-          <span className={styles.summaryLabel}>Rejected reviews</span>
-        </div>
-        <div className={styles.summaryItem}>
-          <span className={styles.summaryValue}>
-            {summary.lastDecision ? formatTimeAgo(summary.lastDecision.createdAt) : '-'}
-          </span>
-          <span className={styles.summaryLabel}>Last decision</span>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className={styles.filtersRow}>
-        <div className={styles.filterGroup}>
-          <label htmlFor="filter-action" className={styles.filterLabel}>Action</label>
-          <select
-            id="filter-action"
-            className={styles.filterSelect}
-            value={filters.action}
-            onChange={(e) => handleFilterChange('action', e.target.value as FilterAction)}
-          >
-            <option value="All">All</option>
-            <option value="Reuse">Reuse</option>
-            <option value="Adapt">Adapt</option>
-            <option value="Drop">Drop</option>
-            <option value="Restore">Restore</option>
-            <option value="Approve">Approve</option>
-            <option value="Edit">Edit</option>
-            <option value="Reject">Reject</option>
-            <option value="Task done">Task done</option>
-          </select>
+        {/* Summary strip */}
+        <div className={styles.summaryStrip}>
+          <div className={styles.summaryItem}>
+            <span className={styles.summaryValue}>{summary.total}</span>
+            <span className={styles.summaryLabel}>Total decisions</span>
+          </div>
+          <div className={styles.summaryItem}>
+            <span className={styles.summaryValue}>
+              {summary.aiOverrides} ({summary.overridePct}%)
+            </span>
+            <span className={styles.summaryLabel}>AI overrides</span>
+          </div>
+          <div className={styles.summaryItem}>
+            <span className={styles.summaryValue}>{summary.rejectedReviews}</span>
+            <span className={styles.summaryLabel}>Rejected reviews</span>
+          </div>
+          <div className={styles.summaryItem}>
+            <span className={styles.summaryValue}>
+              {summary.lastDecision ? formatTimeAgo(summary.lastDecision.createdAt) : '-'}
+            </span>
+            <span className={styles.summaryLabel}>Last decision</span>
+          </div>
         </div>
 
-        <div className={styles.filterGroup}>
-          <label htmlFor="filter-type" className={styles.filterLabel}>Type</label>
-          <select
-            id="filter-type"
-            className={styles.filterSelect}
-            value={filters.type}
-            onChange={(e) => handleFilterChange('type', e.target.value as FilterType)}
-          >
-            <option value="All">All</option>
-            <option value="Library">Library</option>
-            <option value="Review">Review</option>
-          </select>
-        </div>
+        {/* Filters */}
+        <div className={styles.filtersRow}>
+          <div className={styles.filterGroup}>
+            <label htmlFor="filter-action" className={styles.filterLabel}>Action</label>
+            <select
+              id="filter-action"
+              className={styles.filterSelect}
+              value={filters.action}
+              onChange={(e) => handleFilterChange('action', e.target.value as FilterAction)}
+            >
+              <option value="All">All</option>
+              <option value="Reuse">Reuse</option>
+              <option value="Adapt">Adapt</option>
+              <option value="Drop">Drop</option>
+              <option value="Restore">Restore</option>
+              <option value="Approve">Approve</option>
+              <option value="Edit">Edit</option>
+              <option value="Reject">Reject</option>
+              <option value="Task done">Task done</option>
+            </select>
+          </div>
 
-        <div className={`${styles.filterGroup} ${styles.filterGroupCheckbox}`}>
-          <label className={styles.toggleLabel}>
-            <input
-              type="checkbox"
-              checked={filters.overridesOnly}
-              onChange={(e) => handleFilterChange('overridesOnly', e.target.checked)}
-              className={styles.toggleInput}
-            />
-            <span className={styles.toggleText}>Overrides only</span>
-          </label>
-        </div>
+          <div className={styles.filterGroup}>
+            <label htmlFor="filter-type" className={styles.filterLabel}>Type</label>
+            <select
+              id="filter-type"
+              className={styles.filterSelect}
+              value={filters.type}
+              onChange={(e) => handleFilterChange('type', e.target.value as FilterType)}
+            >
+              <option value="All">All</option>
+              <option value="Library">Library</option>
+              <option value="Review">Review</option>
+            </select>
+          </div>
 
-        <div className={styles.filterGroup}>
-          <label htmlFor="filter-date" className={styles.filterLabel}>Date</label>
-          <select
-            id="filter-date"
-            className={styles.filterSelect}
-            value={filters.dateRange}
-            onChange={(e) => handleFilterChange('dateRange', e.target.value as '7d' | '30d' | 'all')}
-          >
-            <option value="all">All</option>
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-          </select>
-        </div>
+          <div className={`${styles.filterGroup} ${styles.filterGroupCheckbox}`}>
+            <label className={styles.toggleLabel}>
+              <input
+                type="checkbox"
+                checked={filters.overridesOnly}
+                onChange={(e) => handleFilterChange('overridesOnly', e.target.checked)}
+                className={styles.toggleInput}
+              />
+              <span className={styles.toggleText}>Overrides only</span>
+            </label>
+          </div>
 
-        <div className={`${styles.filterGroup} ${styles.filterGroupActions}`}>
-          {hasActiveFilters && (
-            <button type="button" className={styles.clearBtn} onClick={handleClearFilters}>
-              Clear filters
+          <div className={styles.filterGroup}>
+            <label htmlFor="filter-date" className={styles.filterLabel}>Date</label>
+            <select
+              id="filter-date"
+              className={styles.filterSelect}
+              value={filters.dateRange}
+              onChange={(e) => handleFilterChange('dateRange', e.target.value as '7d' | '30d' | 'all')}
+            >
+              <option value="all">All</option>
+              <option value="7d">Last 7 days</option>
+              <option value="30d">Last 30 days</option>
+            </select>
+          </div>
+
+          <div className={`${styles.filterGroup} ${styles.filterGroupActions}`}>
+            {hasActiveFilters && (
+              <button type="button" className={styles.clearBtn} onClick={handleClearFilters}>
+                Clear filters
+              </button>
+            )}
+            <button type="button" className={styles.exportBtn} onClick={handleExportCsv}>
+              Export CSV
             </button>
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className={styles.tableWrapper}>
+          {loading ? (
+            <div className={styles.loading}>Loading…</div>
+          ) : filteredLog.length === 0 ? (
+            <div className={styles.emptyState}>No decisions match these filters.</div>
+          ) : (
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th className={styles.colWhen}>When</th>
+                  <th className={styles.colWho}>Who</th>
+                  <th className={styles.colAction}>Action</th>
+                  <th className={styles.colItem}>Item</th>
+                  <th className={styles.colWhy}>Why</th>
+                  <th className={styles.colAiRec}>AI recommended</th>
+                  <th className={styles.colOverride}>Override</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredLog.map((entry) => {
+                  const itemInfo = itemInfoMap[entry.id];
+                  return (
+                    <tr key={entry.id} className={styles.tableRow}>
+                      <td className={styles.colWhen}>
+                        <div className={styles.whenMain}>{formatDate(entry.createdAt)}</div>
+                        <div className={styles.whenAgo}>{formatTimeAgo(entry.createdAt)}</div>
+                      </td>
+                      <td className={styles.colWho}>{entry.who}</td>
+                      <td className={styles.colAction}>
+                        <span className={`${styles.actionPill} ${getActionPillClass(entry.action)}`}>
+                          {entry.action}
+                        </span>
+                      </td>
+                      <td className={styles.colItem}>
+                        <button
+                          type="button"
+                          className={styles.itemLink}
+                          onClick={itemInfo.onClick}
+                        >
+                          {itemInfo.title}
+                        </button>
+                      </td>
+                      <td className={styles.colWhy}>
+                        <span className={entry.why ? '' : styles.emptyWhy}>
+                          {entry.why || '-'}
+                        </span>
+                      </td>
+                      <td className={styles.colAiRec}>
+                        {entry.aiRecommendation || '-'}
+                      </td>
+                      <td className={styles.colOverride}>
+                        {entry.aiOverride && (
+                          <span className={styles.overrideTag}>Overrides AI</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           )}
-          <button type="button" className={styles.exportBtn} onClick={handleExportCsv}>
-            Export CSV
-          </button>
         </div>
       </div>
-
-      {/* Table */}
-      <div className={styles.tableWrapper}>
-        {loading ? (
-          <div className={styles.loading}>Loading…</div>
-        ) : filteredLog.length === 0 ? (
-          <div className={styles.emptyState}>No decisions match these filters.</div>
-        ) : (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th className={styles.colWhen}>When</th>
-                <th className={styles.colWho}>Who</th>
-                <th className={styles.colAction}>Action</th>
-                <th className={styles.colItem}>Item</th>
-                <th className={styles.colWhy}>Why</th>
-                <th className={styles.colAiRec}>AI recommended</th>
-                <th className={styles.colOverride}>Override</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredLog.map((entry) => {
-                const itemInfo = itemInfoMap[entry.id];
-                return (
-                  <tr key={entry.id} className={styles.tableRow}>
-                    <td className={styles.colWhen}>
-                      <div className={styles.whenMain}>{formatDate(entry.createdAt)}</div>
-                      <div className={styles.whenAgo}>{formatTimeAgo(entry.createdAt)}</div>
-                    </td>
-                    <td className={styles.colWho}>{entry.who}</td>
-                    <td className={styles.colAction}>
-                      <span className={`${styles.actionPill} ${getActionPillClass(entry.action)}`}>
-                        {entry.action}
-                      </span>
-                    </td>
-                    <td className={styles.colItem}>
-                      <button
-                        type="button"
-                        className={styles.itemLink}
-                        onClick={itemInfo.onClick}
-                      >
-                        {itemInfo.title}
-                      </button>
-                    </td>
-                    <td className={styles.colWhy}>
-                      <span className={entry.why ? '' : styles.emptyWhy}>
-                        {entry.why || '-'}
-                      </span>
-                    </td>
-                    <td className={styles.colAiRec}>
-                      {entry.aiRecommendation || '-'}
-                    </td>
-                    <td className={styles.colOverride}>
-                      {entry.aiOverride && (
-                        <span className={styles.overrideTag}>Overrides AI</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </div>
-  </article>
-);
+    </article>
+  );
 }
