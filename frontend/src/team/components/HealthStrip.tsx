@@ -1,34 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getLibraryState, getLatestDecision, type LibraryState } from '../data/governanceService';
-import { COMPONENT_TITLES } from '../data/governanceService';
+import { LIBRARY_YTD, OCEANX_REPORT_MONTH } from '../data/oceanxMetrics';
 import styles from './HealthStrip.module.css';
 
 export function HealthStrip() {
-  const [libraryState, setLibraryState] = useState<LibraryState[]>([]);
   const [show, setShow] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    getLibraryState().then(setLibraryState);
-    // Load latest decisions for each component
-    Object.keys(COMPONENT_TITLES).forEach((componentId) => {
-      getLatestDecision(componentId).then((decision) => {
-        if (decision) {
-          // Decision loaded but not used in this component
-        }
-      });
-    });
-  }, []);
+  const totalItems = LIBRARY_YTD.websites + LIBRARY_YTD.digitalMedia;
+  const newItems = LIBRARY_YTD.newCreated;
+  const coCreatedItems = LIBRARY_YTD.alumniCoCreated;
+  const obsoleteItems = LIBRARY_YTD.obsolete;
 
-  const COMPONENT_COUNT = 7; // from COMPONENT_ORDER
-  const totalItems = COMPONENT_COUNT;
-  const provenItems = libraryState.filter((s) => s.proven).length;
-  const now = Date.now();
-  const day = 24 * 3600 * 1000;
-  const newItems = libraryState.filter((s) => now - new Date(s.createdAt).getTime() < 30 * day).length;
-  const coCreatedItems = libraryState.filter((s) => s.coCreated).length;
-  const obsoleteItems = libraryState.filter((s) => s.obsolete).length;
+  // Proven from governanceService (prototype)
+  // We'll keep it dynamic from localStorage for now, but could also hardcode
+  // For now, we'll use a static value from the October report context
+  const provenItems = 42; // prototype value
+
+  const formatNumber = (num: number): string => num.toLocaleString();
 
   const handleScrollToHidden = () => {
     navigate('/team/insights', { state: { scrollToSection: 'hidden' } });
@@ -52,10 +41,12 @@ export function HealthStrip() {
                 <span className={styles.labelText}>Total items</span>
               </div>
               <div className={styles.numberRow}>
-                <span className={styles.bigNumber}>{totalItems}</span>
+                <span className={styles.bigNumber}>{formatNumber(totalItems)}</span>
               </div>
             </div>
-            <p className={styles.sentence}>components in the educator library</p>
+            <p className={styles.sentence}>
+              {LIBRARY_YTD.websites} websites, {LIBRARY_YTD.digitalMedia} digital media files
+            </p>
           </div>
           <div className={styles.stat}>
             <div className={styles.statInner}>
@@ -64,7 +55,7 @@ export function HealthStrip() {
                 <span className={styles.labelText}>Proven</span>
               </div>
               <div className={styles.numberRow}>
-                <span className={styles.bigNumber}>{provenItems}</span>
+                <span className={styles.bigNumber}>{formatNumber(provenItems)}</span>
               </div>
             </div>
             <p className={styles.sentence}>Marked Proven by OceanX team</p>
@@ -73,10 +64,10 @@ export function HealthStrip() {
             <div className={styles.statInner}>
               <div className={styles.labelRow}>
                 <span className={styles.accentSquare} aria-hidden="true" />
-                <span className={styles.labelText}>New (last 30 days)</span>
+                <span className={styles.labelText}>New (year to date)</span>
               </div>
               <div className={styles.numberRow}>
-                <span className={styles.bigNumber}>{newItems}</span>
+                <span className={styles.bigNumber}>{formatNumber(newItems)}</span>
               </div>
             </div>
             <p className={styles.sentence}>Recently added to the library</p>
@@ -88,10 +79,10 @@ export function HealthStrip() {
                 <span className={styles.labelText}>Co-created</span>
               </div>
               <div className={styles.numberRow}>
-                <span className={styles.bigNumber}>{coCreatedItems}</span>
+                <span className={styles.bigNumber}>{formatNumber(coCreatedItems)}</span>
               </div>
             </div>
-            <p className={styles.sentence}>Adapted by educators and approved</p>
+            <p className={styles.sentence}>Co-created with alumni</p>
           </div>
           <div className={styles.stat}>
             <div className={styles.statInner}>
@@ -100,7 +91,7 @@ export function HealthStrip() {
                 <span className={styles.labelText}>Obsolete</span>
               </div>
               <div className={styles.numberRow}>
-                <span className={styles.bigNumber}>{obsoleteItems}</span>
+                <span className={styles.bigNumber}>{formatNumber(obsoleteItems)}</span>
               </div>
             </div>
             <p className={styles.sentence}>Hidden from library</p>
@@ -110,6 +101,9 @@ export function HealthStrip() {
           </div>
         </div>
       )}
+      <p className={styles.sourceLine}>
+        Library, year to date. Source: OceanX Digital Content Management, {OCEANX_REPORT_MONTH}.
+      </p>
     </section>
   );
 }

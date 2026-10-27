@@ -13,7 +13,7 @@ export function OverviewPage() {
 
       <HealthStrip />
       <TimePanel />
-      <ReachStrip cards={[]} session={{}} />
+      <ReachStrip />
     </div>
   );
 }

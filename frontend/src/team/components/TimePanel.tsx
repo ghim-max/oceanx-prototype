@@ -1,52 +1,28 @@
-import { useState, useEffect } from 'react';
-import { getReviewItems, type ReviewItem } from '../data/governanceService';
-import { BEFORE_HOURS_PER_ITEM, ITEMS_PER_YEAR, TEAM_HOURS_LABEL, TEAM_HOURS_YTD } from '../data/timeBaseline';
+import { useState } from 'react';
+import {
+  TEAM_HOURS_YTD,
+  HOURS_BREAKDOWN,
+  ASSUMED_REDUCTION,
+  OCEANX_REPORT_MONTH,
+} from '../data/oceanxMetrics';
 import styles from './TimePanel.module.css';
 
 export function TimePanel() {
-  const [reviewItemsState, setReviewItemsState] = useState<ReviewItem[]>([]);
   const [show, setShow] = useState(true);
 
-  useEffect(() => {
-    getReviewItems().then(setReviewItemsState);
-  }, []);
+  // Total team hours YTD
+  const totalHoursYTD = Object.values(TEAM_HOURS_YTD).reduce((a, b) => a + b, 0);
 
-  const decidedReviews = reviewItemsState.filter((r) => r.status === 'approved' || r.status === 'edited' || r.status === 'rejected');
-  const reviewTimes = decidedReviews
-    .map((r) => r.decidedAt && r.openedAt ? (new Date(r.decidedAt).getTime() - new Date(r.openedAt).getTime()) / 60000 : null)
-    .filter((t): t is number => t !== null && t > 0);
-  const avgReviewMinutes = reviewTimes.length > 0
-    ? reviewTimes.reduce((a, b) => a + b, 0) / reviewTimes.length
-    : null;
+  // Hours by category
+  const contentReviewHours = Math.round(totalHoursYTD * HOURS_BREAKDOWN.contentReview);
+  const contentAdaptationHours = Math.round(totalHoursYTD * HOURS_BREAKDOWN.contentAdaptation);
 
-  const adaptedReviews = reviewItemsState.filter((r) => r.kind === 'ai_adaptation' && r.submittedAt && r.adaptationStartedAt);
-  const adaptationTimes = adaptedReviews
-    .map((r) => r.submittedAt && r.adaptationStartedAt ? (new Date(r.submittedAt).getTime() - new Date(r.adaptationStartedAt).getTime()) / 60000 : null)
-    .filter((t): t is number => t !== null && t > 0);
-  const avgAdaptationMinutes = adaptationTimes.length > 0
-    ? adaptationTimes.reduce((a, b) => a + b, 0) / adaptationTimes.length
-    : null;
+  // Estimated hours saved
+  const reviewSaved = Math.round(contentReviewHours * ASSUMED_REDUCTION.review);
+  const adaptationSaved = Math.round(contentAdaptationHours * ASSUMED_REDUCTION.adaptation);
+  const totalSaved = reviewSaved + adaptationSaved;
 
-  const beforeReview = BEFORE_HOURS_PER_ITEM.review * 60; // minutes
-  const beforeAdaptation = BEFORE_HOURS_PER_ITEM.adaptation * 60; // minutes
-  const afterReview = avgReviewMinutes;
-  const afterAdaptation = avgAdaptationMinutes;
-
-  const reviewSaved = afterReview !== null ? beforeReview - afterReview : null;
-  const adaptationSaved = afterAdaptation !== null ? beforeAdaptation - afterAdaptation : null;
-
-  // Only calculate estimated hours saved when BOTH review and adaptation have data
-  const hasBothData = afterReview !== null && afterAdaptation !== null;
-  const totalSavedPerItem = hasBothData ? (reviewSaved ?? 0) + (adaptationSaved ?? 0) : null;
-  const estimatedHoursSaved = totalSavedPerItem !== null ? totalSavedPerItem / 60 * ITEMS_PER_YEAR : null;
-
-  const formatMinutes = (minutes: number | null): string => {
-    if (minutes === null) return 'Not enough data';
-    if (minutes < 60) return `${Math.round(minutes)} min`;
-    const hours = Math.floor(minutes / 60);
-    const mins = Math.round(minutes % 60);
-    return mins > 0 ? `${hours}h ${mins}min` : `${hours} h`;
-  };
+  const formatNumber = (num: number): string => num.toLocaleString();
 
   return (
     <section className={styles.strip} aria-label="Team time">
@@ -61,36 +37,48 @@ export function TimePanel() {
         <div className={styles.content}>
           <div className={styles.row}>
             <div className={styles.item}>
-              <div className={styles.label}>Review time per item</div>
+              <div className={styles.label}>Total team hours (year to date)</div>
               <div className={styles.values}>
-                <span className={styles.before}>Before {BEFORE_HOURS_PER_ITEM.review} h</span>
-                <span className={styles.separator}>&middot;</span>
-                <span className={styles.after}>
-                  After {formatMinutes(afterReview)}
-                </span>
+                <span className={styles.bigNumber}>{formatNumber(totalHoursYTD)} h</span>
+              </div>
+              <p className={styles.sentence}>
+                3 staff: S.T. {formatNumber(TEAM_HOURS_YTD["S.T."])} h, P.H. {formatNumber(TEAM_HOURS_YTD["P.H."])} h, A.N. {formatNumber(TEAM_HOURS_YTD["A.N."])} h
+              </p>
+            </div>
+            <div className={styles.item}>
+              <div className={styles.label}>Content review</div>
+              <div className={styles.values}>
+                <span className={styles.bigNumber}>{formatNumber(contentReviewHours)} h</span>
+                <span className={styles.percentage}>({Math.round(HOURS_BREAKDOWN.contentReview * 100)}%)</span>
               </div>
             </div>
             <div className={styles.item}>
-              <div className={styles.label}>Adaptation time per item</div>
+              <div className={styles.label}>Content adaptation</div>
               <div className={styles.values}>
-                <span className={styles.before}>Before {BEFORE_HOURS_PER_ITEM.adaptation} h</span>
-                <span className={styles.separator}>&middot;</span>
-                <span className={styles.after}>
-                  After {formatMinutes(afterAdaptation)}
-                </span>
+                <span className={styles.bigNumber}>{formatNumber(contentAdaptationHours)} h</span>
+                <span className={styles.percentage}>({Math.round(HOURS_BREAKDOWN.contentAdaptation * 100)}%)</span>
               </div>
             </div>
             <div className={styles.itemSaved}>
-              <div className={styles.label}>Estimated hours saved per year</div>
-              <div className={styles.savedValue} title="((before review - after review) + (before adaptation - after adaptation)) \u00d7 items per year">
-                {hasBothData && estimatedHoursSaved !== null ? (
-                  (estimatedHoursSaved >= 0 ? '+' : '') + estimatedHoursSaved.toFixed(0) + ' h'
-                ) : 'Not enough data yet'}
+              <div className={styles.label}>Estimated hours saved (year to date)</div>
+              <div className={styles.savedValue}>
+                {formatNumber(totalSaved)} h
               </div>
+              <p className={styles.savedTooltip}>
+                Assumes review time drops by 50% and adaptation time by 40% with the prototype. Prototype estimate.
+              </p>
             </div>
           </div>
-          <p className={styles.note}>
-            {TEAM_HOURS_LABEL} {TEAM_HOURS_YTD.a} / {TEAM_HOURS_YTD.b} / {TEAM_HOURS_YTD.c}
+          <div className={styles.breakdownRow}>
+            <span className={styles.breakdownLabel}>Full breakdown:</span>
+            <span className={styles.breakdownItem}>Review {Math.round(HOURS_BREAKDOWN.contentReview * 100)}%</span>
+            <span className={styles.breakdownItem}>Support {Math.round(HOURS_BREAKDOWN.userSupport * 100)}%</span>
+            <span className={styles.breakdownItem}>Adaptation {Math.round(HOURS_BREAKDOWN.contentAdaptation * 100)}%</span>
+            <span className={styles.breakdownItem}>Admin {Math.round(HOURS_BREAKDOWN.administration * 100)}%</span>
+            <span className={styles.breakdownItem}>Maintenance {Math.round(HOURS_BREAKDOWN.maintenance * 100)}%</span>
+          </div>
+          <p className={styles.sourceLine}>
+            Team time, year to date. Source: OceanX Operations, {OCEANX_REPORT_MONTH}.
           </p>
         </div>
       )}

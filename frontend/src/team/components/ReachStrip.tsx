@@ -1,34 +1,17 @@
-import { useState, useEffect } from 'react';
-import { getReviewItems, type ReviewItem } from '../data/governanceService';
+import { useState } from 'react';
+import { MONTHLY, OCEANX_REPORT_MONTH } from '../data/oceanxMetrics';
 import styles from './ReachStrip.module.css';
 
-export function ReachStrip({ cards, session }: { cards: any[]; session: any }) {
-  const [reviewItemsState, setReviewItemsState] = useState<ReviewItem[]>([]);
+export function ReachStrip() {
   const [show, setShow] = useState(true);
 
-  useEffect(() => {
-    getReviewItems().then(setReviewItemsState);
-  }, []);
-
-  const educatorEmails = new Set<string>();
-  reviewItemsState.forEach((r) => {
-    if (r.educatorEmail) educatorEmails.add(r.educatorEmail);
-  });
-  const insightsEducatorEmails = new Set<string>();
-  cards.forEach((c: any) => {
-    if (c.educator_emails) {
-      c.educator_emails.forEach((e: string) => insightsEducatorEmails.add(e));
-    }
-  });
-  const distinctEducators = new Set([...educatorEmails, ...insightsEducatorEmails]).size;
-  const packagesSent = reviewItemsState.filter((r) => r.status === 'approved' || r.status === 'edited').length;
-  const learnersReached = session.completed ?? 0;
+  const formatNumber = (num: number): string => num.toLocaleString();
 
   return (
     <section className={styles.strip} aria-label="Reach">
       <div className={styles.header}>
         <button type="button" className={styles.sectionToggle} onClick={() => setShow(!show)} aria-expanded={show}>
-          <span className={styles.title}>Reach</span>
+          <span className={styles.title}>Reach ({OCEANX_REPORT_MONTH})</span>
           {show ? 'Hide' : 'Show'}
         </button>
       </div>
@@ -38,40 +21,55 @@ export function ReachStrip({ cards, session }: { cards: any[]; session: any }) {
             <div className={styles.statInner}>
               <div className={styles.labelRow}>
                 <span className={styles.accentSquare} aria-hidden="true" />
-                <span className={styles.labelText}>Educators</span>
+                <span className={styles.labelText}>Schools</span>
               </div>
               <div className={styles.numberRow}>
-                <span className={styles.bigNumber}>{distinctEducators}</span>
+                <span className={styles.bigNumber}>{formatNumber(MONTHLY.schools)}</span>
               </div>
             </div>
-            <p className={styles.sentence}>Distinct educators who submitted or taught</p>
+            <p className={styles.sentence}>Schools using OceanX content</p>
           </div>
           <div className={styles.stat}>
             <div className={styles.statInner}>
               <div className={styles.labelRow}>
                 <span className={styles.accentSquare} aria-hidden="true" />
-                <span className={styles.labelText}>Packages sent</span>
+                <span className={styles.labelText}>Other institutions</span>
               </div>
               <div className={styles.numberRow}>
-                <span className={styles.bigNumber}>{packagesSent}</span>
+                <span className={styles.bigNumber}>{formatNumber(MONTHLY.otherInstitutions)}</span>
               </div>
             </div>
-            <p className={styles.sentence}>Packages approved and emailed</p>
+            <p className={styles.sentence}>Museums and other organisations</p>
           </div>
           <div className={styles.stat}>
             <div className={styles.statInner}>
               <div className={styles.labelRow}>
                 <span className={styles.accentSquare} aria-hidden="true" />
-                <span className={styles.labelText}>Learners reached</span>
+                <span className={styles.labelText}>Countries</span>
               </div>
               <div className={styles.numberRow}>
-                <span className={styles.bigNumber}>{learnersReached}</span>
+                <span className={styles.bigNumber}>{formatNumber(MONTHLY.countries)}</span>
               </div>
             </div>
-            <p className={styles.sentence}>University learners who completed the session</p>
+            <p className={styles.sentence}>Countries with OceanX learners</p>
+          </div>
+          <div className={styles.stat}>
+            <div className={styles.statInner}>
+              <div className={styles.labelRow}>
+                <span className={styles.accentSquare} aria-hidden="true" />
+                <span className={styles.labelText}>Website visits</span>
+              </div>
+              <div className={styles.numberRow}>
+                <span className={styles.bigNumber}>{formatNumber(MONTHLY.websitesAccessed)}</span>
+              </div>
+            </div>
+            <p className={styles.sentence}>Visits to OceanX content websites</p>
           </div>
         </div>
       )}
+      <p className={styles.sourceLine}>
+        Shared this month: {MONTHLY.websitesShared} websites, {MONTHLY.digitalMediaShared} digital media files.
+      </p>
     </section>
   );
 }

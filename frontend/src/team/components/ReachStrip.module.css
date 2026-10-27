@@ -119,6 +119,15 @@
   margin: 0;
 }
 
+.sourceLine {
+  font-size: 12px;
+  font-weight: 350;
+  color: var(--color-text-muted);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
 .prototypeBadge {
   display: inline-flex;
   align-items: center;
