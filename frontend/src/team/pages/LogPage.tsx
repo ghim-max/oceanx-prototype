@@ -241,17 +241,18 @@ export function LogPage() {
   const hasActiveFilters = filters.action !== 'All' || filters.type !== 'All' || filters.overridesOnly || filters.dateRange !== 'all';
 
   return (
-    <div className={styles.logPage}>
-      {/* Header */}
-      <header className={styles.header}>
-        <div className={styles.headerContent}>
-          <div className={styles.headerText}>
-            <h1 className={styles.pageTitle}>Decision log</h1>
-            <p className={styles.pageSubtitle}>Every decision by the OceanX team, with the reason.</p>
+    <article className={styles.page}>
+      <div className={styles.container}>
+        {/* Header */}
+        <header className={styles.header}>
+          <div className={styles.headerContent}>
+            <div>
+              <h1 className={styles.pageTitle}>Decision log</h1>
+              <p className={styles.pageSubtitle}>Every decision by the OceanX team, with the reason.</p>
+            </div>
+            {SUPABASE_IS_SAMPLE && <span className={styles.prototypeTag}>Prototype sample</span>}
           </div>
-          {SUPABASE_IS_SAMPLE && <span className={styles.prototypeTag}>Prototype sample</span>}
-        </div>
-      </header>
+        </header>
 
       {/* Summary strip */}
       <div className={styles.summaryStrip}>
@@ -415,5 +416,6 @@ export function LogPage() {
         )}
       </div>
     </div>
-  );
+  </article>
+);
 }

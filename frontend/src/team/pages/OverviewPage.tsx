@@ -5,15 +5,17 @@ import styles from './OverviewPage.module.css';
 
 export function OverviewPage() {
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <h1 className={styles.h1}>Overview</h1>
-        <p className={styles.subline}>How the library and the team are doing.</p>
-      </header>
+    <article className={styles.page}>
+      <div className={styles.container}>
+        <header className={styles.header}>
+          <h1 className={styles.h1}>Overview</h1>
+          <p className={styles.subline}>How the library and the team are doing.</p>
+        </header>
 
-      <HealthStrip />
-      <TimePanel />
-      <ReachStrip />
-    </div>
+        <HealthStrip />
+        <TimePanel />
+        <ReachStrip />
+      </div>
+    </article>
   );
 }
