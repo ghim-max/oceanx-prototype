@@ -334,22 +334,6 @@ function AIAdaptationSection({
   const originalText = component?.originalText || acceptedData?.originalText || '';
   const sourcesUsed = component ? COMPONENT_SOURCES[componentId] || ['seagrass_sources.md'] : (acceptedData?.sourcesUsed || ['seagrass_sources.md']);
 
-  const [isExpanded, setIsExpanded] = useState(() => {
-    try {
-      const stored = sessionStorage.getItem(`adapt-ai-${componentId}-expanded`);
-      return stored === 'true';
-    } catch {
-      return true;
-    }
-  });
-
-  // Persist expanded state
-  useEffect(() => {
-    try {
-      sessionStorage.setItem(`adapt-ai-${componentId}-expanded`, String(isExpanded));
-    } catch {}
-  }, [isExpanded]);
-
   // Scroll to AI version when result appears
   const aiPreviewRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -389,7 +373,7 @@ function AIAdaptationSection({
         result: null,
         error: null,
       });
-      setIsExpanded(false); // Auto-collapse after accepting
+      // Section stays open - user controls collapse/expand
     }
   };
 
@@ -406,7 +390,7 @@ function AIAdaptationSection({
 
   const handleRemoveAccepted = () => {
     onRemoveRewrite(componentId);
-    setIsExpanded(true); // Expand again when undo
+    // Section stays as user left it - user controls collapse/expand
   };
 
   if (isAccepted && acceptedData) {
@@ -472,7 +456,6 @@ function AIAdaptationSection({
       summary={acceptedData ? `AI version added (${acceptedData.level}, ${acceptedData.length}) · needs OceanX review` : 'Not used'}
       defaultOpen={true}
       storageKey={`adapt-ai-${componentId}`}
-      autoCollapse={status === 'result' && !!aiRewriteState.result}
     >
       <div className={styles.aiSection}>
         <div className={styles.aiControls}>
