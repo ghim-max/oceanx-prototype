@@ -229,6 +229,7 @@ const [pendingCounts, setPendingCounts] = useState<Record<string, number>>({});
     : effectiveRole === 'team' ? '/team/overview'
     : '/';
 
+  const isLandingPage = pathname === '/';
   const isLibraryPage = pathname === '/partner/library';
   const isAdaptPage =
     pathname === '/partner/adapt' ||
@@ -238,6 +239,9 @@ const [pendingCounts, setPendingCounts] = useState<Record<string, number>>({});
   const isQuizPage = pathname.startsWith('/quiz');
   const isEducatorPage = pathname.startsWith('/educator');
   const isTeamPage = pathname.startsWith('/team');
+
+  // Use wide container (matching library) on landing, library, and adapt pages
+  const useWideContainer = isLandingPage || isLibraryPage || isAdaptPage;
 
   const baseNavLinks =
     isLibraryPage ? []
@@ -252,7 +256,7 @@ const [pendingCounts, setPendingCounts] = useState<Record<string, number>>({});
       className={`${styles.nav} ${overHero ? styles.navOver : ''}`}
       aria-label="Main navigation"
     >
-      <div className={`${styles.inner} ${isLibraryPage || isAdaptPage ? styles.innerWide : isTeamPage ? styles.innerTeam : ''}`}>
+      <div className={`${styles.inner} ${useWideContainer ? styles.innerWide : isTeamPage ? styles.innerTeam : ''}`}>
         <NavLink
           to={logoTarget}
           className={styles.wordmark}
