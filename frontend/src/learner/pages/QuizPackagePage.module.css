@@ -182,31 +182,119 @@
   border: 0;
 }
 
-/* Option labels for MCQ - full width rectangles */
+/* ──────────────────────────────────────────────────────────────
+   Question card — new design
+   ────────────────────────────────────────────────────────────── */
+.questionCard {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px;
+  border: 1px solid #E3E9ED;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.questionCard + .questionCard {
+  margin-top: 0; /* gap handled by parent flex gap-24 */
+}
+
+.questionHeader {
+  margin: 0 0 8px 0;
+}
+
+.questionNumber {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #6B7F8E;
+  line-height: 1;
+}
+
+.questionText {
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 28px;
+  color: #0B1F33;
+}
+
+/* Options list */
 .options {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
+/* Each option = full-width row button with letter badge */
 .optionLabel {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: 12px 16px;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 14px 16px;
   border: 1px solid #D5DEE4;
-  border-radius: 6px;
-  background: var(--color-bg);
+  border-radius: 8px;
+  background: #fff;
   cursor: pointer;
-  transition: background 120ms ease, border-color 120ms ease;
-  min-height: 48px;
+  transition: border-color 120ms ease, background 120ms ease;
+  box-sizing: border-box;
+  text-align: left;
 }
 
 .optionLabel:hover {
-  background: var(--color-surface);
-  border-color: var(--color-border);
+  border-color: #0B6E85;
 }
 
+/* Letter badge A/B/C/D */
+.optionLetter {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #D5DEE4;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6B7F8E;
+  background: #fff;
+  transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
+}
+
+.optionText {
+  flex: 1;
+  font-size: 16px;
+  line-height: 24px;
+  color: #0B1F33;
+}
+
+/* Selected state */
+.optionInput:checked + .optionLetter {
+  background: #90E0EF;
+  border-color: #90E0EF;
+  color: #0B1F33;
+}
+
+.optionInput:checked ~ .optionLabel,
+.optionLabel:has(.optionInput:checked) {
+  background: #E8F8FB;
+  border: 2px solid #90E0EF;
+}
+
+/* Focus visible ring on the option label */
+.optionInput:focus-visible + .optionLetter,
+.optionLabel:has(.optionInput:focus-visible) {
+  outline: 2px solid #0B6E85;
+  outline-offset: 2px;
+}
+
+/* Visually hidden radio for accessibility */
 .optionInput {
   position: absolute;
   width: 1px;
@@ -219,9 +307,38 @@
   border: 0;
 }
 
-.optionText {
-  font-size: var(--text-base);
-  flex: 1;
+/* Short answer textarea */
+.shortAnswer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #D5DEE4;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 24px;
+  color: #0B1F33;
+  resize: vertical;
+  min-height: 100px;
+  box-sizing: border-box;
+  transition: border-color 120ms ease;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: #0B6E85;
+  box-shadow: 0 0 0 2px rgba(11, 110, 133, 0.15);
+}
+
+.charCounter {
+  font-size: 12px;
+  color: #6B7F8E;
+  text-align: right;
 }
 
 /* Feedback fieldset style per spec */
@@ -247,385 +364,67 @@
   font-size: var(--text-sm);
 }
 
-.helpedOptions {
+/* Rating scales */
+.ratingScale {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
-.helpedLabel {
+.segBtns {
   display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: 12px 16px;
-  border: 1px solid #D5DEE4;
-  border-radius: 6px;
-  background: var(--color-bg);
-  cursor: pointer;
-  transition: background 120ms ease, border-color 120ms ease;
-  min-height: 48px;
-}
-
-.helpedLabel:hover:not(.disabledLabel) {
-  background: var(--color-surface);
-  border-color: var(--color-border);
-}
-
-.helpedLabel.disabledLabel {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background: var(--color-surface-muted);
-}
-
-.helpedInput {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-.helpedText {
-  font-size: var(--text-base);
-  flex: 1;
-}
-
-.commentArea {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.textarea {
-  width: 100%;
-  padding: var(--space-3);
-  border: 2px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-family: inherit;
-  font-size: var(--text-base);
-  resize: vertical;
-  min-height: 100px;
-  box-sizing: border-box;
-}
-
-.textarea:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-subtle);
-}
-
-.charCounter {
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-  text-align: right;
-}
-
-.divider {
-  border: none;
-  border-top: 1px solid var(--color-border);
-  margin: var(--space-4) 0;
-}
-
-.quiz h2 {
-  font-size: var(--text-xl);
-  margin-bottom: var(--space-2);
-}
-
-.quiz > p:not(.feedbackLegend):not(.optionalLabel):not(.configNote):not(.privacy):not(.error) {
-  color: var(--color-text-muted);
-  margin-bottom: var(--space-6);
-}
-
-.error {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-  padding: var(--space-4);
-  background: var(--color-error-subtle);
-  border: 1px solid var(--color-error);
-  border-radius: var(--radius-md);
-  color: var(--color-error);
-}
-
-.retryBtn {
-  padding: var(--space-2) var(--space-4);
-  border: 1px solid currentColor;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.retryBtn:hover {
-  background: currentColor;
-  color: var(--color-surface);
-}
-
-.actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: var(--space-4);
-}
-
-.submitBtn {
-  padding: var(--space-3) var(--space-8);
-  font-size: var(--text-base);
-  font-weight: 600;
-  border-radius: var(--radius-md);
-  border: none;
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.submitBtn:hover:not(:disabled) {
-  background: var(--color-primary-hover);
-}
-
-.submitBtn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.submitBtn:focus-visible {
-  outline: 3px solid var(--color-focus);
-  outline-offset: 2px;
-}
-
-.configNote {
-  text-align: center;
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
-  margin-top: var(--space-4);
-}
-
-.privacy {
-  text-align: center;
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-  margin-top: var(--space-6);
-}
-
-.success {
-  text-align: center;
-  padding: var(--space-12) var(--space-4);
-}
-
-.success h1 {
-  font-size: var(--text-2xl);
-  margin-bottom: var(--space-4);
-}
-
-.success p {
-  color: var(--color-text-muted);
-  margin-bottom: var(--space-4);
-}
-
-.resetLink {
-  color: var(--color-primary);
-  text-decoration: underline;
-  font-weight: 500;
-}
-
-.resetLink:hover {
-  color: var(--color-primary-hover);
-}
-
-/* Header with issue button */
-.headerWithIssue {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
   flex-wrap: wrap;
+  gap: 8px;
 }
 
-.issueBtn {
+.segBtn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border: 1px solid var(--color-border);
+  justify-content: center;
+  height: 40px;
+  min-width: 48px;
+  padding: 0 14px;
   border-radius: 6px;
+  border: 1px solid #D5DEE4;
   background: var(--color-bg);
-  color: var(--color-text-secondary);
   font-size: var(--text-small);
-  font-weight: 500;
+  font-family: var(--font-body);
+  font-weight: var(--weight-label);
+  color: var(--color-text-primary);
   cursor: pointer;
+  white-space: nowrap;
   transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
-.issueBtn:hover {
+.segBtn:hover:not(.segBtnActive) {
   background: var(--color-surface);
-  border-color: var(--color-text-muted);
-  color: var(--color-heading);
 }
 
-.issueBtn:focus-visible {
+.segBtn:focus-visible {
   outline: 2px solid var(--color-link);
   outline-offset: 2px;
 }
 
-/* Modal styles */
-.modalOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  z-index: 95;
-  animation: fadeIn 180ms ease;
+.segBtnActive {
+  background: #90E0EF;
+  border-color: #5ecfe6;
+  color: #000;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+/* Rating scales - five equal-width squares (48px wide) */
+.ratingScale .segBtn {
+  flex: 1 0 48px;
+  min-width: 48px;
+  max-width: 48px;
 }
 
-.modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 100;
-  background: var(--color-bg);
-  border-radius: var(--radius-lg);
-  width: min(560px, calc(100vw - 32px));
-  max-height: calc(100vh - 80px);
-  overflow: hidden;
+.ratingLabels {
   display: flex;
-  flex-direction: column;
-  animation: fadeIn 180ms ease;
-}
-
-.modalHeader {
-  display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--color-border-subtle);
-}
-
-.modalHeader h2 {
-  font-size: var(--text-xl);
-  font-weight: 600;
-  color: var(--color-heading);
-  margin: 0;
-}
-
-.modalClose {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--color-border);
-  background: transparent;
-  color: var(--color-text-secondary);
-  font-size: 24px;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: background 140ms ease;
-}
-
-.modalClose:hover {
-  background: var(--color-surface);
-}
-
-.modalClose:focus-visible {
-  outline: 2px solid var(--color-link);
-  outline-offset: 2px;
-}
-
-.modalBody {
-  padding: 24px;
-  overflow-y: auto;
-}
-
-.formGroup {
-  margin-bottom: var(--space-4);
-}
-
-.label {
-  display: block;
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--color-text-primary);
-  margin-bottom: 8px;
-}
-
-.select,
-.textarea {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background: var(--color-bg);
-  font-size: var(--text-base);
-  font-family: var(--font-body);
-  color: var(--color-text-primary);
-  box-sizing: border-box;
-}
-
-.select:focus,
-.textarea:focus {
-  outline: none;
-  border-color: var(--color-link);
-  box-shadow: 0 0 0 3px var(--color-primary-subtle);
-}
-
-.modalFooter {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-3);
-  padding: 16px 24px;
-  border-top: 1px solid var(--color-border-subtle);
-}
-
-.btnSecondary,
-.btnPrimary {
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-size: var(--text-sm);
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
-  border: 1px solid transparent;
-}
-
-.btnSecondary {
-  background: transparent;
-  border-color: var(--color-border);
-  color: var(--color-text-secondary);
-}
-
-.btnSecondary:hover:not(:disabled) {
-  background: var(--color-surface);
-  border-color: var(--color-text-muted);
-  color: var(--color-text-primary);
-}
-
-.btnPrimary {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: var(--color-on-primary);
-}
-
-.btnPrimary:hover:not(:disabled) {
-  background: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
-}
-
-.btnSecondary:disabled,
-.btnPrimary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  padding: 0 4px;
+  margin-top: 6px;
 }
 
 /* Mobile responsive */
@@ -635,7 +434,24 @@
   }
 
   .questionCard {
-    padding: var(--space-4);
+    padding: 16px;
+  }
+
+  .questionText {
+    font-size: 17px;
+    line-height: 26px;
+  }
+
+  .optionLabel {
+    min-height: 48px;
+    padding: 12px 14px;
+    font-size: 15px;
+  }
+
+  .optionLetter {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
   }
 
   .segBtns {
@@ -654,9 +470,8 @@
     max-width: 44px;
   }
 
-  .optionLabel,
-  .helpedLabel {
-    padding: 10px 12px;
-    font-size: 14px;
+  .textarea {
+    font-size: 15px;
+    padding: 12px 14px;
   }
 }

@@ -425,11 +425,11 @@ export function QuizPackagePage() {
       <p>{preCheckItems.length} {preCheckItems.length === 1 ? 'question' : 'questions'}. No score shown yet. Just pick your best answer for each.</p>
       <form onSubmit={(e) => e.preventDefault()}>
         {preCheckItems.map((item, qi) => (
-          <fieldset key={item.id} className={styles.questionCard}>
-            <legend className={styles.questionLegend}>
+          <div key={item.id} className={styles.questionCard}>
+            <div className={styles.questionHeader}>
               <span className={styles.questionNumber}>Question {qi + 1} of {preCheckItems.length}</span>
-              {item.question}
-            </legend>
+            </div>
+            <p className={styles.questionText}>{item.question}</p>
             <div className={styles.options} role="radiogroup" aria-label={item.question}>
               {(item.options ?? []).map((option, idx) => (
                 <label key={idx} className={styles.optionLabel}>
@@ -439,13 +439,14 @@ export function QuizPackagePage() {
                     value={idx}
                     checked={preAnswers[item.id] === idx}
                     onChange={() => setPreAnswers((prev) => ({ ...prev, [item.id]: idx }))}
-                    className={styles.visuallyHidden}
+                    className={styles.optionInput}
                   />
+                  <span className={styles.optionLetter}>{String.fromCharCode(65 + idx)}</span>
                   <span className={styles.optionText}>{option}</span>
                 </label>
               ))}
             </div>
-          </fieldset>
+          </div>
         ))}
         <fieldset className={styles.questionCard}>
                   <legend className={styles.questionLegend}>
@@ -513,11 +514,11 @@ export function QuizPackagePage() {
 
         <form onSubmit={(e) => e.preventDefault()}>
           {questions.map((q, idx) => (
-            <fieldset key={q.id} className={styles.questionCard}>
-              <legend className={styles.questionLegend}>
+            <div key={q.id} className={styles.questionCard}>
+              <div className={styles.questionHeader}>
                 <span className={styles.questionNumber}>Question {idx + 1} of {questions.length}</span>
-                {q.question}
-              </legend>
+              </div>
+              <p className={styles.questionText}>{q.question}</p>
               {q.qtype === 'short' ? (
                 <div className={styles.shortAnswer}>
                   <textarea
@@ -544,14 +545,15 @@ export function QuizPackagePage() {
                         value={optIdx}
                         checked={postAnswers[q.id] === optIdx}
                         onChange={() => handlePostQuizChange(q.id, optIdx)}
-                        className={styles.visuallyHidden}
+                        className={styles.optionInput}
                       />
+                      <span className={styles.optionLetter}>{String.fromCharCode(65 + optIdx)}</span>
                       <span className={styles.optionText}>{option}</span>
                     </label>
                   ))}
                 </div>
               )}
-            </fieldset>
+            </div>
           ))}
 
           <hr className={styles.divider} />
