@@ -177,7 +177,7 @@ function LibraryNavLinks({ overHero }: { overHero: boolean }) {
   );
 }
 
-export function Nav() {
+export function Nav({ wideContainer = false }: { wideContainer?: boolean }) {
   const { role } = useRole();
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -229,7 +229,6 @@ const [pendingCounts, setPendingCounts] = useState<Record<string, number>>({});
     : effectiveRole === 'team' ? '/team/overview'
     : '/';
 
-  const isLandingPage = pathname === '/';
   const isLibraryPage = pathname === '/partner/library';
   const isAdaptPage =
     pathname === '/partner/adapt' ||
@@ -240,8 +239,8 @@ const [pendingCounts, setPendingCounts] = useState<Record<string, number>>({});
   const isEducatorPage = pathname.startsWith('/educator');
   const isTeamPage = pathname.startsWith('/team');
 
-  // Use wide container (matching library) on landing, library, and adapt pages
-  const useWideContainer = isLandingPage || isLibraryPage || isAdaptPage;
+  // Use wide container (matching library) on library, adapt pages, or when prop is passed
+  const useWideContainer = wideContainer || isLibraryPage || isAdaptPage;
 
   const baseNavLinks =
     isLibraryPage ? []

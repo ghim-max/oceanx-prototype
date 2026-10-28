@@ -46,12 +46,14 @@ function ScrollToTop() {
 function AppContent() {
   const { pathname } = useLocation();
   const isLanding = pathname === '/partner';
+  const isRoot = pathname === '/';
+  const wideContainer = isLanding || isRoot || pathname === '/partner/library' || pathname.startsWith('/partner/adapt');
 
   return (
     <PicksProvider>
       <ScrollToTop />
       <a href="#main-content" className="skip-link">Skip to content</a>
-      <Nav />
+      <Nav wideContainer={wideContainer} />
       <main
         id="main-content"
         className={`page-main${isLanding ? ' page-main--landing' : ''}`}
