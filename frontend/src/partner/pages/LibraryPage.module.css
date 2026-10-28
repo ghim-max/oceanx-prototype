@@ -975,29 +975,31 @@
    Drawer: past feedback section
    ────────────────────────────────────────────────────────────── */
 .pastFeedbackTrigger {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-2);
-  padding: 8px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--color-text-secondary);
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #90E0EF;
+  border-radius: 8px;
+  background: #90E0EF;
+  color: #0B1F33;
   font-size: var(--text-small);
   font-family: var(--font-body);
+  font-weight: 600;
   cursor: pointer;
-  transition: border-color 150ms ease, color 150ms ease, background 150ms ease;
+  transition: background 150ms ease, border-color 150ms ease;
   margin-top: var(--space-3);
 }
 
 .pastFeedbackTrigger:hover {
-  border-color: var(--color-text-muted);
-  color: var(--color-heading);
-  background: var(--color-surface);
+  background: #7AD4E6;
+  border-color: #7AD4E6;
 }
 
 .pastFeedbackTrigger:focus-visible {
-  outline: 2px solid var(--color-link);
+  outline: 2px solid #0B6E85;
   outline-offset: 2px;
 }
 
