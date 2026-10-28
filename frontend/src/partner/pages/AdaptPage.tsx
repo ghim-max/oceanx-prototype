@@ -1192,7 +1192,6 @@ export function AdaptPage() {
           }
           defaultOpen={true}
           storageKey="adapt-extras-collapsed"
-          autoCollapse={quizAdded && lessonPlanAdded}
         >
           <p className={styles.extrasSubline}>Add a knowledge check or lesson plan to your package.</p>
 
