@@ -1602,85 +1602,12 @@
   background: var(--color-bg);
 }
 
-/* Accepted state styles */
-.aiAcceptedPreview {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-3);
-  margin-bottom: var(--space-3);
-}
-
-@media (max-width: 767px) {
-  .aiAcceptedPreview {
-    grid-template-columns: 1fr;
-  }
-}
-
-.aiPreviewCol {
-  flex: 1;
-  min-width: 0;
-}
-
-.aiPreviewLabel {
-  display: block;
-  font-size: var(--text-micro);
-  font-weight: var(--weight-label);
-  font-family: var(--font-body);
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: var(--space-1);
-}
-
-.aiPreviewText {
-  font-size: var(--text-small);
-  color: var(--color-text-primary);
-  font-family: var(--font-body);
-  font-weight: var(--weight-body);
-  line-height: 1.5;
-  background: var(--color-surface);
-  padding: var(--space-3);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-md);
-  min-height: 120px;
-}
-
-.aiSources {
-  margin-top: var(--space-3);
-  font-size: var(--text-micro);
-  font-weight: var(--weight-label);
-  color: var(--color-text-muted);
-  font-family: var(--font-body);
-}
-
-.aiUndoBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: 8px 16px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-pill);
-  background: transparent;
-  color: var(--color-text-secondary);
-  font-size: var(--text-small);
-  font-family: var(--font-body);
-  font-weight: var(--weight-label);
-  cursor: pointer;
-  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
-  margin-top: var(--space-3);
-}
-
-.aiUndoBtn:hover {
-  background: var(--color-surface);
-  border-color: var(--color-text-primary);
-  color: var(--color-text-primary);
-}
-
+/* Accepted badge next to title */
 .aiAcceptedBadge {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  padding: 6px 12px;
+  padding: 4px 10px;
   border-radius: var(--radius-pill);
   border: 1px solid #5ecfe6;
   background: #90E0EF;
@@ -1688,19 +1615,65 @@
   font-size: var(--text-small);
   font-family: var(--font-body);
   font-weight: var(--weight-label);
-  margin-bottom: var(--space-3);
+  margin-left: var(--space-2);
 }
 
-.aiNote {
-  font-size: var(--text-micro);
-  font-weight: var(--weight-label);
-  color: var(--color-text-muted);
+/* Replace warning */
+.aiReplaceWarning {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-md);
+  background: #fffbeb;
+  color: #92400e;
+  font-size: var(--text-small);
   font-family: var(--font-body);
-  font-style: italic;
-  margin-top: 12px;
+  font-weight: var(--weight-body);
+  flex-wrap: wrap;
 }
 
-/* Controls before accepting */
+.aiConfirmReplaceBtn {
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-heading);
+  background: var(--color-heading);
+  color: var(--color-bg);
+  font-size: var(--text-small);
+  font-family: var(--font-body);
+  font-weight: var(--weight-label);
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.aiConfirmReplaceBtn:hover {
+  background: #1a2e3a;
+  border-color: #1a2e3a;
+}
+
+.aiCancelReplaceBtn {
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-small);
+  font-family: var(--font-body);
+  font-weight: var(--weight-label);
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.aiCancelReplaceBtn:hover {
+  background: var(--color-surface);
+  border-color: var(--color-text-primary);
+  color: var(--color-text-primary);
+}
+
+/* Controls row - ALWAYS VISIBLE */
 .aiControls {
   display: flex;
   align-items: flex-end;
@@ -1833,14 +1806,12 @@
   color: white;
 }
 
-/* Side-by-side Original | AI version */
+/* Two boxes side by side - SAME STYLE */
 .aiPreviewRow {
   display: flex;
-  gap: var(--space-4);
+  gap: 16px;
   align-items: stretch;
   margin-top: var(--space-4);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--color-border-subtle);
 }
 
 @media (max-width: 900px) {
@@ -1849,7 +1820,56 @@
   }
 }
 
-/* Action buttons row */
+.aiPreviewCol {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.aiPreviewLabel {
+  display: block;
+  font-size: var(--text-micro);
+  font-weight: var(--weight-label);
+  font-family: var(--font-body);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+/* Both boxes: white bg, 1px #E3E9ED border, 8px radius, 16px padding, 15px text, line-height 24px, equal height */
+.aiPreviewText {
+  flex: 1;
+  font-size: 15px;
+  line-height: 24px;
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-weight: var(--weight-body);
+  background: #fff;
+  padding: 16px;
+  border: 1px solid #E3E9ED;
+  border-radius: 8px;
+  min-height: 140px;
+}
+
+.aiPreviewText p {
+  margin: 0;
+}
+
+.aiPreviewText p + p {
+  margin-top: 12px;
+}
+
+.aiSources {
+  margin-top: var(--space-3);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+}
+
+/* Actions row - changes per state */
 .aiActionRow {
   display: flex;
   align-items: center;
@@ -1860,36 +1880,42 @@
   flex-wrap: wrap;
 }
 
-.aiUseBtn,
-.aiDiscardBtn,
-.aiRetryBtn {
+/* Use AI version - dark primary button (NOT essence style) */
+.aiUseBtn {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
   padding: 8px var(--space-4);
   border-radius: var(--radius-pill);
+  border: 1px solid var(--color-heading);
+  background: var(--color-heading);
+  color: var(--color-bg);
+  font-size: var(--text-small);
+  font-family: var(--font-body);
+  font-weight: var(--weight-label);
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.aiUseBtn:hover {
+  background: #1a2e3a;
+  border-color: #1a2e3a;
+}
+
+.aiDiscardBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 8px var(--space-4);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-secondary);
   font-size: var(--text-small);
   font-family: var(--font-body);
   font-weight: var(--weight-label);
   cursor: pointer;
   transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
-}
-
-.aiUseBtn {
-  border: 1px solid #5ecfe6;
-  background: #90E0EF;
-  color: #000;
-}
-
-.aiUseBtn:hover {
-  background: #72d5e9;
-  border-color: #46c5de;
-}
-
-.aiDiscardBtn {
-  border: 1px solid var(--color-border);
-  background: transparent;
-  color: var(--color-text-secondary);
 }
 
 .aiDiscardBtn:hover {
@@ -1899,15 +1925,57 @@
 }
 
 .aiRetryBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 8px var(--space-4);
+  border-radius: var(--radius-pill);
   border: 1px solid var(--color-border);
   background: transparent;
   color: var(--color-text-secondary);
+  font-size: var(--text-small);
+  font-family: var(--font-body);
+  font-weight: var(--weight-label);
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
 }
 
 .aiRetryBtn:hover {
   background: var(--color-surface);
   border-color: var(--color-text-primary);
   color: var(--color-text-primary);
+}
+
+/* Undo button for State 3 */
+.aiUndoBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 8px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-small);
+  font-family: var(--font-body);
+  font-weight: var(--weight-label);
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.aiUndoBtn:hover {
+  background: var(--color-surface);
+  border-color: var(--color-text-primary);
+  color: var(--color-text-primary);
+}
+
+.aiNote {
+  font-size: 13px;
+  font-weight: var(--weight-label);
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  font-style: italic;
+  margin-top: 12px;
 }
 
 .aiNoOriginal {
