@@ -4,6 +4,7 @@ import styles from './CollapsibleSection.module.css';
 
 interface CollapsibleSectionProps {
   title: ReactNode;
+  optionalTag?: ReactNode;
   subtitle?: ReactNode;
   summary: string;
   defaultOpen?: boolean;
@@ -15,6 +16,7 @@ interface CollapsibleSectionProps {
 
 export function CollapsibleSection({
   title,
+  optionalTag,
   subtitle,
   summary,
   defaultOpen = true,
@@ -82,7 +84,10 @@ export function CollapsibleSection({
         id={storageKey ? `${storageKey}-heading` : undefined}
       >
         <div className={styles.headerLeft}>
-          <span className={styles.title}>{title}</span>
+          <div className={styles.titleRow}>
+            <span className={styles.title}>{title}</span>
+            {optionalTag && <span className={styles.optionalTag}>{optionalTag}</span>}
+          </div>
           {subtitle && <span className={styles.subtitle}>{subtitle}</span>}
         </div>
         <button

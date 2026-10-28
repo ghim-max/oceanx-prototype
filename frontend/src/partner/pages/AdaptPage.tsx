@@ -894,6 +894,11 @@ export function AdaptPage() {
   // Enabled: at least 1 pick exists
   const canContinue = allPickIds.length > 0;
 
+  // Build collapsed summary for "Need more materials?" section
+  const extrasSummary = quizAdded || lessonPlanAdded
+    ? `${quizAdded ? `Knowledge check: ${assembleResult?.itemIds.length ?? quizCount} ${quizType === 'mcq' ? 'MCQ' : quizType === 'short' ? 'Short' : 'Mixed'}, ${quizDifficulty}` : ''}${quizAdded && lessonPlanAdded ? ' · ' : ''}${lessonPlanAdded ? `Lesson plan: ${lessonPlanLength} min, ${lessonPlanLevel.charAt(0).toUpperCase() + lessonPlanLevel.slice(1)}` : ''}`
+    : 'Nothing added yet';
+
   const handleContinue = () => {
     const addedRecDetails = Array.from(addedRecs).map(id => {
       const c = getComponent(id);
@@ -1184,18 +1189,14 @@ export function AdaptPage() {
         {/* ── Section 3: Need more materials? ── */}
         <CollapsibleSection
           title="Need more materials?"
-          subtitle={<span className={styles.optionalBadge}>Optional</span>}
-          summary={
-            quizAdded || lessonPlanAdded
-              ? `${quizAdded ? 'Knowledge check added' : ''}${quizAdded && lessonPlanAdded ? ' · ' : ''}${lessonPlanAdded ? 'Lesson plan added' : ''}`
-              : 'Nothing added'
-          }
+          optionalTag={<span className={styles.optionalBadge}>Optional</span>}
+          subtitle="Add a knowledge check or lesson plan to your package."
+          summary={extrasSummary}
           defaultOpen={true}
           storageKey="adapt-extras-collapsed"
         >
-          <p className={styles.extrasSubline}>Add a knowledge check or lesson plan to your package.</p>
-
-          <div className={styles.extrasGrid}>
+          <div className={styles.extrasContent}>
+            <div className={styles.extrasGrid}>
             {/* Knowledge check card */}
             <div className={styles.extrasCard}>
               <div className={styles.extrasCardHead}>
@@ -1311,24 +1312,22 @@ export function AdaptPage() {
                     </div>
                   ) : (
                     <>
-                      <div className={styles.extrasCardFooter}>
-                        <button
-                          type="button"
-                          className={styles.addToPicksBtn}
-                          onClick={() => setQuizAdded(true)}
-                          disabled={!!assembleResult?.error}
-                          aria-disabled={!!assembleResult?.error}
-                        >
-                          Add to my picks
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.removeLink}
-                          onClick={() => { setQuizEnabled(false); setAssembleResult(null); }}
-                        >
-                          Remove
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        className={styles.addToPicksBtn}
+                        onClick={() => setQuizAdded(true)}
+                        disabled={!!assembleResult?.error}
+                        aria-disabled={!!assembleResult?.error}
+                      >
+                        Add to my picks
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.removeLink}
+                        onClick={() => { setQuizEnabled(false); setAssembleResult(null); }}
+                      >
+                        Remove
+                      </button>
                       {assembleResult?.error && (
                         <p className={`${styles.assembleMsg} ${styles.assembleMsgError}`}>Cannot add: {assembleResult.error}</p>
                       )}
@@ -1424,24 +1423,22 @@ export function AdaptPage() {
                     </div>
                   ) : (
                     <>
-                      <div className={styles.extrasCardFooter}>
-                        <button
-                          type="button"
-                          className={styles.addToPicksBtn}
-                          onClick={() => setLessonPlanAdded(true)}
-                          disabled={!!(lessonPlanAssembleResult && 'error' in lessonPlanAssembleResult)}
-                          aria-disabled={!!(lessonPlanAssembleResult && 'error' in lessonPlanAssembleResult)}
-                        >
-                          Add to my picks
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.removeLink}
-                          onClick={() => { setLessonPlanEnabled(false); setLessonPlanAssembleResult(null); }}
-                        >
-                          Remove
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        className={styles.addToPicksBtn}
+                        onClick={() => setLessonPlanAdded(true)}
+                        disabled={!!(lessonPlanAssembleResult && 'error' in lessonPlanAssembleResult)}
+                        aria-disabled={!!(lessonPlanAssembleResult && 'error' in lessonPlanAssembleResult)}
+                      >
+                        Add to my picks
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.removeLink}
+                        onClick={() => { setLessonPlanEnabled(false); setLessonPlanAssembleResult(null); }}
+                      >
+                        Remove
+                      </button>
                       {lessonPlanAssembleResult && 'error' in lessonPlanAssembleResult && (
                         <p className={`${styles.assembleMsg} ${styles.assembleMsgError}`}>Cannot add: {lessonPlanAssembleResult.error}</p>
                       )}
@@ -1459,6 +1456,7 @@ export function AdaptPage() {
               </div>
             </div>
           </div>
+        </div>
         </CollapsibleSection>
 
       </div>
