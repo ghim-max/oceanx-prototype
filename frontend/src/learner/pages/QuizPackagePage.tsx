@@ -378,14 +378,14 @@ export function QuizPackagePage() {
       <div className={styles.choices}>
         <button
           type="button"
-          className={styles.choiceBtn}
+          className={styles.primaryBtn}
           onClick={() => setSearchParams({ step: 'pre' }, { replace: true })}
         >
           Start of class
         </button>
         <button
           type="button"
-          className={styles.choiceBtn}
+          className={styles.primaryBtn}
           onClick={() => setSearchParams({ step: 'post' }, { replace: true })}
         >
           After class
@@ -476,7 +476,7 @@ export function QuizPackagePage() {
         <div className={styles.actions}>
           <button
             type="button"
-            className={styles.submitBtn}
+            className={styles.primaryBtn}
             onClick={handlePreDone}
             disabled={
               !preCheckItems.every((q) => preAnswers[q.id] !== undefined) ||
@@ -485,6 +485,12 @@ export function QuizPackagePage() {
           >
             Done
           </button>
+          {(!preCheckItems.every((q) => preAnswers[q.id] !== undefined) ||
+            preConfidence === undefined) && (
+            <p className={styles.disabledHint}>
+              Answer all questions to continue ({preCheckItems.filter((q) => preAnswers[q.id] !== undefined).length} of {preCheckItems.length} answered).
+            </p>
+          )}
         </div>
       </form>
     </div>
@@ -732,12 +738,17 @@ export function QuizPackagePage() {
           <div className={styles.actions}>
             <button
               type="button"
-              className={styles.submitBtn}
+              className={styles.primaryBtn}
               onClick={handleSubmit}
               disabled={!isSubmitReady() || submitting || !isSupabaseConfigured}
             >
               {submitting ? 'Submitting...' : 'Submit'}
             </button>
+            {(!isSubmitReady() || !isSupabaseConfigured) && !submitting && (
+              <p className={styles.disabledHint}>
+                Answer all questions to continue ({questions.filter((q) => q.qtype === 'mcq').filter((q) => postAnswers[q.id] !== undefined).length} of {questions.filter((q) => q.qtype === 'mcq').length} answered).
+              </p>
+            )}
           </div>
 
           {!isSupabaseConfigured && (
