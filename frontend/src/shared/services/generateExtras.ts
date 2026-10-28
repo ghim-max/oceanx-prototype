@@ -112,12 +112,12 @@ export const UNIVERSITY_QUIZ: GeneratedQuiz = {
   ],
 };
 
-const UNIVERSITY_LESSON_PLAN: GeneratedLessonPlan = {
+export const UNIVERSITY_LESSON_PLAN: GeneratedLessonPlan = {
   title: 'Seagrass Stories: university seminar plan',
   description:
     'A 90-minute seminar built around your picks: the Changi Point video, the game and a causal chain research question.',
   totalDuration: '90 min',
-  pdfUrl: '/seagrass-stories-university-lesson-plan.pdf',
+  pdfUrl: '/files/seagrass-stories-lesson-plan.pdf',
   sections: [
     {
       label: 'Before class',

@@ -67,16 +67,16 @@ function buildComponentsSection(components: PackageEmailInput['components']): st
 function buildLessonPlanBlock(input: PackageEmailInput): string {
   if (!input.lessonPlanLink) return '';
 
-  const safeLink = escapeHtml(input.lessonPlanLink);
-  const safeLength = escapeHtml(String(input.lessonPlanLength ?? ''));
-  const safeLevel = escapeHtml(input.lessonPlanLevel ?? '');
+  // PDF URL using the email asset base URL
+  const pdfUrl = `${EMAIL_ASSET_BASE_URL}/files/seagrass-stories-lesson-plan.pdf`;
 
   return `
 <tr>
   <td style="padding:28px 40px 0 40px;">
     <div style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#4A6072;font-weight:bold;margin-bottom:6px;">Before class</div>
-    <p style="margin:0 0 16px 0;font-size:15px;line-height:24px;">Your lesson plan: ${safeLength} min, ${safeLevel}. Open it to print or save as PDF.</p>
-    ${buildButton({ href: safeLink, label: 'Open lesson plan', variant: 'dark' })}
+    <p style="margin:0 0 16px 0;font-size:15px;line-height:24px;">Your lesson plan is ready. Download it to print or share with co-teachers.</p>
+    ${buildButton({ href: escapeHtml(pdfUrl), label: 'Download lesson plan (PDF)', variant: 'dark' })}
+    <p style="margin:12px 0 0 0;font-size:13px;line-height:20px;color:#6B7F8E;">Sample lesson plan for the prototype.</p>
   </td>
 </tr>`;
 }
