@@ -41,7 +41,7 @@ const PAST_FEEDBACK_INSIGHTS: Record<
   string,
   { recommendedDecision: string; matchingFinalDecisionCount: number; ratedFourPlusCount: number; sampleSize: number }
 > = {
-  'video-nada': { recommendedDecision: 'Reuse', matchingFinalDecisionCount: 2, ratedFourPlusCount: 2, sampleSize: 3 },
+  'video-nada': { recommendedDecision: 'Reuse', matchingFinalDecisionCount: 3, ratedFourPlusCount: 3, sampleSize: 4 },
   'create-activity': { recommendedDecision: 'Adapt', matchingFinalDecisionCount: 4, ratedFourPlusCount: 4, sampleSize: 6 },
 };
 
@@ -356,9 +356,7 @@ function DrawerContent({
             <div className={styles.pastFeedbackContent}>
               {PAST_FEEDBACK_INSIGHTS[component.id] && (
                 <section className={styles.feedbackInsights} aria-label="Educator test insights">
-                  <h4 className={styles.feedbackInsightsTitle}>
-                    Educator test insights (n={PAST_FEEDBACK_INSIGHTS[component.id].sampleSize})
-                  </h4>
+                  <h4 className={styles.feedbackInsightsTitle}>Educator test insights</h4>
                   <p className={styles.feedbackInsight}>
                     Final decision matched {PAST_FEEDBACK_INSIGHTS[component.id].recommendedDecision}:{' '}
                     <strong>
