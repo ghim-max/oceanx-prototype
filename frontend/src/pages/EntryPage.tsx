@@ -1,11 +1,17 @@
 import partnersImg from '../../../Images/entry_page/Partners.jpg';
 import teamImg from '../../../Images/entry_page/Team.avif';
+import { useEffect } from 'react';
 import { useRole } from '../shared/context/RoleContext';
 import { ImageCard } from '../shared/ui/ImageCard';
+import { resetShareMaterialDemo } from '../team/data/governanceService';
 import styles from './EntryPage.module.css';
 
 export function EntryPage() {
   const { setRole } = useRole();
+
+  useEffect(() => {
+    resetShareMaterialDemo();
+  }, []);
 
   return (
     <div className={styles.page}>

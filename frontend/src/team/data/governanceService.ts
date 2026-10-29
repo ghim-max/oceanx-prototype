@@ -1235,6 +1235,32 @@ export function resetMock(): void {
   seedIfEmpty();
 }
 
+export function resetShareMaterialDemo(): void {
+  seedIfEmpty();
+  // Get IDs of new material items before removing them
+  const newMaterialIds = reviewItems
+    .filter((i) => i.isNewMaterial)
+    .map((i) => i.id);
+  
+  // Remove new material review items
+  reviewItems = reviewItems.filter((i) => !i.isNewMaterial);
+  
+  // Remove decision log rows that belong to removed ticket ids
+  decisionLog = decisionLog.filter((entry) => {
+    // Check if this log entry is for a new material share_back item
+    if (entry.targetType === 'share_back' && newMaterialIds.includes(entry.targetId)) {
+      return false;
+    }
+    return true;
+  });
+  
+  // Clear co-created materials
+  coCreatedMaterials = [];
+  
+  saveToStorage();
+  window.dispatchEvent(new Event('oceanx-review-counts-changed'));
+}
+
 // ============================================
 // AI Adaptation API (Part B)
 // ============================================

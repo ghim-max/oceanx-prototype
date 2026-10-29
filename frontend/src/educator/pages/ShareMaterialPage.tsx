@@ -32,15 +32,15 @@ interface Errors {
 }
 
 const initialFormData: FormData = {
-  title: '',
-  link: '',
-  stage: '',
-  description: '',
+  title: 'Seagrass Restoration Trade-offs: Seminar Debate',
+  link: `${window.location.origin}/files/seagrass-tradeoffs-seminar-activity.pdf`,
+  stage: 'Reflect',
+  description: 'A 45 minute stakeholder debate run after the Seagrass Stories game. Groups argue which restoration choice to fund, then map the consequences with the Map the chain causal chain.',
   coverImageLink: '',
-  creditName: '',
-  creditInstitution: '',
-  email: '',
-  okToReuse: false,
+  creditName: 'Dr. A. Rahman',
+  creditInstitution: 'Example University',
+  email: 'a.rahman@example.edu',
+  okToReuse: true,
 };
 
 const initialErrors: Errors = {};
