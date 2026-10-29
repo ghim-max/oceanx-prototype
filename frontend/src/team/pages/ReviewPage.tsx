@@ -175,6 +175,28 @@ export function ReviewPage() {
     }
   }, [searchParams, loadCounts, loadItems]);
 
+  // Auto-select the first ticket when the list changes and the current selection is not in it
+  useEffect(() => {
+    if (loading) return;
+    if (activeTab === 'packages') {
+      const stillThere = selectedPackage && packageRecords.some((r) => r.id === selectedPackage.id);
+      if (!stillThere) {
+        setSelectedPackage(packageRecords[0] ?? null);
+        setSelectedItem(null);
+      }
+    } else {
+      const stillThere = selectedItem && items.some((i) => i.id === selectedItem.id);
+      if (!stillThere) {
+        setSelectedPackage(null);
+        if (items[0]) {
+          void openReview(items[0].id).then((opened) => setSelectedItem(opened ?? items[0]));
+        } else {
+          setSelectedItem(null);
+        }
+      }
+    }
+  }, [loading, activeTab, packageRecords, items, selectedItem, selectedPackage]);
+
   // Handle row click
   const handleRowClick = async (item: ReviewItem) => {
     try {
