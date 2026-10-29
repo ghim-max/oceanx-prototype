@@ -8,6 +8,8 @@ export type PackageScreeningStatus = 'flagged' | 'passed';
 export type PackageReviewStatus = 'pending_review' | 'cleared';
 export type PackageComponentDecision = 'approved' | 'edited' | 'original';
 
+export { demoScreen };
+
 export interface PackageReviewMaterial {
   componentId: string;
   title: string;

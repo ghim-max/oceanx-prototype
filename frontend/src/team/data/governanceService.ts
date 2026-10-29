@@ -1,4 +1,5 @@
 import { SEAGRASS_STORIES } from '../../shared/data/seagrass-stories';
+import { demoScreen } from './packageReviewService';
 
 export const USE_MOCK = true;
 
@@ -40,6 +41,14 @@ export interface ReviewItem {
   screeningStatus?: 'flagged' | 'passed';
   screeningReason?: string;
   screeningMode?: 'demo';
+  // Share material fields
+  isNewMaterial?: boolean;
+  materialType?: string;
+  materialLink?: string;
+  stage?: string;
+  audience?: string;
+  creditName?: string;
+  creditInstitution?: string;
 }
 
 export interface DecisionLogEntry {
@@ -1107,6 +1116,75 @@ export async function submitShareBack(input: SubmitShareBackInput): Promise<{ ok
   return { ok: true, id: item.id };
 }
 
+// ============================================
+// Share Material API
+// ============================================
+
+export interface SubmitNewMaterialInput {
+  title: string;
+  materialType: string;
+  materialLink: string;
+  stage: string;
+  audience: string;
+  description: string;
+  creditName: string;
+  creditInstitution: string;
+  educatorEmail: string;
+  okToReuse: boolean;
+  pkgSlug?: string;
+}
+
+export async function submitNewMaterial(input: SubmitNewMaterialInput): Promise<{ ok: boolean; id?: string; error?: string }> {
+  await delay(300);
+  seedIfEmpty();
+
+  const now = nowISO();
+  const screen = demoScreen(`${input.title}\n${input.description}`);
+
+  const item: ReviewItem = {
+    id: genId(),
+    kind: 'share_back',
+    componentId: `new-${genId()}`,
+    componentTitle: input.title,
+    packageId: input.pkgSlug,
+    educatorEmail: input.educatorEmail,
+    originalText: '',
+    proposedText: input.description,
+    status: 'pending',
+    reviewer: 'OceanX team',
+    createdAt: now,
+    okToReuse: input.okToReuse,
+    screeningStatus: screen.status,
+    screeningReason: screen.reason,
+    screeningMode: 'demo',
+    isNewMaterial: true,
+    materialType: input.materialType,
+    materialLink: input.materialLink,
+    stage: input.stage,
+    audience: input.audience,
+    creditName: input.creditName,
+    creditInstitution: input.creditInstitution,
+  };
+
+  reviewItems.push(item);
+  reviewItems.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  saveToStorage();
+
+  // Write a decision_log entry the same way submitShareBack does
+  addDecisionLog({
+    who: 'OceanX team',
+    action: 'Package pending review',
+    targetType: 'share_back',
+    targetId: item.id,
+    why: `New material shared: ${input.title}`,
+    aiOverride: false,
+  });
+
+  window.dispatchEvent(new Event('oceanx-review-counts-changed'));
+
+  return { ok: true, id: item.id };
+}
+
 export function resetMock(): void {
   reviewItems = [];
   decisionLog = [];
@@ -1482,6 +1560,15 @@ export async function getLatestDecision(componentId: string): Promise<DecisionLo
 if (typeof window !== 'undefined' && USE_MOCK) {
   (window as any).__governanceLog = getDecisionLog;
   (window as any).__governanceReset = resetMock;
+  (window as any).__gov = {
+    getReviewItems,
+    getDecisionLog,
+    resetMock,
+    submitNewMaterial,
+    submitShareBack,
+    submitIssueReport,
+    seedIfEmpty,
+  };
 }
 
 // ============================================
