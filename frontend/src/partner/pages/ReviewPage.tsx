@@ -2,21 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Check, AlertCircle } from 'lucide-react';
 import {
-  sendPackage,
-  emailjsConfigured,
-  DEMO_EMAIL,
-  MissingEnvError,
-  type PackagePayload,
-} from '../../shared/services/sendPackage';
-import { API_BASE } from '../../shared/services/apiBase';
-import { BASE_URL } from '../../shared/services/sendPackage';
-import {
   assembleLessonPlan,
   type LessonLevel,
 } from '../../shared/services/assembleLessonPlan';
-import { submitPackage } from '../../team/data/governanceService';
-import { UNIVERSITY_STATUS } from '../../shared/data/university-version';
-import { DURATION_MIN } from './AdaptPage';
+import { submitDemoPackage } from '../../team/data/packageReviewService';
 import styles from './ReviewPage.module.css';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -72,13 +61,15 @@ function readAdaptOptions(): AdaptOptions | null {
   }
 }
 
-type SendState = 'idle' | 'sending' | 'success' | 'error' | 'missing-env';
+type SendState = 'idle' | 'sending' | 'success' | 'error';
 
 // ─── Email validation ────────────────────────────────────────────────────────
 
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
+
+const DEMO_EMAIL = import.meta.env.VITE_DEMO_EMAIL ?? '';
 
 // ─── Detail row for package summary ────────────────────────────────────────
 
@@ -195,7 +186,8 @@ function PackageSummary() {
 
       {/* Always shown review gate message */}
       <p className={styles.gateNotice}>
-        Your package will go through the OceanX Education Review Gate. Allow up to 1 business day for your links to arrive.
+        Your package will be automatically checked before delivery. Only flagged materials require additional review by OceanX Education.
+        {' '}Demo mode uses deterministic examples; no email is sent.
       </p>
     </section>
   );
@@ -276,16 +268,6 @@ export function ReviewPage() {
 
     const adaptOptions = readAdaptOptions();
     const quizEnabled = adaptOptions?.quizEnabled ?? false;
-    const quizTitle = quizEnabled && (adaptOptions?.itemIds.length ?? 0) > 0 ? 'Knowledge Check' : undefined;
-    const quizAssembly = {
-      component_ids: adaptOptions?.componentIds ?? [],
-      options: adaptOptions
-        ? { type: adaptOptions.quizType, difficulty: adaptOptions.quizDifficulty, count: adaptOptions.quizCount }
-        : {},
-      item_ids: adaptOptions?.itemIds ?? [],
-    };
-
-    // Assemble lesson plan if requested
     const lpEnabled = adaptOptions?.lessonPlanEnabled ?? false;
     let assembledPlan: ReturnType<typeof assembleLessonPlan> | null = null;
     if (lpEnabled && adaptOptions?.lessonPlanLength && adaptOptions?.lessonPlanLevel) {
@@ -306,128 +288,39 @@ export function ReviewPage() {
     }
 
     const lessonPlanData = assembledPlan && !('error' in assembledPlan) ? assembledPlan : null;
-
-    // If there are accepted AI rewrites, submit them for review instead of sending email directly
-    if (acceptedRewrites.length > 0) {
-      // Update rewrites with the actual educator email
-      const rewritesWithEmail = acceptedRewrites.map(r => ({
-        ...r,
+    try {
+      const record = submitDemoPackage({
         educatorEmail: email.trim(),
-      }));
-
-      // Create a package object for submitPackage
-      const pkgForSubmit = {
         audience: pkg.audience,
         picks: pkg.picks,
         recommendations: pkg.recommendations,
-      };
-
-      const result = await submitPackage(pkgForSubmit, rewritesWithEmail);
-
-      if (result.status === 'pending_review') {
-        setSentForReview(true);
-        setSendState('success');
-        sessionStorage.removeItem('adaptPackage');
-        sessionStorage.removeItem('adaptOptions');
-        sessionStorage.removeItem('adaptAcceptedRewrites');
-        return;
-      }
-      // If status is 'sent', fall through to normal email sending
-    }
-
-    // First, create the package on the backend to get a slug
-    let slug: string | undefined;
-    try {
-      const createResponse = await fetch(`${API_BASE}/packages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          audience: pkg.audience,
-          picks: pkg.picks,
-          recommendations: pkg.recommendations,
-          quiz_title: quizTitle,
-          lesson_plan_title: lessonPlanData ? 'Lesson Plan' : undefined,
-          lesson_plan_url: lessonPlanData ? undefined : undefined,
-          lesson_plan: lessonPlanData ?? undefined,
-          educator_email: email.trim(),
-          component_ids: quizAssembly.component_ids,
-          options: quizAssembly.options,
-          item_ids: quizAssembly.item_ids,
-        }),
+        acceptedRewrites,
+        quiz: quizEnabled
+          ? {
+              title: adaptOptions?.itemIds.length ? 'Knowledge Check' : undefined,
+              componentIds: adaptOptions?.componentIds ?? [],
+              options: adaptOptions
+                ? { type: adaptOptions.quizType, difficulty: adaptOptions.quizDifficulty, count: adaptOptions.quizCount }
+                : {},
+              itemIds: adaptOptions?.itemIds ?? [],
+            }
+          : undefined,
+        quizSummary: quizEnabled
+          ? `${adaptOptions?.itemIds.length ?? 0} ${adaptOptions?.quizType ?? 'mixed'} question(s)`
+          : undefined,
+        lessonPlan: lessonPlanData ?? undefined,
+        lessonPlanSummary: lessonPlanData
+          ? `${lessonPlanData.length} minutes, ${lessonPlanData.level} level`
+          : undefined,
       });
-      if (!createResponse.ok) {
-        throw new Error('Failed to create package');
-      }
-      const createdPkg = await createResponse.json();
-      slug = createdPkg.slug;
-    } catch (err) {
-      console.error('[create package error]', err);
-      setSendState('error');
-      setErrorMessage('Failed to create package. Please try again.');
-      return;
-    }
-
-    const lessonPlanUrl = lessonPlanData && slug ? `/lesson/p/${slug}` : undefined;
-
-    // Build component list for email
-    const allComponents = [
-      ...pkg.picks,
-      ...pkg.recommendations,
-    ];
-const emailComponents = allComponents.map(c => ({
-      title: c.title,
-      type: UNIVERSITY_STATUS[c.id]?.status || 'Fixed',
-      minutes: DURATION_MIN[c.id] || 0,
-    }));
-
-    // Quiz info
-    const quizLink = quizEnabled && slug ? `${BASE_URL}/quiz/p/${slug}` : undefined;
-    const quizQuestionCount = adaptOptions?.quizCount;
-
-    // Lesson plan info
-    const lessonPlanLength = adaptOptions?.lessonPlanLength;
-    const lessonPlanLevel = adaptOptions?.lessonPlanLevel;
-
-    // AI review flag
-    const hadAiReview = acceptedRewrites.length > 0;
-
-    // Then send the email with the slug
-    const payload: PackagePayload = {
-      email: email.trim(),
-      educatorName: '', // Will use fallback in email template
-      audience: pkg.audience,
-      components: emailComponents,
-      quizLink,
-      quizQuestionCount,
-      lessonPlanLink: lessonPlanUrl,
-      lessonPlanLength,
-      lessonPlanLevel,
-      hadAiReview,
-      slug,
-    };
-
-    try {
-      await sendPackage(payload);
+      setSentForReview(record.status === 'pending_review');
       setSendState('success');
       sessionStorage.removeItem('adaptPackage');
       sessionStorage.removeItem('adaptOptions');
       sessionStorage.removeItem('adaptAcceptedRewrites');
     } catch (err) {
-      console.error('[sendPackage error]', err);
-      if (err instanceof MissingEnvError) {
-        setSendState('missing-env');
-        setErrorMessage(err.message);
-      } else {
-        setSendState('error');
-        // EmailJS rejects with {status, text} — not an Error instance
-        const msg =
-          err instanceof Error
-            ? err.message
-            : typeof err === 'object' && err !== null && 'text' in err
-            ? String((err as { text: unknown }).text)
-            : 'Something went wrong. Please try again.';
-        setErrorMessage(msg);
-      }
+      setSendState('error');
+      setErrorMessage(err instanceof Error ? err.message : 'Package submission failed. Nothing was sent.');
     }
   };
 
@@ -458,16 +351,16 @@ const emailComponents = allComponents.map(c => ({
             </span>
             {sentForReview ? (
               <>
-                <h1 className={styles.h1} ref={h1Ref} tabIndex={-1}>Sent for OceanX review.</h1>
+                <h1 className={styles.h1} ref={h1Ref} tabIndex={-1}>Your package requires additional review.</h1>
                 <p className={styles.successDesc}>
-                  Your package has been submitted for review. You will get your email after approval.
+                  In a live workflow, OceanX Education would email your resources once the review is complete. Demo mode: no email was sent.
                 </p>
               </>
             ) : (
               <>
-                <h1 className={styles.h1} ref={h1Ref} tabIndex={-1}>Your package is on its way.</h1>
+                <h1 className={styles.h1} ref={h1Ref} tabIndex={-1}>Your package has passed the review check.</h1>
                 <p className={styles.successDesc}>
-                  Check <strong>{email}</strong> for your seminar links. Allow a few minutes for delivery.
+                  Demo mode: the package was recorded for preview. No email was sent to <strong>{email}</strong>.
                 </p>
               </>
             )}
@@ -507,7 +400,7 @@ const emailComponents = allComponents.map(c => ({
           </button>
           <h1 className={styles.h1} ref={h1Ref} tabIndex={-1}>Review your package</h1>
           <p className={styles.subtitle}>
-            Check what will be sent, then enter your email to receive the links.
+            Check what will be included in the demo package, then enter your email address.
           </p>
         </header>
 
@@ -516,21 +409,7 @@ const emailComponents = allComponents.map(c => ({
 
         {/* ── Email section ── */}
         <section className={styles.section} aria-labelledby="email-heading">
-          <h2 className={styles.h2} id="email-heading">Send to</h2>
-
-          {sendState === 'missing-env' && (
-            <div className={styles.envWarning} role="alert">
-              <AlertCircle size={16} aria-hidden="true" />
-              <div>
-                <p className={styles.envWarningTitle}>EmailJS not configured</p>
-                <p className={styles.envWarningDesc}>
-                  Add <code>VITE_EMAILJS_SERVICE_ID</code>,{' '}
-                  <code>VITE_EMAILJS_TEMPLATE_ID</code>, and{' '}
-                  <code>VITE_EMAILJS_PUBLIC_KEY</code> to your <code>.env</code> file, then restart the dev server.
-                </p>
-              </div>
-            </div>
-          )}
+          <h2 className={styles.h2} id="email-heading">Educator email</h2>
 
           {sendState === 'error' && (
             <div className={styles.errorBanner} role="alert">
@@ -543,13 +422,6 @@ const emailComponents = allComponents.map(c => ({
               >
                 Try again
               </button>
-            </div>
-          )}
-
-          {!emailjsConfigured() && sendState === 'idle' && (
-            <div className={styles.envNotice} role="note">
-              <AlertCircle size={14} aria-hidden="true" />
-              <p>EmailJS credentials are not set. The send button will show the configuration error when clicked.</p>
             </div>
           )}
 
@@ -590,10 +462,10 @@ const emailComponents = allComponents.map(c => ({
                 <span className={styles.sendingDots} aria-hidden="true">
                   <span /><span /><span />
                 </span>
-                Sending...
+                Checking...
               </>
             ) : (
-              'Send package'
+              'Submit package'
             )}
           </button>
         </section>

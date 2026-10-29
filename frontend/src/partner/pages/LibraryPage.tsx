@@ -37,6 +37,14 @@ const TYPE_OPTIONS: ComponentType[] = ['Watch', 'Play', 'Discuss', 'Create', 'Re
 const AUDIENCE_OPTIONS = ['Schools', 'University', 'Museum'] as const;
 type Audience = (typeof AUDIENCE_OPTIONS)[number];
 
+const PAST_FEEDBACK_INSIGHTS: Record<
+  string,
+  { recommendedDecision: string; matchingFinalDecisionCount: number; ratedFourPlusCount: number; sampleSize: number }
+> = {
+  'video-nada': { recommendedDecision: 'Reuse', matchingFinalDecisionCount: 3, ratedFourPlusCount: 3, sampleSize: 4 },
+  'create-activity': { recommendedDecision: 'Adapt', matchingFinalDecisionCount: 4, ratedFourPlusCount: 4, sampleSize: 6 },
+};
+
 const TYPE_ICONS: Record<ComponentType, React.ComponentType<{ size?: number }>> = {
   Watch: Play,
   Play: Gamepad2,
@@ -346,6 +354,35 @@ function DrawerContent({
           {/* Past feedback content */}
           {showPastFeedback && (
             <div className={styles.pastFeedbackContent}>
+              {PAST_FEEDBACK_INSIGHTS[component.id] && (
+                <section className={styles.feedbackInsights} aria-label="Educator test insights">
+                  <h4 className={styles.feedbackInsightsTitle}>Educator test insights</h4>
+                  <p className={styles.feedbackInsight}>
+                    Final decision matched {PAST_FEEDBACK_INSIGHTS[component.id].recommendedDecision}:{' '}
+                    <strong>
+                      {(
+                        (PAST_FEEDBACK_INSIGHTS[component.id].matchingFinalDecisionCount /
+                          PAST_FEEDBACK_INSIGHTS[component.id].sampleSize) *
+                        100
+                      ).toFixed(1)}
+                      % ({PAST_FEEDBACK_INSIGHTS[component.id].matchingFinalDecisionCount}/
+                      {PAST_FEEDBACK_INSIGHTS[component.id].sampleSize})
+                    </strong>
+                  </p>
+                  <p className={styles.feedbackInsight}>
+                    Rated recommendation 4 or above:{' '}
+                    <strong>
+                      {(
+                        (PAST_FEEDBACK_INSIGHTS[component.id].ratedFourPlusCount /
+                          PAST_FEEDBACK_INSIGHTS[component.id].sampleSize) *
+                        100
+                      ).toFixed(1)}
+                      % ({PAST_FEEDBACK_INSIGHTS[component.id].ratedFourPlusCount}/
+                      {PAST_FEEDBACK_INSIGHTS[component.id].sampleSize})
+                    </strong>
+                  </p>
+                </section>
+              )}
               {loadingFeedback ? (
                 <div className={styles.pastFeedbackEmpty}>Loading feedback...</div>
               ) : pastFeedback && pastFeedback.length > 0 ? (
