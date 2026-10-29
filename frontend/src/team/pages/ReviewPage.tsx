@@ -5,13 +5,11 @@ import {
   getPendingCounts,
   openReview,
   decideReview,
-  getDecisionLog,
   resetMock,
   resolveIssueReport,
   type ReviewItem,
   type ReviewKind,
   type ReviewStatus,
-  USE_MOCK,
 } from '../data/governanceService';
 import {
   decideDemoPackageComponent,
@@ -102,7 +100,6 @@ export function ReviewPage() {
   const [filterStatus, setFilterStatus] = useState<'pending' | 'done'>('pending');
   const [items, setItems] = useState<ReviewItem[]>([]);
   const [packageRecords, setPackageRecords] = useState<PackageReviewRecord[]>([]);
-  const [legacyAdaptationCount, setLegacyAdaptationCount] = useState(0);
   const [counts, setCounts] = useState({
     packages: 0,
     share_back: 0,
@@ -114,6 +111,7 @@ export function ReviewPage() {
   const [selectedItem, setSelectedItem] = useState<ReviewItem | null>(null);
   const [selectedPackage, setSelectedPackage] = useState<PackageReviewRecord | null>(null);
   const [packageEdits, setPackageEdits] = useState<Record<string, string>>({});
+  const [approvalMaterial, setApprovalMaterial] = useState<PackageReviewMaterial | null>(null);
   const [editText, setEditText] = useState('');
   const [rejectReason, setRejectReason] = useState('');
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -144,9 +142,6 @@ export function ReviewPage() {
       if (activeTab === 'packages') {
         const status = filterStatus === 'pending' ? 'pending_review' : 'cleared';
         setPackageRecords(getPackageReviewRecords(status));
-        const legacyAdaptations =
-          filterStatus === 'pending' ? await getReviewQueue('ai_adaptation', 'pending') : [];
-        setLegacyAdaptationCount(legacyAdaptations.length);
         setItems([]);
       } else {
         const data = await getReviewQueue(activeTab, filterStatus === 'pending' ? 'pending' : 'done');
@@ -158,7 +153,6 @@ export function ReviewPage() {
           setItems(data);
         }
         setPackageRecords([]);
-        setLegacyAdaptationCount(0);
       }
     } catch {
       setError('Could not load review queue');
@@ -226,6 +220,13 @@ export function ReviewPage() {
     }
   };
 
+  const handlePackageApprovalConfirm = async () => {
+    if (!selectedPackage || !approvalMaterial) return;
+    const material = approvalMaterial;
+    setApprovalMaterial(null);
+    await handlePackageDecision(selectedPackage.id, material, 'approve');
+  };
+
   // Handle decision
   const handleDecide = async (action: 'approve' | 'edit' | 'reject', finalText?: string, reason?: string) => {
     if (!selectedItem) return;
@@ -251,7 +252,7 @@ export function ReviewPage() {
       // Check for release email
       if (result.releaseEmail && result.educatorEmail) {
         setTimeout(() => {
-          setToast({ message: `All items approved. Email would be sent to ${result.educatorEmail} (mock)`, type: 'info' });
+          setToast({ message: 'All items approved. Email delivery is simulated; no email was sent.', type: 'info' });
         }, 500);
       }
 
@@ -361,12 +362,6 @@ export function ReviewPage() {
     setShowResolveModal(false);
   };
 
-  // Dev: log decision log to console
-  const handleLogDecisionLog = async () => {
-    const log = await getDecisionLog();
-    console.log('Decision Log:', log);
-  };
-
   // Render list rows
   const renderList = () => {
     if (loading) {
@@ -394,7 +389,7 @@ export function ReviewPage() {
       if (packageRecords.length === 0) {
         return (
           <div className={styles.emptyState}>
-            <p>{filterStatus === 'pending' ? 'No packages are waiting for review.' : 'No cleared demo packages yet.'}</p>
+            <p>{filterStatus === 'pending' ? 'No packages are waiting for review.' : 'No completed packages yet.'}</p>
           </div>
         );
       }
@@ -402,7 +397,6 @@ export function ReviewPage() {
       return (
         <ul className={styles.list} role="listbox" aria-label="Packages requiring review">
           {packageRecords.map((record) => {
-            const flaggedCount = record.materials.filter((material) => material.screeningStatus === 'flagged').length;
             return (
               <li
                 key={record.id}
@@ -419,12 +413,12 @@ export function ReviewPage() {
                   <div className={styles.itemMeta}>
                     <span className={styles.metaItem}>{record.educatorEmail}</span>
                     <span className={styles.metaItem}>{formatDateTime(record.createdAt)}</span>
-                    <span className={styles.metaItem}>{flaggedCount} flagged component(s)</span>
                   </div>
                 </div>
                 <div className={styles.itemStatus}>
-                  <span className={`${styles.statusPill} ${record.status === 'pending_review' ? styles.statusFlagged : styles.statusApproved}`}>
-                    {record.status === 'pending_review' ? 'Pending review' : 'Cleared'}
+                  <span className={`${styles.statusPill} ${styles.statusFlagged}`}>Flagged</span>
+                  <span className={`${styles.statusPill} ${record.status === 'pending_review' ? styles.statusPending : styles.statusApproved}`}>
+                    {record.status === 'pending_review' ? 'Pending' : 'Done'}
                   </span>
                 </div>
               </li>
@@ -506,12 +500,12 @@ export function ReviewPage() {
       <div className={styles.detailPanel} role="region" aria-label={`${selectedPackage.id} package detail`}>
         <div className={styles.detailHeader}>
           <h2 className={styles.detailTitle}>{selectedPackage.id}</h2>
-          <span className={`${styles.statusPill} ${selectedPackage.status === 'pending_review' ? styles.statusFlagged : styles.statusApproved}`}>
-            {selectedPackage.status === 'pending_review' ? 'Pending review' : 'Cleared'}
-          </span>
-        </div>
-        <div className={styles.flaggedIntro}>
-          DEMO MODE — rule-based screening only. No live AI assessment or email delivery is connected.
+          <div className={styles.itemStatus}>
+            <span className={`${styles.statusPill} ${styles.statusFlagged}`}>Flagged</span>
+            <span className={`${styles.statusPill} ${selectedPackage.status === 'pending_review' ? styles.statusPending : styles.statusApproved}`}>
+              {selectedPackage.status === 'pending_review' ? 'Pending' : 'Done'}
+            </span>
+          </div>
         </div>
         <div className={styles.detailMeta}>
           <div className={styles.metaRow}><span className={styles.metaLabel}>Educator:</span> {selectedPackage.educatorEmail}</div>
@@ -533,10 +527,15 @@ export function ReviewPage() {
                 <div className={styles.detailHeader}>
                   <h4 className={styles.detailTitle}>{material.title}</h4>
                   <span className={`${styles.statusPill} ${material.screeningStatus === 'flagged' ? styles.statusFlagged : styles.statusApproved}`}>
-                    {material.screeningStatus === 'flagged' ? 'Flagged (demo)' : 'Passed (demo)'}
+                    {material.screeningStatus === 'flagged' ? 'Flagged' : 'Passed'}
                   </span>
                 </div>
-                {material.screeningReason && <p className={styles.reasonBlock}>{material.screeningReason}</p>}
+                {material.screeningReason && (
+                  <div className={styles.reasonBlock}>
+                    <span className={styles.metaLabel}>Flag reason:</span>
+                    <p>{material.screeningReason}</p>
+                  </div>
+                )}
                 <div className={styles.compareSection}>
                   <div className={styles.compareCol}>
                     <h4 className={styles.compareHeading}>Original approved resource</h4>
@@ -579,7 +578,7 @@ export function ReviewPage() {
                       <button
                         type="button"
                         className={`${styles.btn} ${styles.btnApprove}`}
-                        onClick={() => handlePackageDecision(selectedPackage.id, material, 'approve')}
+                        onClick={() => setApprovalMaterial(material)}
                         disabled={deciding}
                       >
                         Approve &amp; Send
@@ -607,11 +606,6 @@ export function ReviewPage() {
             );
           })}
         </div>
-        {selectedPackage.status === 'cleared' && (
-          <div className={styles.flaggedIntro}>
-            Final package preview is shown above. The demo records what would be sent; no real email was sent.
-          </div>
-        )}
       </div>
     );
   };
@@ -675,8 +669,8 @@ export function ReviewPage() {
             <div className={styles.metaRow}>
               <span className={styles.metaLabel}>Screening:</span>{' '}
               {item.screeningStatus === 'flagged'
-                ? `Flagged${item.screeningMode === 'demo' ? ' (demo)' : ''}`
-                : `Passed${item.screeningMode === 'demo' ? ' (demo)' : ''}`}
+                ? 'Flagged'
+                : 'Passed'}
             </div>
           )}
         </div>
@@ -869,6 +863,7 @@ export function ReviewPage() {
       <div className={styles.container}>
         <header className={styles.header}>
           <h1 className={styles.h1}>Review</h1>
+          <p className={styles.reviewerLine}>Prototype: screening and package delivery are simulated; no email is sent.</p>
         </header>
 
         {/* Tabs */}
@@ -919,14 +914,9 @@ export function ReviewPage() {
             <h2 id="list-heading" className={styles.sectionHeading}>
               {REVIEW_TABS.find((tab) => tab.id === activeTab)?.label} ({activeTab === 'packages' ? packageRecords.length : items.length})
             </h2>
-            {activeTab === 'packages' && legacyAdaptationCount > 0 && (
-              <p className={styles.flaggedIntro} role="note">
-                {legacyAdaptationCount} legacy AI adaptation review item(s) remain in the earlier demo queue. They are not complete package submissions and cannot be safely released. New requests are reviewed as full packages.
-              </p>
-            )}
             {activeTab === 'share_back' && (
               <p className={styles.flaggedIntro}>
-                Only submissions flagged by demo screening appear here. All contributions still require staff review before library inclusion.
+                Only submissions flagged for staff review appear here. All contributions require staff review before library inclusion.
               </p>
             )}
             {renderList()}
@@ -940,17 +930,45 @@ export function ReviewPage() {
           </aside>
         </div>
 
-        {/* Dev button to log decision log */}
-        {USE_MOCK && (
-          <button type="button" className={styles.devLogBtn} onClick={handleLogDecisionLog}>
-            Log decision log to console
-          </button>
-        )}
       </div>
 
       {renderToast()}
       {renderRejectModal()}
       {renderResolveModal()}
+      {approvalMaterial && (
+        <div className={styles.modalOverlay} onClick={() => setApprovalMaterial(null)}>
+          <div
+            className={styles.modal}
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="package-approval-title"
+            aria-describedby="package-approval-prompt"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 id="package-approval-title" className={styles.modalTitle}>Confirm Approval</h2>
+            <p id="package-approval-prompt" className={styles.modalText}>
+              Have you verified the flagged scientific claims and confirmed this adaptation is suitable for release?
+            </p>
+            <div className={styles.modalActions}>
+              <button
+                type="button"
+                className={`${styles.btn} ${styles.btnCancel}`}
+                onClick={() => setApprovalMaterial(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={`${styles.btn} ${styles.btnApprove}`}
+                onClick={handlePackageApprovalConfirm}
+                disabled={deciding}
+              >
+                Confirm Approval
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </article>
   );
 }

@@ -2,7 +2,7 @@ import { COMPONENT_ORIGINAL_TEXTS, recordPackageDecision } from './governanceSer
 import { UNIVERSITY_STATUS } from '../../shared/data/university-version';
 
 const STORAGE_KEY = 'oceanx_demo_package_reviews_v1';
-const DEMO_SCREENING_NOTICE = 'Demo screening rule matched potentially out-of-scope or absolute-claim wording. Human judgement is required; this is not a live AI assessment.';
+const SCREENING_NOTICE = 'The submitted adaptation requires staff review for scientific accuracy and alignment with OceanX learning objectives.';
 
 export type PackageScreeningStatus = 'flagged' | 'passed';
 export type PackageReviewStatus = 'pending_review' | 'cleared';
@@ -56,25 +56,103 @@ function readRecords(): PackageReviewRecord[] {
   try {
     raw = localStorage.getItem(STORAGE_KEY);
   } catch {
-    throw new Error('Demo package storage is unavailable. Nothing was submitted.');
+    throw new Error('Package review storage is unavailable. Nothing was submitted.');
   }
-  if (!raw) return [];
 
+  let records: PackageReviewRecord[];
   try {
-    const parsed: unknown = JSON.parse(raw);
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(parsed)) throw new Error('Invalid package records');
-    return parsed as PackageReviewRecord[];
+    records = parsed as PackageReviewRecord[];
   } catch {
-    throw new Error('Demo package records could not be read. Nothing was submitted.');
+    throw new Error('Package review records could not be read. Nothing was submitted.');
   }
+
+  if (addSampleFlaggedPackages(records)) writeRecords(records);
+  return records;
 }
 
 function writeRecords(records: PackageReviewRecord[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
   } catch {
-    throw new Error('Demo package storage is unavailable. Nothing was submitted.');
+    throw new Error('Package review storage is unavailable. Nothing was submitted.');
   }
+}
+
+function addSampleFlaggedPackages(records: PackageReviewRecord[]): boolean {
+  const samples: PackageReviewRecord[] = [
+    {
+      id: 'PKG-2026-1048',
+      educatorEmail: 'maya.chen@coastaluniversity.edu',
+      audience: 'University',
+      createdAt: '2026-10-28T09:15:00.000Z',
+      status: 'pending_review',
+      deliveryStatus: 'not_sent',
+      materials: [
+        {
+          componentId: 'marine-ecosystem-learning-activity',
+          title: 'Marine Ecosystem Learning Activity',
+          originalText: COMPONENT_ORIGINAL_TEXTS['create-activity'],
+          proposedText: 'Students create a simple food chain showing how small fish eat seagrass and larger fish eat smaller fish. They use Post-it notes to demonstrate that changes in one species lead to predictable changes throughout the ecosystem.',
+          screeningStatus: 'flagged',
+          screeningReason: 'The adaptation oversimplifies seagrass food webs and assumes predictable ecological responses. OceanX Science should verify the feeding relationships, while OceanX Education should ensure the activity preserves its original learning objectives.',
+          finalText: 'Students create a simple food chain showing how small fish eat seagrass and larger fish eat smaller fish. They use Post-it notes to demonstrate that changes in one species lead to predictable changes throughout the ecosystem.',
+          originalApproved: true,
+        },
+      ],
+    },
+    {
+      id: 'PKG-2026-1052',
+      educatorEmail: 'jordan.lee@marinelearning.org',
+      audience: 'Secondary school educators',
+      createdAt: '2026-10-29T06:40:00.000Z',
+      status: 'pending_review',
+      deliveryStatus: 'not_sent',
+      materials: [
+        {
+          componentId: 'seagrass-restoration-workshop',
+          title: 'Seagrass Restoration Workshop',
+          originalText: COMPONENT_ORIGINAL_TEXTS['create-activity'],
+          proposedText: 'Students create a cause-and-effect diagram showing how planting seagrass shoots in any sandy coastal area guarantees meadow recovery within one season and increases fish populations. They illustrate these outcomes using Post-it notes.',
+          screeningStatus: 'flagged',
+          screeningReason: 'The adaptation incorrectly presents seagrass restoration as guaranteed regardless of site conditions. OceanX Science should verify site suitability, recovery timelines and expected ecological outcomes before the resource is released.',
+          finalText: 'Students create a cause-and-effect diagram showing how planting seagrass shoots in any sandy coastal area guarantees meadow recovery within one season and increases fish populations. They illustrate these outcomes using Post-it notes.',
+          originalApproved: true,
+        },
+      ],
+    },
+  ];
+
+  let changed = false;
+  for (const sample of samples) {
+    const existing = records.find((record) => record.id === sample.id);
+    if (!existing) {
+      records.push(sample);
+      changed = true;
+      continue;
+    }
+
+    if (existing.audience !== sample.audience) {
+      existing.audience = sample.audience;
+      changed = true;
+    }
+    for (const material of sample.materials) {
+      const existingMaterial = existing.materials.find((entry) => entry.componentId === material.componentId);
+      if (!existingMaterial) continue;
+
+      if (existingMaterial.screeningReason !== material.screeningReason) {
+        existingMaterial.screeningReason = material.screeningReason;
+        changed = true;
+      }
+      if (existingMaterial.proposedText !== material.proposedText) {
+        existingMaterial.proposedText = material.proposedText;
+        if (!existingMaterial.decision) existingMaterial.finalText = material.finalText;
+        changed = true;
+      }
+    }
+  }
+  return changed;
 }
 
 function demoScreen(text: string): { status: PackageScreeningStatus; reason?: string } {
@@ -83,7 +161,7 @@ function demoScreen(text: string): { status: PackageScreeningStatus; reason?: st
     /\b(?:proves?|guarantees?|always|never|100\s*%)\b/i,
   ];
   return demoRules.some((rule) => rule.test(text))
-    ? { status: 'flagged', reason: DEMO_SCREENING_NOTICE }
+    ? { status: 'flagged', reason: SCREENING_NOTICE }
     : { status: 'passed' };
 }
 
@@ -141,7 +219,7 @@ function makeRecord(input: CreatePackageReviewInput): PackageReviewRecord {
     });
   }
 
-  const id = `demo-package-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const id = `package-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const flagged = materials.some((material) => material.screeningStatus === 'flagged');
   return {
     id,
@@ -176,13 +254,13 @@ export function submitDemoPackage(input: CreatePackageReviewInput): PackageRevie
   writeRecords(records);
 
   if (record.status === 'cleared') {
-    recordPackageDecision(record.id, 'Package cleared', 'All demo screening rules passed.');
-    recordPackageDecision(record.id, 'Delivery simulated', 'No email was sent in demo mode.');
+    recordPackageDecision(record.id, 'Package cleared', 'All screening checks passed.');
+    recordPackageDecision(record.id, 'Delivery simulated', 'Delivery was simulated; no email was sent.');
   } else {
     recordPackageDecision(
       record.id,
       'Package pending review',
-      `${record.materials.filter((material) => material.screeningStatus === 'flagged').length} component(s) were flagged by demo rules.`,
+      `${record.materials.filter((material) => material.screeningStatus === 'flagged').length} component(s) were flagged for staff review.`,
     );
   }
 
@@ -198,7 +276,7 @@ export function decideDemoPackageComponent(
 ): { record: PackageReviewRecord; unresolvedCount: number } {
   const records = readRecords();
   const recordIndex = records.findIndex((entry) => entry.id === packageId);
-  if (recordIndex < 0) throw new Error('Package not found in demo review storage.');
+  if (recordIndex < 0) throw new Error('Package not found in review storage.');
 
   const record = records[recordIndex];
   if (record.status !== 'pending_review') throw new Error('This package is no longer awaiting review.');
@@ -231,7 +309,7 @@ export function decideDemoPackageComponent(
       recordPackageDecision(
         `${record.id}:${componentId}`,
         'Package pending review',
-        'The edited text still matches a demo screening rule and remains on hold.',
+        'The edited text still matches a screening rule and remains on hold.',
       );
       window.dispatchEvent(new Event('oceanx-review-counts-changed'));
       return {
@@ -267,7 +345,7 @@ export function decideDemoPackageComponent(
   );
   if (unresolvedCount === 0) {
     recordPackageDecision(record.id, 'Package cleared', 'All flagged components have staff decisions.');
-    recordPackageDecision(record.id, 'Delivery simulated', 'No email was sent in demo mode.');
+    recordPackageDecision(record.id, 'Delivery simulated', 'Delivery was simulated; no email was sent.');
   }
 
   window.dispatchEvent(new Event('oceanx-review-counts-changed'));
