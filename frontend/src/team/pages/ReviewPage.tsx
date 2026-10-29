@@ -502,7 +502,7 @@ export function ReviewPage() {
                       : '✅ Passed'}
                   </span>
                   {item.isNewMaterial && (
-                    <span className="new-material-badge">New material</span>
+                    <span className={styles.newMaterialBadge}>New material</span>
                   )}
                 </>
               )}
@@ -817,7 +817,7 @@ export function ReviewPage() {
             <span className={`${styles.statusPill} ${item.screeningStatus === 'flagged' ? styles.statusFlagged : styles.statusApproved}`}>
               {item.screeningStatus === 'flagged' ? '🚩 Flagged' : '✅ Passed'}
             </span>
-            <span className="new-material-badge">New material</span>
+            <span className={styles.newMaterialBadge}>New material</span>
             <span className={`${styles.statusPill} ${statusPillClass(item.status)}`}>
               {statusLabel(item.status)}
             </span>

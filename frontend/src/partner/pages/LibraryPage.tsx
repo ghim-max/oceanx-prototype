@@ -903,7 +903,12 @@ export function LibraryPage() {
               {/* Stage sections */}
               {STAGES.map((stage) => {
                 const stageComponents = filtered.filter((c) => c.stage === stage);
-                const stageCoCreated = coCreatedMaterials.filter((m) => m.stage === stage);
+                const stageCoCreated = coCreatedMaterials.filter((m) =>
+                  m.stage === stage &&
+                  activeTypes.length === 0 &&
+                  activeAudiences.length === 0 &&
+                  (activeStages.length === 0 || activeStages.includes(stageToAnchor(stage)))
+                );
                 const allStageItems = [...stageComponents, ...stageCoCreated];
                 if (allStageItems.length === 0) return null;
                 return (

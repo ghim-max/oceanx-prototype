@@ -935,7 +935,7 @@
   background: var(--color-surface-raised);
 }
 
-.new-material-badge {
+.newMaterialBadge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
