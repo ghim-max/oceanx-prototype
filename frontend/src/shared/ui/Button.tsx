@@ -1,7 +1,7 @@
 import { Link, type LinkProps } from 'react-router-dom';
 import styles from './Button.module.css';
 
-type Variant = 'dark' | 'light';
+type Variant = 'dark' | 'light' | 'accent';
 type Size = 'md' | 'sm';
 
 type ButtonProps = {

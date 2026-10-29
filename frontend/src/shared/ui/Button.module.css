@@ -74,3 +74,12 @@
   --btn-hover-bg: rgba(255, 255, 255, 0.12);
   --btn-active-bg: rgba(255, 255, 255, 0.2);
 }
+
+/* Accent: essence colour fill */
+.accent {
+  --btn-color: var(--color-text-on-accent);
+  --btn-hover-bg: var(--color-accent-dim);
+  --btn-active-bg: var(--color-accent-dim);
+  background: var(--color-accent);
+  border-color: var(--color-accent-dim);
+}

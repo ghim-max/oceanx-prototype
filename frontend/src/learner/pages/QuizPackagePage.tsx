@@ -379,14 +379,14 @@ export function QuizPackagePage() {
       <div className={styles.choices}>
         <LinkButton
           to={`/quiz/p/${slug}?step=pre`}
-          variant="dark"
+          variant="accent"
           size="md"
         >
           Start of class
         </LinkButton>
         <LinkButton
           to={`/quiz/p/${slug}?step=post`}
-          variant="dark"
+          variant="accent"
           size="md"
         >
           After class
@@ -405,7 +405,7 @@ export function QuizPackagePage() {
         on the same phone and choose "After class".
       </p>
       <div className={styles.choices}>
-        <LinkButton to={`/quiz/p/${slug}`} variant="dark" size="md">
+        <LinkButton to={`/quiz/p/${slug}`} variant="accent" size="md">
           Back to start
         </LinkButton>
       </div>
@@ -415,7 +415,7 @@ export function QuizPackagePage() {
       <h1>Pre-check: before class</h1>
       <p>No multiple choice questions are included in this quiz, so there is no pre-check for this session.</p>
       <div className={styles.choices}>
-        <LinkButton to={`/quiz/p/${slug}`} variant="dark" size="md">
+        <LinkButton to={`/quiz/p/${slug}`} variant="accent" size="md">
           Back to start
         </LinkButton>
       </div>
@@ -761,7 +761,7 @@ export function QuizPackagePage() {
       <h1>Thank you</h1>
       <p>{successMessage}</p>
       <p>
-        <LinkButton to={`/quiz/p/${slug}?reset=1`} variant="dark" size="md">
+        <LinkButton to={`/quiz/p/${slug}?reset=1`} variant="accent" size="md">
           Start over
         </LinkButton>
       </p>
