@@ -1,7 +1,7 @@
-import { COMPONENT_ORIGINAL_TEXTS, recordPackageDecision } from './governanceService';
+import { COMPONENT_ORIGINAL_TEXTS, COMPONENT_TITLES, getComponentOriginalText, recordPackageDecision } from './governanceService';
 import { UNIVERSITY_STATUS } from '../../shared/data/university-version';
 
-const STORAGE_KEY = 'oceanx_demo_package_reviews_v1';
+const STORAGE_KEY = 'oceanx_demo_package_reviews_v2';
 const SCREENING_NOTICE = 'The submitted adaptation requires staff review for scientific accuracy and alignment with OceanX learning objectives.';
 
 export type PackageScreeningStatus = 'flagged' | 'passed';
@@ -84,40 +84,40 @@ function addSampleFlaggedPackages(records: PackageReviewRecord[]): boolean {
   const samples: PackageReviewRecord[] = [
     {
       id: 'PKG-2026-1048',
-      educatorEmail: 'maya.chen@coastaluniversity.edu',
+      educatorEmail: 'a.rahman@example.edu',
       audience: 'University',
       createdAt: '2026-10-28T09:15:00.000Z',
       status: 'pending_review',
       deliveryStatus: 'not_sent',
       materials: [
         {
-          componentId: 'marine-ecosystem-learning-activity',
-          title: 'Marine Ecosystem Learning Activity',
-          originalText: COMPONENT_ORIGINAL_TEXTS['create-activity'],
-          proposedText: 'Students create a simple food chain showing how small fish eat seagrass and larger fish eat smaller fish. They use Post-it notes to demonstrate that changes in one species lead to predictable changes throughout the ecosystem.',
+          componentId: 'create-activity',
+          title: COMPONENT_TITLES['create-activity'],
+          originalText: getComponentOriginalText('create-activity'),
+          proposedText: 'Groups of 2 to 3 learners build a causal chain with 6 to 10 Post-its. Planting seagrass always guarantees full meadow recovery within one season.',
           screeningStatus: 'flagged',
-          screeningReason: 'The adaptation oversimplifies seagrass food webs and assumes predictable ecological responses. OceanX Science should verify the feeding relationships, while OceanX Education should ensure the activity preserves its original learning objectives.',
-          finalText: 'Students create a simple food chain showing how small fish eat seagrass and larger fish eat smaller fish. They use Post-it notes to demonstrate that changes in one species lead to predictable changes throughout the ecosystem.',
+          screeningReason: "Absolute claim ('always guarantees') not supported by the approved sources. Recovery depends on site conditions.",
+          finalText: 'Groups of 2 to 3 learners build a causal chain with 6 to 10 Post-its. Planting seagrass always guarantees full meadow recovery within one season.',
           originalApproved: true,
         },
       ],
     },
     {
       id: 'PKG-2026-1052',
-      educatorEmail: 'jordan.lee@marinelearning.org',
-      audience: 'Secondary school educators',
+      educatorEmail: 'j.koh@example.edu',
+      audience: 'University',
       createdAt: '2026-10-29T06:40:00.000Z',
       status: 'pending_review',
       deliveryStatus: 'not_sent',
       materials: [
         {
-          componentId: 'seagrass-restoration-workshop',
-          title: 'Seagrass Restoration Workshop',
-          originalText: COMPONENT_ORIGINAL_TEXTS['create-activity'],
-          proposedText: 'Students create a cause-and-effect diagram showing how planting seagrass shoots in any sandy coastal area guarantees meadow recovery within one season and increases fish populations. They illustrate these outcomes using Post-it notes.',
+          componentId: 'investigate-prompts',
+          title: COMPONENT_TITLES['investigate-prompts'],
+          originalText: getComponentOriginalText('investigate-prompts'),
+          proposedText: 'Discuss: what restoration decisions did you face? Note that 80% of seagrass meadows recover without help.',
           screeningStatus: 'flagged',
-          screeningReason: 'The adaptation incorrectly presents seagrass restoration as guaranteed regardless of site conditions. OceanX Science should verify site suitability, recovery timelines and expected ecological outcomes before the resource is released.',
-          finalText: 'Students create a cause-and-effect diagram showing how planting seagrass shoots in any sandy coastal area guarantees meadow recovery within one season and increases fish populations. They illustrate these outcomes using Post-it notes.',
+          screeningReason: 'Adds a number (80%) that is not in the approved sources.',
+          finalText: 'Discuss: what restoration decisions did you face? Note that 80% of seagrass meadows recover without help.',
           originalApproved: true,
         },
       ],
@@ -195,7 +195,7 @@ function makeRecord(input: CreatePackageReviewInput): PackageReviewRecord {
     materials.push({
       componentId: 'package-knowledge-check',
       title: 'Knowledge check',
-      originalText: '',
+      originalText: getComponentOriginalText('package-knowledge-check'),
       proposedText: 'Knowledge check assembled from the selected question-bank items.',
       screeningStatus: screen.status,
       screeningReason: screen.reason,
@@ -210,7 +210,7 @@ function makeRecord(input: CreatePackageReviewInput): PackageReviewRecord {
     materials.push({
       componentId: 'package-lesson-plan',
       title: 'Lesson plan',
-      originalText: '',
+      originalText: getComponentOriginalText('package-lesson-plan'),
       proposedText,
       screeningStatus: screen.status,
       screeningReason: screen.reason,
