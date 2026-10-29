@@ -5,20 +5,14 @@ import { submitNewMaterial } from '../../team/data/governanceService';
 import { Button } from '../../shared/ui/Button';
 import styles from './ShareMaterialPage.module.css';
 
-const MATERIAL_TYPES = ['Activity', 'Slides', 'Student work', 'Reading', 'Other'] as const;
-const AUDIENCES = ['Schools', 'University'] as const;
-
-type MaterialType = typeof MATERIAL_TYPES[number];
-type Audience = typeof AUDIENCES[number];
 type Stage = typeof STAGES[number];
 
 interface FormData {
   title: string;
-  materialType: MaterialType | '';
   link: string;
   stage: Stage | '';
-  audience: Audience | '';
   description: string;
+  coverImageLink: string;
   creditName: string;
   creditInstitution: string;
   email: string;
@@ -27,11 +21,10 @@ interface FormData {
 
 interface Errors {
   title?: string;
-  materialType?: string;
   link?: string;
   stage?: string;
-  audience?: string;
   description?: string;
+  coverImageLink?: string;
   creditName?: string;
   creditInstitution?: string;
   email?: string;
@@ -40,11 +33,10 @@ interface Errors {
 
 const initialFormData: FormData = {
   title: '',
-  materialType: '',
   link: '',
   stage: '',
-  audience: '',
   description: '',
+  coverImageLink: '',
   creditName: '',
   creditInstitution: '',
   email: '',
@@ -56,7 +48,7 @@ const initialErrors: Errors = {};
 function isValidUrl(url: string): boolean {
   try {
     const u = new URL(url);
-    return u.protocol === 'https:';
+    return u.protocol === 'https:' || u.protocol === 'http:';
   } catch {
     return false;
   }
@@ -97,28 +89,24 @@ export function ShareMaterialPage() {
       newErrors.title = 'Title must be 80 characters or fewer';
     }
 
-    if (!formData.materialType) {
-      newErrors.materialType = 'Select a material type';
-    }
-
     if (!formData.link.trim()) {
       newErrors.link = 'Link is required';
     } else if (!isValidUrl(formData.link)) {
-      newErrors.link = 'Link must start with https://';
+      newErrors.link = 'Enter a full link starting with http:// or https://';
     }
 
     if (!formData.stage) {
       newErrors.stage = 'Select a story stage';
     }
 
-    if (!formData.audience) {
-      newErrors.audience = 'Select an audience';
+    if (!formData.description.trim()) {
+      newErrors.description = 'Short description is required';
+    } else if (formData.description.length > 300) {
+      newErrors.description = 'Short description must be 300 characters or fewer';
     }
 
-    if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
-    } else if (formData.description.length > 600) {
-      newErrors.description = 'Description must be 600 characters or fewer';
+    if (formData.coverImageLink.trim() && !isValidUrl(formData.coverImageLink)) {
+      newErrors.coverImageLink = 'Enter a full link starting with http:// or https://';
     }
 
     if (!formData.creditName.trim()) {
@@ -156,11 +144,10 @@ export function ShareMaterialPage() {
     try {
       await submitNewMaterial({
         title: formData.title.trim(),
-        materialType: formData.materialType,
         materialLink: formData.link.trim(),
         stage: formData.stage,
-        audience: formData.audience,
         description: formData.description.trim(),
+        coverImageLink: formData.coverImageLink.trim() || undefined,
         creditName: formData.creditName.trim(),
         creditInstitution: formData.creditInstitution.trim(),
         educatorEmail: formData.email.trim(),
@@ -197,29 +184,6 @@ export function ShareMaterialPage() {
         />
         {errors.title && <p id="title-error" className={styles.errorText} role="alert">{errors.title}</p>}
         <p className={styles.charCounter}>{formData.title.length}/80</p>
-      </div>
-
-      <div className={styles.fieldGroup}>
-        <label className={styles.fieldLabel}>
-          Type <span className={styles.required}>*</span>
-        </label>
-        <div className={styles.segmentedGroup} role="group" aria-label="Material type">
-          {MATERIAL_TYPES.map((type) => (
-            <label key={type} className={`${styles.segmentedBtn} ${formData.materialType === type ? styles.segmentedBtnActive : ''} ${errors.materialType ? styles.segmentedBtnError : ''}`}>
-              <input
-                type="radio"
-                name="materialType"
-                value={type}
-                checked={formData.materialType === type}
-                onChange={() => handleChange('materialType', type)}
-                className={styles.segmentedInput}
-                disabled={sending}
-              />
-              <span className={styles.segmentedText}>{type}</span>
-            </label>
-          ))}
-        </div>
-        {errors.materialType && <p className={styles.errorText} role="alert">{errors.materialType}</p>}
       </div>
 
       <div className={styles.fieldGroup}>
@@ -265,46 +229,42 @@ export function ShareMaterialPage() {
       </div>
 
       <div className={styles.fieldGroup}>
-        <label className={styles.fieldLabel}>
-          Audience <span className={styles.required}>*</span>
-        </label>
-        <div className={styles.segmentedGroup} role="group" aria-label="Audience">
-          {AUDIENCES.map((audience) => (
-            <label key={audience} className={`${styles.segmentedBtn} ${formData.audience === audience ? styles.segmentedBtnActive : ''} ${errors.audience ? styles.segmentedBtnError : ''}`}>
-              <input
-                type="radio"
-                name="audience"
-                value={audience}
-                checked={formData.audience === audience}
-                onChange={() => handleChange('audience', audience)}
-                className={styles.segmentedInput}
-                disabled={sending}
-              />
-              <span className={styles.segmentedText}>{audience}</span>
-            </label>
-          ))}
-        </div>
-        {errors.audience && <p className={styles.errorText} role="alert">{errors.audience}</p>}
-      </div>
-
-      <div className={styles.fieldGroup}>
         <label htmlFor="description" className={styles.fieldLabel}>
-          What did learners do with it? <span className={styles.required}>*</span>
+          Short description <span className={styles.required}>*</span>
         </label>
         <textarea
           id="description"
           className={`${styles.textarea} ${errors.description ? styles.inputError : ''}`}
           value={formData.description}
           onChange={(e) => handleChange('description', e.target.value)}
-          maxLength={600}
-          rows={4}
-          placeholder="Describe how you used this material in your session and what learners did with it."
+          maxLength={300}
+          rows={3}
+          placeholder="Briefly describe your material for the library card."
           aria-invalid={!!errors.description}
           aria-describedby={errors.description ? 'description-error' : undefined}
           disabled={sending}
         />
         {errors.description && <p id="description-error" className={styles.errorText} role="alert">{errors.description}</p>}
-        <p className={styles.charCounter}>{formData.description.length}/600</p>
+        <p className={styles.charCounter}>{formData.description.length}/300</p>
+      </div>
+
+      <div className={styles.fieldGroup}>
+        <label htmlFor="coverImageLink" className={styles.fieldLabel}>
+          Cover image link (optional)
+        </label>
+        <input
+          id="coverImageLink"
+          type="url"
+          className={`${styles.input} ${errors.coverImageLink ? styles.inputError : ''}`}
+          value={formData.coverImageLink}
+          onChange={(e) => handleChange('coverImageLink', e.target.value)}
+          placeholder="https://..."
+          aria-invalid={!!errors.coverImageLink}
+          aria-describedby={errors.coverImageLink ? 'coverImageLink-error' : 'coverImageLink-hint'}
+          disabled={sending}
+        />
+        {errors.coverImageLink && <p id="coverImageLink-error" className={styles.errorText} role="alert">{errors.coverImageLink}</p>}
+        <p id="coverImageLink-hint" className={styles.hint}>A picture for the library card. Leave empty to use the OceanX default.</p>
       </div>
 
       <div className={styles.twoColumn}>
@@ -381,7 +341,7 @@ export function ShareMaterialPage() {
       </div>
 
       <div className={styles.actions}>
-        <Button type="submit" variant="dark" disabled={sending} className={styles.submitBtn}>
+        <Button type="submit" variant="dark" disabled={sending}>
           {sending ? 'Sending...' : 'Send to OceanX'}
         </Button>
       </div>

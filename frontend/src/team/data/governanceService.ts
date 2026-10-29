@@ -43,12 +43,11 @@ export interface ReviewItem {
   screeningMode?: 'demo';
   // Share material fields
   isNewMaterial?: boolean;
-  materialType?: string;
   materialLink?: string;
   stage?: string;
-  audience?: string;
   creditName?: string;
   creditInstitution?: string;
+  coverImageLink?: string;
 }
 
 export interface DecisionLogEntry {
@@ -1122,11 +1121,10 @@ export async function submitShareBack(input: SubmitShareBackInput): Promise<{ ok
 
 export interface SubmitNewMaterialInput {
   title: string;
-  materialType: string;
   materialLink: string;
   stage: string;
-  audience: string;
   description: string;
+  coverImageLink?: string;
   creditName: string;
   creditInstitution: string;
   educatorEmail: string;
@@ -1158,12 +1156,11 @@ export async function submitNewMaterial(input: SubmitNewMaterialInput): Promise<
     screeningReason: screen.reason,
     screeningMode: 'demo',
     isNewMaterial: true,
-    materialType: input.materialType,
     materialLink: input.materialLink,
     stage: input.stage,
-    audience: input.audience,
     creditName: input.creditName,
     creditInstitution: input.creditInstitution,
+    coverImageLink: input.coverImageLink,
   };
 
   reviewItems.push(item);

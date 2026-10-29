@@ -184,7 +184,7 @@ export function buildPackageEmail(input: PackageEmailInput): { subject: string; 
                       <div style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#4A6072;font-weight:bold;margin-bottom:6px;">After class</div>
                       <p style="margin:0 0 16px 0;font-size:15px;line-height:24px;">Tell us how the session went. It takes about 3 minutes and helps us improve every future version of Seagrass Stories.</p>
                       <a href="${feedbackLink}" style="color:#0B6E85;text-decoration:underline;font-size:15px;font-weight:bold;">Share your feedback</a>
-                      <p style="margin:12px 0 0 0;font-size:15px;line-height:24px;">Made your own material for this session? <a href="${shareLink}" style="color:#0B6E85;text-decoration:underline;">Share it with OceanX</a></p>
+                      <p style="margin:12px 0 0 0;font-size:15px;line-height:24px;">Made your own material for this session? <a href="${shareLink}" style="color:#0B6E85;text-decoration:underline;">Share your materials</a></p>
                     </td>
                   </tr>
                 </table>
