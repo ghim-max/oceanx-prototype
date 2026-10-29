@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { buildPackageEmail } from '../../shared/email/packageEmail';
-import { BASE_URL } from '../../shared/services/sendPackage';
+import { appLink } from '../../shared/appUrl';
 import styles from './EmailPreviewPage.module.css';
 
 // Sample data for preview
@@ -16,12 +16,12 @@ const SAMPLE_WITH_AI = {
   educatorName: 'Dr. Marina Chen',
   audience: 'university',
   components: SAMPLE_COMPONENTS,
-  quizLink: `${BASE_URL}/quiz/p/pkg-university-2026-q3`,
+  quizLink: appLink('quiz/p/pkg-university-2026-q3'),
   quizQuestionCount: 8,
-  lessonPlanLink: `${BASE_URL}/lesson/p/pkg-university-2026-q3`,
+  lessonPlanLink: appLink('lesson/p/pkg-university-2026-q3'),
   lessonPlanLength: 60,
   lessonPlanLevel: 'intermediate',
-  feedbackLink: `${BASE_URL}/educator/p/pkg-university-2026-q3`,
+  feedbackLink: appLink('educator/p/pkg-university-2026-q3'),
   hadAiReview: true,
 };
 
@@ -29,12 +29,12 @@ const SAMPLE_NO_AI = {
   educatorName: '',
   audience: 'university',
   components: SAMPLE_COMPONENTS.slice(0, 3),
-  quizLink: `${BASE_URL}/quiz/p/pkg-university-2026-q4`,
+  quizLink: appLink('quiz/p/pkg-university-2026-q4'),
   quizQuestionCount: 6,
   lessonPlanLink: undefined,
   lessonPlanLength: undefined,
   lessonPlanLevel: undefined,
-  feedbackLink: `${BASE_URL}/educator/p/pkg-university-2026-q4`,
+  feedbackLink: appLink('educator/p/pkg-university-2026-q4'),
   hadAiReview: false,
 };
 

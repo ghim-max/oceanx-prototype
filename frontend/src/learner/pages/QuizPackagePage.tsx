@@ -11,6 +11,7 @@ import { isSupabaseConfigured } from '../../shared/services/supabase';
 import { API_BASE } from '../../shared/services/apiBase';
 import { getApprovedBankItems } from '../../shared/services/bankApi';
 import { Flag } from 'lucide-react';
+import { Button, LinkButton } from '../../shared/ui/Button';
 import styles from './QuizPackagePage.module.css';
 
 const PRECHECK_KEY = 'oxe-precheck-package-';
@@ -376,20 +377,20 @@ export function QuizPackagePage() {
         It takes about 3 minutes each time. No names or emails are collected.
       </p>
       <div className={styles.choices}>
-        <button
-          type="button"
-          className={styles.choiceBtn}
-          onClick={() => setSearchParams({ step: 'pre' }, { replace: true })}
+        <LinkButton
+          to={`/quiz/p/${slug}?step=pre`}
+          variant="accent"
+          size="md"
         >
           Start of class
-        </button>
-        <button
-          type="button"
-          className={styles.choiceBtn}
-          onClick={() => setSearchParams({ step: 'post' }, { replace: true })}
+        </LinkButton>
+        <LinkButton
+          to={`/quiz/p/${slug}?step=post`}
+          variant="accent"
+          size="md"
         >
           After class
-        </button>
+        </LinkButton>
       </div>
     </div>
   );
@@ -404,9 +405,9 @@ export function QuizPackagePage() {
         on the same phone and choose "After class".
       </p>
       <div className={styles.choices}>
-        <a href={`/quiz/p/${slug}`} className={styles.choiceBtn}>
+        <LinkButton to={`/quiz/p/${slug}`} variant="accent" size="md">
           Back to start
-        </a>
+        </LinkButton>
       </div>
     </div>
   ) : preCheckItems.length === 0 ? (
@@ -414,9 +415,9 @@ export function QuizPackagePage() {
       <h1>Pre-check: before class</h1>
       <p>No multiple choice questions are included in this quiz, so there is no pre-check for this session.</p>
       <div className={styles.choices}>
-        <a href={`/quiz/p/${slug}`} className={styles.choiceBtn}>
+        <LinkButton to={`/quiz/p/${slug}`} variant="accent" size="md">
           Back to start
-        </a>
+        </LinkButton>
       </div>
     </div>
   ) : (
@@ -452,30 +453,31 @@ export function QuizPackagePage() {
             <span className={styles.questionNumber}>Confidence</span>
             How confident are you in the topics covered today?
           </legend>
-          <div className={styles.confidencePillGroup} role="radiogroup" aria-label="Confidence">
+          <div className={styles.ratingScale} role="radiogroup" aria-label="Confidence">
             {[1, 2, 3, 4, 5].map((n) => (
-              <label key={n} className={styles.pillLabel}>
+              <label key={n} className={`${styles.segBtn} ${preConfidence === n ? styles.segBtnActive : ''}`}>
                 <input
                   type="radio"
                   name="confidence_pre"
                   value={n}
                   checked={preConfidence === n}
                   onChange={() => setPreConfidence(n)}
-                  className={styles.pillInput}
+                  className={styles.visuallyHidden}
+                  aria-label={n === 1 ? '1, not at all' : n === 5 ? '5, very confident' : String(n)}
                 />
-                <span className={styles.pillText}>{n}</span>
+                <span>{n}</span>
               </label>
             ))}
-            <div className={styles.confidenceScale} aria-hidden="true">
-              <span>1 = Not at all</span>
-              <span>5 = Very confident</span>
-            </div>
+          </div>
+          <div className={styles.ratingLabels} aria-hidden="true">
+            <span>1 = Not at all</span>
+            <span>5 = Very confident</span>
           </div>
         </fieldset>
         <div className={styles.actions}>
-          <button
+          <Button
             type="button"
-            className={styles.submitBtn}
+            variant="dark"
             onClick={handlePreDone}
             disabled={
               !preCheckItems.every((q) => preAnswers[q.id] !== undefined) ||
@@ -483,7 +485,7 @@ export function QuizPackagePage() {
             }
           >
             Done
-          </button>
+          </Button>
         </div>
       </form>
     </div>
@@ -574,24 +576,25 @@ export function QuizPackagePage() {
             <legend className={styles.feedbackLegend}>
               How confident are you in the topics covered today?
             </legend>
-            <div className={styles.confidencePillGroup} role="radiogroup" aria-label="Confidence">
+            <div className={styles.ratingScale} role="radiogroup" aria-label="Confidence">
               {[1, 2, 3, 4, 5].map((n) => (
-                <label key={n} className={styles.pillLabel}>
+                <label key={n} className={`${styles.segBtn} ${feedbackAnswers.confidence_post === n ? styles.segBtnActive : ''}`}>
                   <input
                     type="radio"
                     name="confidence_post"
                     value={n}
                     checked={feedbackAnswers.confidence_post === n}
                     onChange={() => handleFeedbackChange('confidence_post', n)}
-                    className={styles.pillInput}
+                    className={styles.visuallyHidden}
+                    aria-label={n === 1 ? '1, not at all' : n === 5 ? '5, very confident' : String(n)}
                   />
-                  <span className={styles.pillText}>{n}</span>
+                  <span>{n}</span>
                 </label>
               ))}
-              <div className={styles.confidenceScale} aria-hidden="true">
-                <span>1 = Not at all</span>
-                <span>5 = Very confident</span>
-              </div>
+            </div>
+            <div className={styles.ratingLabels} aria-hidden="true">
+              <span>1 = Not at all</span>
+              <span>5 = Very confident</span>
             </div>
           </fieldset>
 
@@ -646,20 +649,25 @@ export function QuizPackagePage() {
             <legend className={styles.feedbackLegend}>
               How satisfied were you with today's session?
             </legend>
-            <div className={styles.pillGroup} role="radiogroup" aria-label="Satisfaction">
+            <div className={styles.ratingScale} role="radiogroup" aria-label="Satisfaction">
               {[1, 2, 3, 4, 5].map((n) => (
-                <label key={n} className={styles.pillLabel}>
+                <label key={n} className={`${styles.segBtn} ${feedbackAnswers.satisfaction === n ? styles.segBtnActive : ''}`}>
                   <input
                     type="radio"
                     name="satisfaction"
                     value={n}
                     checked={feedbackAnswers.satisfaction === n}
                     onChange={() => handleFeedbackChange('satisfaction', n)}
-                    className={styles.pillInput}
+                    className={styles.visuallyHidden}
+                    aria-label={n === 1 ? '1, not satisfied' : n === 5 ? '5, very satisfied' : String(n)}
                   />
-                  <span className={styles.pillText}>{n}</span>
+                  <span>{n}</span>
                 </label>
               ))}
+            </div>
+            <div className={styles.ratingLabels} aria-hidden="true">
+              <span>1 = Not satisfied</span>
+              <span>5 = Very satisfied</span>
             </div>
           </fieldset>
 
@@ -667,28 +675,30 @@ export function QuizPackagePage() {
             <legend className={styles.feedbackLegend}>
               Would you recommend this session to a friend?
             </legend>
-            <div className={styles.pillGroup} role="radiogroup" aria-label="Recommend">
-              <label className={styles.pillLabel}>
+            <div className={styles.segBtns} role="radiogroup" aria-label="Recommend">
+              <label className={`${styles.segBtn} ${feedbackAnswers.wouldRecommend === true ? styles.segBtnActive : ''}`}>
                 <input
                   type="radio"
                   name="wouldRecommend"
                   value="yes"
                   checked={feedbackAnswers.wouldRecommend === true}
                   onChange={() => handleFeedbackChange('wouldRecommend', true)}
-                  className={styles.pillInput}
+                  className={styles.visuallyHidden}
+                  aria-label="Yes"
                 />
-                <span className={styles.pillText}>Yes</span>
+                <span>Yes</span>
               </label>
-              <label className={styles.pillLabel}>
+              <label className={`${styles.segBtn} ${feedbackAnswers.wouldRecommend === false ? styles.segBtnActive : ''}`}>
                 <input
                   type="radio"
                   name="wouldRecommend"
                   value="no"
                   checked={feedbackAnswers.wouldRecommend === false}
                   onChange={() => handleFeedbackChange('wouldRecommend', false)}
-                  className={styles.pillInput}
+                  className={styles.visuallyHidden}
+                  aria-label="No"
                 />
-                <span className={styles.pillText}>No</span>
+                <span>No</span>
               </label>
             </div>
           </fieldset>
@@ -724,14 +734,14 @@ export function QuizPackagePage() {
           )}
 
           <div className={styles.actions}>
-            <button
+            <Button
               type="button"
-              className={styles.submitBtn}
+              variant="dark"
               onClick={handleSubmit}
               disabled={!isSubmitReady() || submitting || !isSupabaseConfigured}
             >
               {submitting ? 'Submitting...' : 'Submit'}
-            </button>
+            </Button>
           </div>
 
           {!isSupabaseConfigured && (
@@ -751,9 +761,9 @@ export function QuizPackagePage() {
       <h1>Thank you</h1>
       <p>{successMessage}</p>
       <p>
-        <a href={`/quiz/p/${slug}?reset=1`} className={styles.resetLink}>
+        <LinkButton to={`/quiz/p/${slug}?reset=1`} variant="accent" size="md">
           Start over
-        </a>
+        </LinkButton>
       </p>
     </div>
   );

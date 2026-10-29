@@ -6,6 +6,11 @@ import {
   type LessonLevel,
 } from '../../shared/services/assembleLessonPlan';
 import { submitDemoPackage } from '../../team/data/packageReviewService';
+import { sendPackage, type PackagePayload } from '../../shared/services/sendPackage';
+import { API_BASE } from '../../shared/services/apiBase';
+import { appLink } from '../../shared/appUrl';
+import { UNIVERSITY_STATUS } from '../../shared/data/university-version';
+import { DURATION_MIN } from './AdaptPage';
 import styles from './ReviewPage.module.css';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -187,7 +192,6 @@ function PackageSummary() {
       {/* Always shown review gate message */}
       <p className={styles.gateNotice}>
         Your package will be automatically checked before delivery. Only flagged materials require additional review by OceanX Education.
-        {' '}Demo mode uses deterministic examples; no email is sent.
       </p>
     </section>
   );
@@ -288,39 +292,106 @@ export function ReviewPage() {
     }
 
     const lessonPlanData = assembledPlan && !('error' in assembledPlan) ? assembledPlan : null;
+
+    const quizAssembly = {
+      component_ids: adaptOptions?.componentIds ?? [],
+      options: adaptOptions
+        ? { type: adaptOptions.quizType, difficulty: adaptOptions.quizDifficulty, count: adaptOptions.quizCount }
+        : {},
+      item_ids: adaptOptions?.itemIds ?? [],
+    };
+    const quizTitle = quizEnabled && quizAssembly.item_ids.length > 0 ? 'Knowledge Check' : undefined;
+
+    // 1. Demo review record (kept)
+    let record: ReturnType<typeof submitDemoPackage>;
     try {
-      const record = submitDemoPackage({
+      record = submitDemoPackage({
         educatorEmail: email.trim(),
         audience: pkg.audience,
         picks: pkg.picks,
         recommendations: pkg.recommendations,
         acceptedRewrites,
         quiz: quizEnabled
-          ? {
-              title: adaptOptions?.itemIds.length ? 'Knowledge Check' : undefined,
-              componentIds: adaptOptions?.componentIds ?? [],
-              options: adaptOptions
-                ? { type: adaptOptions.quizType, difficulty: adaptOptions.quizDifficulty, count: adaptOptions.quizCount }
-                : {},
-              itemIds: adaptOptions?.itemIds ?? [],
-            }
+          ? { title: quizTitle, componentIds: quizAssembly.component_ids, options: quizAssembly.options, itemIds: quizAssembly.item_ids }
           : undefined,
         quizSummary: quizEnabled
-          ? `${adaptOptions?.itemIds.length ?? 0} ${adaptOptions?.quizType ?? 'mixed'} question(s)`
+          ? `${quizAssembly.item_ids.length} ${adaptOptions?.quizType ?? 'mixed'} question(s)`
           : undefined,
         lessonPlan: lessonPlanData ?? undefined,
-        lessonPlanSummary: lessonPlanData
-          ? `${lessonPlanData.length} minutes, ${lessonPlanData.level} level`
-          : undefined,
+        lessonPlanSummary: lessonPlanData ? `${lessonPlanData.length} minutes, ${lessonPlanData.level} level` : undefined,
       });
+    } catch (err) {
+      setSendState('error');
+      setErrorMessage(err instanceof Error ? err.message : 'Package submission failed. Nothing was sent.');
+      return;
+    }
+
+    // 2. Create package on backend to get slug
+    let slug: string | undefined;
+    try {
+      const createResponse = await fetch(`${API_BASE}/packages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          audience: pkg.audience,
+          picks: pkg.picks,
+          recommendations: pkg.recommendations,
+          quiz_title: quizTitle,
+          lesson_plan_title: lessonPlanData ? 'Lesson Plan' : undefined,
+          lesson_plan: lessonPlanData ?? undefined,
+          educator_email: email.trim(),
+          component_ids: quizAssembly.component_ids,
+          options: quizAssembly.options,
+          item_ids: quizAssembly.item_ids,
+        }),
+      });
+      if (!createResponse.ok) throw new Error('Failed to create package');
+      const createdPkg = await createResponse.json();
+      slug = createdPkg.slug;
+    } catch (err) {
+      console.error('[create package error]', err);
+      setSendState('error');
+      setErrorMessage('Failed to create package. Please try again.');
+      return;
+    }
+
+    // 3. Send email (always)
+    const payload: PackagePayload = {
+      email: email.trim(),
+      educatorName: '',
+      audience: pkg.audience,
+      components: [...pkg.picks, ...pkg.recommendations].map((c) => ({
+        title: c.title,
+        type: UNIVERSITY_STATUS[c.id]?.status || 'Fixed',
+        minutes: DURATION_MIN[c.id] || 0,
+      })),
+      quizLink: quizEnabled && slug ? appLink(`quiz/p/${slug}`) : undefined,
+      quizQuestionCount: adaptOptions?.quizCount,
+      lessonPlanLink: lessonPlanData && slug ? appLink(`lesson/p/${slug}`) : undefined,
+      lessonPlanLength: adaptOptions?.lessonPlanLength,
+      lessonPlanLevel: adaptOptions?.lessonPlanLevel,
+      hadAiReview: acceptedRewrites.length > 0,
+      slug,
+    };
+    console.log({ quizLink: payload.quizLink, lessonPlanLink: payload.lessonPlanLink });
+
+    try {
+      await sendPackage(payload);
       setSentForReview(record.status === 'pending_review');
       setSendState('success');
       sessionStorage.removeItem('adaptPackage');
       sessionStorage.removeItem('adaptOptions');
       sessionStorage.removeItem('adaptAcceptedRewrites');
     } catch (err) {
+      console.error('[sendPackage error]', err);
+      const msg =
+        err instanceof Error
+          ? err.message
+          : typeof err === 'object' && err !== null && 'text' in err
+          ? String((err as { text: unknown }).text)
+          : 'Something went wrong. Please try again.';
       setSendState('error');
-      setErrorMessage(err instanceof Error ? err.message : 'Package submission failed. Nothing was sent.');
+      setErrorMessage(msg);
     }
   };
 
@@ -351,16 +422,16 @@ export function ReviewPage() {
             </span>
             {sentForReview ? (
               <>
-                <h1 className={styles.h1} ref={h1Ref} tabIndex={-1}>Your package requires additional review.</h1>
+                <h1 className={styles.h1} ref={h1Ref} tabIndex={-1}>Your package is on its way.</h1>
                 <p className={styles.successDesc}>
-                  In a live workflow, OceanX Education would email your resources once the review is complete. Demo mode: no email was sent.
+                  We sent it to <strong>{email}</strong>. The OceanX team will also check the AI changes.
                 </p>
               </>
             ) : (
               <>
-                <h1 className={styles.h1} ref={h1Ref} tabIndex={-1}>Your package has passed the review check.</h1>
+                <h1 className={styles.h1} ref={h1Ref} tabIndex={-1}>Your package is on its way.</h1>
                 <p className={styles.successDesc}>
-                  Demo mode: the package was recorded for preview. No email was sent to <strong>{email}</strong>.
+                  We sent it to <strong>{email}</strong>. Check your inbox (and spam).
                 </p>
               </>
             )}
