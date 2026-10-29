@@ -2,7 +2,7 @@ import { SEAGRASS_STORIES } from '../../shared/data/seagrass-stories';
 
 export const USE_MOCK = true;
 
-const STORAGE_KEY = 'oceanx_mock_governance';
+const STORAGE_KEY = 'oceanx_mock_governance_v2';
 export const MOCK_FLAGGED_SUBMISSION_IDS = [
   'mock-flagged-hydrothermal-vents',
   'mock-flagged-arctic-food-web',
@@ -272,8 +272,8 @@ function ensureFlaggedDemoShareBacks(): void {
       proposedText: 'Replace Post-its with a shared Miro board. Each group adds one real local restoration case.',
       status: 'pending',
       reviewer: 'OceanX team',
-      reason: 'Valid adaptation suggestion — using digital tools and local cases.',
-      screeningReason: 'Valid adaptation suggestion — using digital tools and local cases.',
+      reason: 'Valid adaptation suggestion using digital tools and local cases.',
+      screeningReason: 'Valid adaptation suggestion using digital tools and local cases.',
       screeningStatus: 'passed',
       screeningMode: 'demo',
       createdAt: '2026-10-29T08:30:00.000Z',
@@ -429,7 +429,7 @@ function seedIfEmpty(): void {
       originalText:
         'Nada introduces her work and explains why she chose to study seagrass restoration.',
       proposedText:
-        'Nada introduces her work and explains why she chose to study seagrass restoration. (No adaptation — educator shared this works well as-is for university opener.)',
+        'Nada introduces her work and explains why she chose to study seagrass restoration. (No adaptation; educator shared this works well as is for university opener.)',
       status: 'pending',
       reviewer: 'OceanX team',
       createdAt: new Date(baseTime - 6 * hour).toISOString(),
@@ -1115,6 +1115,7 @@ export function resetMock(): void {
   dismissedFlaggedIds = [];
   try {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem('oceanx_demo_package_reviews_v2');
   } catch {
     // Ignore
   }

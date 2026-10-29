@@ -542,6 +542,10 @@ export function ReviewPage() {
                     <div className={styles.textBlock}>
                       {material.originalApproved && material.originalText
                         ? material.originalText
+                        : material.componentId === 'package-knowledge-check'
+                        ? 'Assembled from the OceanX question bank'
+                        : material.componentId === 'package-lesson-plan'
+                        ? 'Assembled from library components'
                         : '(Approved original resource unavailable)'}
                     </div>
                   </div>

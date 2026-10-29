@@ -1,7 +1,7 @@
 import { COMPONENT_ORIGINAL_TEXTS, COMPONENT_TITLES, getComponentOriginalText, recordPackageDecision } from './governanceService';
 import { UNIVERSITY_STATUS } from '../../shared/data/university-version';
 
-const STORAGE_KEY = 'oceanx_demo_package_reviews_v1';
+const STORAGE_KEY = 'oceanx_demo_package_reviews_v2';
 const SCREENING_NOTICE = 'The submitted adaptation requires staff review for scientific accuracy and alignment with OceanX learning objectives.';
 
 export type PackageScreeningStatus = 'flagged' | 'passed';
