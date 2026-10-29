@@ -11,7 +11,17 @@ jobs:
     steps:
       - name: Ping backend health endpoint
         run: |
-          curl -fsS --max-time 15 "${{ secrets.RENDER_HEALTH_URL }}" \
-            || (echo "Health check failed" && exit 1)
+          set -e
+          response=$(curl -sS -w "\n%{http_code}" --max-time 90 --retry 3 --retry-delay 10 --retry-all-errors "${RENDER_HEALTH_URL}")
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | head -n-1)
+          if [[ "$http_code" -ge 200 && "$http_code" -lt 300 ]]; then
+            echo "Health check OK (HTTP $http_code)"
+            echo "$body"
+          else
+            echo "Health check failed (HTTP $http_code)"
+            echo "$body"
+            exit 1
+          fi
         env:
           RENDER_HEALTH_URL: ${{ secrets.RENDER_HEALTH_URL }}
