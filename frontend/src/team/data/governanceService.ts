@@ -1,8 +1,8 @@
+import { SEAGRASS_STORIES } from '../../shared/data/seagrass-stories';
+
 export const USE_MOCK = true;
 
 const STORAGE_KEY = 'oceanx_mock_governance';
-const FLAGGED_SHARE_BACK_REASON =
-  "The submission introduces scientific concepts beyond OceanX's approved learning materials, with claims that may require further verification. Staff review is needed to assess scientific accuracy, educational relevance and alignment with OceanX's learning objectives.";
 export const MOCK_FLAGGED_SUBMISSION_IDS = [
   'mock-flagged-hydrothermal-vents',
   'mock-flagged-arctic-food-web',
@@ -157,6 +157,17 @@ export const COMPONENT_SOURCES: Record<string, string[]> = {
   'explore-prompts': ['observation_skills.md', 'wonder_questions.md'],
 };
 
+export function getComponentOriginalText(componentId: string): string {
+  if (COMPONENT_ORIGINAL_TEXTS[componentId]) {
+    return COMPONENT_ORIGINAL_TEXTS[componentId];
+  }
+  const component = SEAGRASS_STORIES.components.find((c) => c.id === componentId);
+  if (component) {
+    return component.originalText ?? component.description ?? '';
+  }
+  return '';
+}
+
 // ============================================
 // In-memory state
 // ============================================
@@ -236,16 +247,16 @@ function ensureFlaggedDemoShareBacks(): void {
     {
       id: MOCK_FLAGGED_SUBMISSION_IDS[0],
       kind: 'share_back',
-      componentId: 'hydrothermal-vents-lesson',
-      componentTitle: 'Deep-sea hydrothermal vents lesson',
-      packageId: 'Unknown',
-      educatorEmail: 'prof.tan@university.edu',
-      originalText: '(No OceanX learning content attached.)',
-      proposedText: 'Create a lesson explaining how hydrothermal vents form and how organisms survive around them.',
+      componentId: 'reflect-prompts',
+      componentTitle: COMPONENT_TITLES['reflect-prompts'],
+      packageId: undefined,
+      educatorEmail: 's.lim@example.edu',
+      originalText: getComponentOriginalText('reflect-prompts'),
+      proposedText: 'Hold a debate on who decides what gets restored. Conservation decisions are never political.',
       status: 'pending',
       reviewer: 'OceanX team',
-      reason: FLAGGED_SHARE_BACK_REASON,
-      screeningReason: FLAGGED_SHARE_BACK_REASON,
+      reason: "Absolute claim ('never political') contradicts the approved source on conservation politics.",
+      screeningReason: "Absolute claim ('never political') contradicts the approved source on conservation politics.",
       screeningStatus: 'flagged',
       screeningMode: 'demo',
       createdAt: '2026-10-28T09:00:00.000Z',
@@ -253,17 +264,17 @@ function ensureFlaggedDemoShareBacks(): void {
     {
       id: MOCK_FLAGGED_SUBMISSION_IDS[1],
       kind: 'share_back',
-      componentId: 'arctic-food-web-activity',
-      componentTitle: 'Arctic marine food-web activity',
-      packageId: 'Unknown',
-      educatorEmail: 'dr.lim@university.edu',
-      originalText: '(No OceanX learning content attached.)',
-      proposedText: 'Design a classroom activity about how sea-ice loss affects the Arctic marine food web.',
+      componentId: 'create-activity',
+      componentTitle: COMPONENT_TITLES['create-activity'],
+      packageId: undefined,
+      educatorEmail: 'd.tan@example.edu',
+      originalText: getComponentOriginalText('create-activity'),
+      proposedText: 'Replace Post-its with a shared Miro board. Each group adds one real local restoration case.',
       status: 'pending',
       reviewer: 'OceanX team',
-      reason: FLAGGED_SHARE_BACK_REASON,
-      screeningReason: FLAGGED_SHARE_BACK_REASON,
-      screeningStatus: 'flagged',
+      reason: 'Valid adaptation suggestion — using digital tools and local cases.',
+      screeningReason: 'Valid adaptation suggestion — using digital tools and local cases.',
+      screeningStatus: 'passed',
       screeningMode: 'demo',
       createdAt: '2026-10-29T08:30:00.000Z',
     },
@@ -274,7 +285,7 @@ function ensureFlaggedDemoShareBacks(): void {
     const existing = reviewItems.find((item) => item.id === example.id);
     if (existing) {
       existing.kind = 'share_back';
-      existing.screeningStatus = 'flagged';
+      existing.screeningStatus = example.screeningStatus;
       existing.reason = example.reason;
       existing.screeningReason = example.screeningReason;
       existing.screeningMode = 'demo';
@@ -285,6 +296,26 @@ function ensureFlaggedDemoShareBacks(): void {
     if (dismissedFlaggedIds.includes(example.id)) continue;
     reviewItems.push(example);
     changed = true;
+  }
+
+  // Also ensure existing seeded share backs (game, video-nada) have screeningStatus 'passed' if missing
+  const existingSeeded = reviewItems.filter(
+    (item) => item.kind === 'share_back' && item.componentId === 'game'
+  );
+  for (const item of existingSeeded) {
+    if (!item.screeningStatus) {
+      item.screeningStatus = 'passed';
+      changed = true;
+    }
+  }
+  const existingSeeded2 = reviewItems.filter(
+    (item) => item.kind === 'share_back' && item.componentId === 'video-nada'
+  );
+  for (const item of existingSeeded2) {
+    if (!item.screeningStatus) {
+      item.screeningStatus = 'passed';
+      changed = true;
+    }
   }
 
   if (changed) {
