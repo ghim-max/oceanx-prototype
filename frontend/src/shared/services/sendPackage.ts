@@ -1,5 +1,6 @@
 import emailjs from '@emailjs/browser';
 import { buildPackageEmail } from '../email/packageEmail';
+import { appLink } from '../appUrl';
 
 export interface PackagePayload {
   email: string;
@@ -18,7 +19,6 @@ export interface PackagePayload {
 const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID as string | undefined;
 const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID as string | undefined;
 const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY as string | undefined;
-export const BASE_URL = (import.meta.env.VITE_PUBLIC_BASE_URL as string | undefined) ?? '';
 // Email asset base URL - defaults to production Vercel URL, never localhost
 export const EMAIL_ASSET_BASE_URL = (import.meta.env.VITE_EMAIL_ASSET_BASE_URL as string | undefined) ?? 'https://oceanx-prototype.vercel.app';
 export const DEMO_EMAIL = (import.meta.env.VITE_DEMO_EMAIL as string | undefined) ?? '';
@@ -41,7 +41,9 @@ export async function sendPackage(payload: PackagePayload): Promise<void> {
     );
   }
 
-  const feedbackLink = `${BASE_URL}/educator${payload.slug ? `/p/${payload.slug}` : '/seagrass-university'}`;
+  const feedbackLink = appLink(payload.slug ? `educator/p/${payload.slug}` : 'educator/seagrass-university');
+
+  console.log({ feedbackLink });
 
   const emailInput = {
     educatorName: payload.educatorName,

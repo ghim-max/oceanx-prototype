@@ -1,4 +1,5 @@
 import { EMAIL_ASSET_BASE_URL } from '../services/sendPackage';
+import { appLink } from '../appUrl';
 
 export interface PackageEmailInput {
   educatorName?: string;
@@ -113,7 +114,7 @@ export function buildPackageEmail(input: PackageEmailInput): { subject: string; 
   const feedbackLink = escapeHtml(input.feedbackLink);
   const hadAiReview = input.hadAiReview;
   const headerImageUrl = `${EMAIL_ASSET_BASE_URL}/email/oceanx-email-header.jpg`;
-  const resourcesLink = `${EMAIL_ASSET_BASE_URL}/partner/library`;
+  const resourcesLink = appLink('partner/library');
 
   console.log('[buildPackageEmail] header image src:', headerImageUrl);
 
