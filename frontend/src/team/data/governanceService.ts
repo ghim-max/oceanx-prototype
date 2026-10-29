@@ -95,6 +95,8 @@ export interface CoCreatedMaterial {
   creditName: string;
   creditInstitution: string;
   approvedAt: string;
+  sourceTicketId: string;
+  reviewStatus: 'in_review' | 'approved';
 }
 
 export interface DecideResult {
@@ -919,19 +921,22 @@ export async function decideReview(
     }
   }
 
-  // Handle new material approval -> save as co-created material
+  // Handle new material approval -> update co-created material status
   if (item.kind === 'share_back' && item.isNewMaterial && action === 'approve') {
-    const coCreated: CoCreatedMaterial = {
-      id: genId(),
-      title: item.componentTitle,
-      link: item.materialLink || '',
-      stage: item.stage || '',
-      coverImageLink: item.coverImageLink,
-      creditName: item.creditName || '',
-      creditInstitution: item.creditInstitution || '',
-      approvedAt: nowISO(),
-    };
-    coCreatedMaterials.unshift(coCreated);
+    const coCreatedIndex = coCreatedMaterials.findIndex((c) => c.sourceTicketId === item.id);
+    if (coCreatedIndex !== -1) {
+      coCreatedMaterials[coCreatedIndex] = {
+        ...coCreatedMaterials[coCreatedIndex],
+        reviewStatus: 'approved',
+        approvedAt: nowISO(),
+      };
+      saveToStorage();
+    }
+  }
+
+  // Handle new material rejection -> remove co-created material
+  if (item.kind === 'share_back' && item.isNewMaterial && action === 'reject') {
+    coCreatedMaterials = coCreatedMaterials.filter((c) => c.sourceTicketId !== item.id);
     saveToStorage();
   }
 
@@ -1202,6 +1207,22 @@ export async function submitNewMaterial(input: SubmitNewMaterialInput): Promise<
 
   reviewItems.push(item);
   reviewItems.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  saveToStorage();
+
+  // Also create a co-created material entry with 'in_review' status
+  const coCreated: CoCreatedMaterial = {
+    id: genId(),
+    title: input.title,
+    link: input.materialLink,
+    stage: input.stage,
+    coverImageLink: input.coverImageLink,
+    creditName: input.creditName,
+    creditInstitution: input.creditInstitution,
+    approvedAt: now,
+    sourceTicketId: item.id,
+    reviewStatus: 'in_review',
+  };
+  coCreatedMaterials.unshift(coCreated);
   saveToStorage();
 
   // Write a decision_log entry the same way submitShareBack does
@@ -1630,6 +1651,7 @@ if (typeof window !== 'undefined' && USE_MOCK) {
     submitIssueReport,
     seedIfEmpty,
     getCoCreatedMaterials,
+    decideReview,
   };
 }
 

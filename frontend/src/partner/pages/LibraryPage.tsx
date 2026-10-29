@@ -905,8 +905,6 @@ export function LibraryPage() {
                 const stageComponents = filtered.filter((c) => c.stage === stage);
                 const stageCoCreated = coCreatedMaterials.filter((m) =>
                   m.stage === stage &&
-                  activeTypes.length === 0 &&
-                  activeAudiences.length === 0 &&
                   (activeStages.length === 0 || activeStages.includes(stageToAnchor(stage)))
                 );
                 const allStageItems = [...stageComponents, ...stageCoCreated];
@@ -930,6 +928,7 @@ export function LibraryPage() {
                         const isCoCreated = 'approvedAt' in item;
                         if (isCoCreated) {
                           const coCreated = item as CoCreatedMaterial;
+                          const reviewTag = coCreated.reviewStatus === 'in_review' ? 'Co-created · In review' : 'Co-created';
                           return (
                             <a
                               key={coCreated.id}
@@ -952,7 +951,7 @@ export function LibraryPage() {
                               <div className={styles.cardBody}>
                                 <span className={styles.cardTypeLabel}>
                                   <BookMarked size={13} aria-hidden="true" />
-                                  Co-created
+                                  {reviewTag}
                                 </span>
                                 <span className={styles.cardTitle}>{coCreated.title}</span>
                                 <p className={styles.cardDesc}>
