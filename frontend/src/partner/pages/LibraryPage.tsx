@@ -28,7 +28,7 @@ import {
 } from '../../shared/data/seagrass-stories';
 import { usePicks } from '../../shared/context/PicksContext';
 import { DEMO_PICKABLE_IDS } from '../../shared/data/adaptConfig';
-import { getLibraryState, getPastFeedback, type PastFeedbackItem } from '../../team/data/governanceService';
+import { getLibraryState, getPastFeedback, type PastFeedbackItem, getCoCreatedMaterials, type CoCreatedMaterial } from '../../team/data/governanceService';
 import styles from './LibraryPage.module.css';
 
 // ─── Filter config ─────────────────────────────────────────────────────────
@@ -632,6 +632,7 @@ export function LibraryPage() {
   const story = SEAGRASS_STORIES;
   const { picks, addPick, removePick } = usePicks();
   const [libraryState, setLibraryState] = useState<Record<string, { hidden: boolean; proven: boolean }>>({});
+  const [coCreatedMaterials, setCoCreatedMaterials] = useState<CoCreatedMaterial[]>([]);
 
   // Load library state on mount
   useEffect(() => {
@@ -641,6 +642,13 @@ export function LibraryPage() {
         map[s.componentId] = { hidden: s.hidden, proven: s.proven };
       });
       setLibraryState(map);
+    });
+  }, []);
+
+  // Load co-created materials
+  useEffect(() => {
+    getCoCreatedMaterials().then((materials) => {
+      setCoCreatedMaterials(materials);
     });
   }, []);
 
@@ -895,7 +903,9 @@ export function LibraryPage() {
               {/* Stage sections */}
               {STAGES.map((stage) => {
                 const stageComponents = filtered.filter((c) => c.stage === stage);
-                if (stageComponents.length === 0) return null;
+                const stageCoCreated = coCreatedMaterials.filter((m) => m.stage === stage);
+                const allStageItems = [...stageComponents, ...stageCoCreated];
+                if (allStageItems.length === 0) return null;
                 return (
                   <section
                     key={stage}
@@ -910,14 +920,56 @@ export function LibraryPage() {
                       <p className={styles.stageDesc}>{STAGE_DESCRIPTIONS[stage]}</p>
                     </div>
                     <div className={styles.cardGrid}>
-                      {stageComponents.map((c) => (
-                        <ComponentCard
-                          key={c.id}
-                          component={c}
-                          isPickable={(DEMO_PICKABLE_IDS as readonly string[]).includes(c.id)}
-                          onOpen={() => openDrawer(c.id)}
-                        />
-                      ))}
+                      {allStageItems.map((item) => {
+                        // Check if it's a co-created material
+                        const isCoCreated = 'approvedAt' in item;
+                        if (isCoCreated) {
+                          const coCreated = item as CoCreatedMaterial;
+                          return (
+                            <a
+                              key={coCreated.id}
+                              href={coCreated.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={styles.card}
+                              aria-label={coCreated.title}
+                            >
+                              <div className={styles.cardThumb}>
+                                <img
+                                  src={coCreated.coverImageLink || '/images/co-created-seagrass-tradeoffs.jpg'}
+                                  alt=""
+                                  className={styles.cardThumbImg}
+                                  onError={(e) => {
+                                    e.currentTarget.src = '/images/co-created-seagrass-tradeoffs.jpg';
+                                  }}
+                                />
+                              </div>
+                              <div className={styles.cardBody}>
+                                <span className={styles.cardTypeLabel}>
+                                  <BookMarked size={13} aria-hidden="true" />
+                                  Co-created
+                                </span>
+                                <span className={styles.cardTitle}>{coCreated.title}</span>
+                                <p className={styles.cardDesc}>
+                                  By {coCreated.creditName}, {coCreated.creditInstitution}
+                                </p>
+                                <div className={styles.cardMeta}>
+                                  <span className={styles.cardMetaItem}>{coCreated.stage}</span>
+                                </div>
+                              </div>
+                            </a>
+                          );
+                        }
+                        const c = item as StoryComponent;
+                        return (
+                          <ComponentCard
+                            key={c.id}
+                            component={c}
+                            isPickable={(DEMO_PICKABLE_IDS as readonly string[]).includes(c.id)}
+                            onOpen={() => openDrawer(c.id)}
+                          />
+                        );
+                      })}
                     </div>
                   </section>
                 );

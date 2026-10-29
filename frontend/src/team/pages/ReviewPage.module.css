@@ -851,3 +851,101 @@
 .loading {
   padding: 8px 0;
 }
+
+/* ── New material detail ─────────────────────────────────────────────────── */
+.newMaterialDetail {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+  .newMaterialDetail {
+    grid-template-columns: 1fr;
+  }
+}
+
+.newMaterialLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.newMaterialMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.newMaterialRight {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.coverThumb {
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-surface-raised);
+}
+
+.coverThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  max-height: 160px;
+}
+
+.descriptionBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.openLinkCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-small);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.openLinkCheckbox input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-link);
+}
+
+.btnOpenLink {
+  background: var(--color-bg);
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.btnOpenLink:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  background: var(--color-surface-raised);
+}
+
+.new-material-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}

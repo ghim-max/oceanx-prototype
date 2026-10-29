@@ -86,6 +86,17 @@ export interface PendingCounts {
   total: number;
 }
 
+export interface CoCreatedMaterial {
+  id: string;
+  title: string;
+  link: string;
+  stage: string;
+  coverImageLink?: string;
+  creditName: string;
+  creditInstitution: string;
+  approvedAt: string;
+}
+
 export interface DecideResult {
   releaseEmail: boolean;
   packageId?: string;
@@ -185,10 +196,17 @@ let decisionLog: DecisionLogEntry[] = [];
 let libraryState: LibraryState[] = [];
 let adaptationTasks: AdaptationTask[] = [];
 let dismissedFlaggedIds: string[] = [];
+let coCreatedMaterials: CoCreatedMaterial[] = [];
 
 // Exported getter for reviewItems (used by LogPage for title lookup)
 export function getReviewItems(): Promise<ReviewItem[]> {
   return Promise.resolve(reviewItems);
+}
+
+export async function getCoCreatedMaterials(): Promise<CoCreatedMaterial[]> {
+  await delay(300);
+  seedIfEmpty();
+  return [...coCreatedMaterials].sort((a, b) => new Date(b.approvedAt).getTime() - new Date(a.approvedAt).getTime());
 }
 
 // ============================================
@@ -215,6 +233,9 @@ function loadFromStorage(): void {
       if (parsed.dismissedFlaggedIds && Array.isArray(parsed.dismissedFlaggedIds)) {
         dismissedFlaggedIds = parsed.dismissedFlaggedIds;
       }
+      if (parsed.coCreatedMaterials && Array.isArray(parsed.coCreatedMaterials)) {
+        coCreatedMaterials = parsed.coCreatedMaterials;
+      }
       // Sort by createdAt ascending
       reviewItems.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     }
@@ -227,7 +248,7 @@ function saveToStorage(): void {
   try {
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ reviewItems, decisionLog, libraryState, adaptationTasks, dismissedFlaggedIds })
+      JSON.stringify({ reviewItems, decisionLog, libraryState, adaptationTasks, dismissedFlaggedIds, coCreatedMaterials })
     );
   } catch {
     // Ignore storage full errors
@@ -898,6 +919,22 @@ export async function decideReview(
     }
   }
 
+  // Handle new material approval -> save as co-created material
+  if (item.kind === 'share_back' && item.isNewMaterial && action === 'approve') {
+    const coCreated: CoCreatedMaterial = {
+      id: genId(),
+      title: item.componentTitle,
+      link: item.materialLink || '',
+      stage: item.stage || '',
+      coverImageLink: item.coverImageLink,
+      creditName: item.creditName || '',
+      creditInstitution: item.creditInstitution || '',
+      approvedAt: nowISO(),
+    };
+    coCreatedMaterials.unshift(coCreated);
+    saveToStorage();
+  }
+
   // Log the decision
   let logAction: DecisionLogEntry['action'];
   switch (action) {
@@ -1188,6 +1225,7 @@ export function resetMock(): void {
   libraryState = [];
   adaptationTasks = [];
   dismissedFlaggedIds = [];
+  coCreatedMaterials = [];
   try {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem('oceanx_demo_package_reviews_v2');
@@ -1565,6 +1603,7 @@ if (typeof window !== 'undefined' && USE_MOCK) {
     submitShareBack,
     submitIssueReport,
     seedIfEmpty,
+    getCoCreatedMaterials,
   };
 }
 
