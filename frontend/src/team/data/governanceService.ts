@@ -1,6 +1,12 @@
 export const USE_MOCK = true;
 
 const STORAGE_KEY = 'oceanx_mock_governance';
+const FLAGGED_SHARE_BACK_REASON =
+  "The submission introduces scientific concepts beyond OceanX's approved learning materials, with claims that may require further verification. Staff review is needed to assess scientific accuracy, educational relevance and alignment with OceanX's learning objectives.";
+export const MOCK_FLAGGED_SUBMISSION_IDS = [
+  'mock-flagged-hydrothermal-vents',
+  'mock-flagged-arctic-food-web',
+] as const;
 
 // ============================================
 // Types
@@ -30,12 +36,33 @@ export interface ReviewItem {
   submittedAt?: string;
   adaptationStartedAt?: string;
   okToReuse?: boolean;
+  flaggedSourceId?: string;
+  screeningStatus?: 'flagged' | 'passed';
+  screeningReason?: string;
+  screeningMode?: 'demo';
 }
 
 export interface DecisionLogEntry {
   id: string;
   who: 'OceanX team';
-  action: 'Reuse' | 'Adapt' | 'Drop' | 'Approve' | 'Edit' | 'Reject' | 'Restore' | 'Task done' | 'Resolved' | 'Not an issue';
+  action:
+    | 'Reuse'
+    | 'Adapt'
+    | 'Drop'
+    | 'Approve'
+    | 'Edit'
+    | 'Reject'
+    | 'Restore'
+    | 'Task done'
+    | 'Resolved'
+    | 'Not an issue'
+    | 'Package pending review'
+    | 'Package cleared'
+    | 'Approve & Send'
+    | 'Edit & Send'
+    | 'Reject & Send Original'
+    | 'Delivery simulated'
+    | 'Delivery failed';
   targetType: string;
   targetId: string;
   why?: string;
@@ -138,6 +165,7 @@ let reviewItems: ReviewItem[] = [];
 let decisionLog: DecisionLogEntry[] = [];
 let libraryState: LibraryState[] = [];
 let adaptationTasks: AdaptationTask[] = [];
+let dismissedFlaggedIds: string[] = [];
 
 // Exported getter for reviewItems (used by LogPage for title lookup)
 export function getReviewItems(): Promise<ReviewItem[]> {
@@ -165,6 +193,9 @@ function loadFromStorage(): void {
       if (parsed.adaptationTasks && Array.isArray(parsed.adaptationTasks)) {
         adaptationTasks = parsed.adaptationTasks;
       }
+      if (parsed.dismissedFlaggedIds && Array.isArray(parsed.dismissedFlaggedIds)) {
+        dismissedFlaggedIds = parsed.dismissedFlaggedIds;
+      }
       // Sort by createdAt ascending
       reviewItems.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     }
@@ -175,7 +206,10 @@ function loadFromStorage(): void {
 
 function saveToStorage(): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ reviewItems, decisionLog, libraryState, adaptationTasks }));
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ reviewItems, decisionLog, libraryState, adaptationTasks, dismissedFlaggedIds })
+    );
   } catch {
     // Ignore storage full errors
   }
@@ -197,11 +231,79 @@ function genId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
+function ensureFlaggedDemoShareBacks(): void {
+  const examples: ReviewItem[] = [
+    {
+      id: MOCK_FLAGGED_SUBMISSION_IDS[0],
+      kind: 'share_back',
+      componentId: 'hydrothermal-vents-lesson',
+      componentTitle: 'Deep-sea hydrothermal vents lesson',
+      packageId: 'Unknown',
+      educatorEmail: 'prof.tan@university.edu',
+      originalText: '(No OceanX learning content attached.)',
+      proposedText: 'Create a lesson explaining how hydrothermal vents form and how organisms survive around them.',
+      status: 'pending',
+      reviewer: 'OceanX team',
+      reason: FLAGGED_SHARE_BACK_REASON,
+      screeningReason: FLAGGED_SHARE_BACK_REASON,
+      screeningStatus: 'flagged',
+      screeningMode: 'demo',
+      createdAt: '2026-10-28T09:00:00.000Z',
+    },
+    {
+      id: MOCK_FLAGGED_SUBMISSION_IDS[1],
+      kind: 'share_back',
+      componentId: 'arctic-food-web-activity',
+      componentTitle: 'Arctic marine food-web activity',
+      packageId: 'Unknown',
+      educatorEmail: 'dr.lim@university.edu',
+      originalText: '(No OceanX learning content attached.)',
+      proposedText: 'Design a classroom activity about how sea-ice loss affects the Arctic marine food web.',
+      status: 'pending',
+      reviewer: 'OceanX team',
+      reason: FLAGGED_SHARE_BACK_REASON,
+      screeningReason: FLAGGED_SHARE_BACK_REASON,
+      screeningStatus: 'flagged',
+      screeningMode: 'demo',
+      createdAt: '2026-10-29T08:30:00.000Z',
+    },
+  ];
+
+  let changed = false;
+  for (const example of examples) {
+    const existing = reviewItems.find((item) => item.id === example.id);
+    if (existing) {
+      existing.kind = 'share_back';
+      existing.screeningStatus = 'flagged';
+      existing.reason = example.reason;
+      existing.screeningReason = example.screeningReason;
+      existing.screeningMode = 'demo';
+      if (!existing.reason) existing.reason = example.reason;
+      changed = true;
+      continue;
+    }
+    if (dismissedFlaggedIds.includes(example.id)) continue;
+    reviewItems.push(example);
+    changed = true;
+  }
+
+  if (changed) {
+    reviewItems.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    saveToStorage();
+  }
+}
+
 function seedIfEmpty(): void {
-  if (reviewItems.length > 0) return;
+  if (reviewItems.length > 0) {
+    ensureFlaggedDemoShareBacks();
+    return;
+  }
 
   loadFromStorage();
-  if (reviewItems.length > 0) return;
+  if (reviewItems.length > 0) {
+    ensureFlaggedDemoShareBacks();
+    return;
+  }
 
   const baseTime = Date.now();
   const hour = 3600 * 1000;
@@ -565,6 +667,7 @@ function seedIfEmpty(): void {
   reviewItems.push(...decidedReviews);
   reviewItems.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
+  ensureFlaggedDemoShareBacks();
   saveToStorage();
 }
 
@@ -579,14 +682,30 @@ function addDecisionLog(entry: Omit<DecisionLogEntry, 'id' | 'createdAt'>): Deci
   return logEntry;
 }
 
+export function recordPackageDecision(
+  targetId: string,
+  action: Extract<DecisionLogEntry['action'], 'Package pending review' | 'Package cleared' | 'Approve & Send' | 'Edit & Send' | 'Reject & Send Original' | 'Delivery simulated' | 'Delivery failed'>,
+  why?: string,
+): void {
+  seedIfEmpty();
+  addDecisionLog({
+    who: 'OceanX team',
+    action,
+    targetType: 'package_review',
+    targetId,
+    why,
+    aiOverride: false,
+  });
+}
+
 // ============================================
 // Public API
 // ============================================
 
-export async function getReviewQueue(kind?: ReviewKind, status: ReviewStatus = 'pending'): Promise<ReviewItem[]> {
+export async function getReviewQueue(kind?: ReviewKind, status: ReviewStatus | 'done' = 'pending'): Promise<ReviewItem[]> {
   await delay(300);
   seedIfEmpty();
-  let filtered = reviewItems.filter((item) => item.status === status);
+  let filtered = reviewItems.filter((item) => status === 'done' ? item.status !== 'pending' : item.status === status);
   if (kind) {
     filtered = filtered.filter((item) => item.kind === kind);
   }
@@ -604,6 +723,70 @@ export async function getPendingCounts(): Promise<PendingCounts> {
     issue_report: pending.filter((i) => i.kind === 'issue_report').length,
     total: pending.length,
   };
+}
+
+export function getFlaggedSubmissionCount(): number {
+  seedIfEmpty();
+  return MOCK_FLAGGED_SUBMISSION_IDS.filter((id) => !dismissedFlaggedIds.includes(id)).length;
+}
+
+export function isFlaggedSubmissionDismissed(id: string): boolean {
+  seedIfEmpty();
+  return dismissedFlaggedIds.includes(id);
+}
+
+export async function unflagSubmissionForReview(flaggedItem: ReviewItem): Promise<ReviewItem> {
+  await delay(300);
+  seedIfEmpty();
+
+  const existingItem = reviewItems.find((item) => item.flaggedSourceId === flaggedItem.id);
+  if (existingItem) {
+    if (!dismissedFlaggedIds.includes(flaggedItem.id)) {
+      dismissedFlaggedIds.push(flaggedItem.id);
+      saveToStorage();
+      window.dispatchEvent(new Event('oceanx-review-counts-changed'));
+    }
+    return existingItem;
+  }
+
+  const reviewItem: ReviewItem = {
+    ...flaggedItem,
+    id: genId(),
+    kind: 'share_back',
+    status: 'pending',
+    reviewer: 'OceanX team',
+    createdAt: nowISO(),
+    openedAt: undefined,
+    decidedAt: undefined,
+    finalText: undefined,
+    reason: undefined,
+    okToReuse: false,
+    flaggedSourceId: flaggedItem.id,
+    screeningStatus: undefined,
+    screeningReason: undefined,
+    screeningMode: undefined,
+  };
+
+  reviewItems.push(reviewItem);
+  reviewItems.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  if (!dismissedFlaggedIds.includes(flaggedItem.id)) {
+    dismissedFlaggedIds.push(flaggedItem.id);
+  }
+  saveToStorage();
+  window.dispatchEvent(new Event('oceanx-review-counts-changed'));
+
+  return reviewItem;
+}
+
+export async function declineFlaggedSubmission(id: string): Promise<void> {
+  await delay(300);
+  seedIfEmpty();
+
+  if (!dismissedFlaggedIds.includes(id)) {
+    dismissedFlaggedIds.push(id);
+    saveToStorage();
+    window.dispatchEvent(new Event('oceanx-review-counts-changed'));
+  }
 }
 
 export async function openReview(id: string): Promise<ReviewItem | null> {
@@ -698,6 +881,7 @@ export async function decideReview(
     why: newReason,
     aiOverride: false,
   });
+  window.dispatchEvent(new Event('oceanx-review-counts-changed'));
 
   // Check if all ai_adaptation items for this package are approved/edited
   let releaseEmail = false;
@@ -842,6 +1026,7 @@ export async function resolveIssueReport(
     why: action === 'Not an issue' ? reason : undefined,
     aiOverride: false,
   });
+  window.dispatchEvent(new Event('oceanx-review-counts-changed'));
 
   return { ok: true };
 }
@@ -886,6 +1071,7 @@ export async function submitShareBack(input: SubmitShareBackInput): Promise<{ ok
   reviewItems.push(item);
   reviewItems.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   saveToStorage();
+  window.dispatchEvent(new Event('oceanx-review-counts-changed'));
 
   return { ok: true, id: item.id };
 }
@@ -895,6 +1081,7 @@ export function resetMock(): void {
   decisionLog = [];
   libraryState = [];
   adaptationTasks = [];
+  dismissedFlaggedIds = [];
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch {
@@ -1302,6 +1489,22 @@ export async function getPastFeedback(componentId: string): Promise<PastFeedback
         createdAt: item.createdAt,
       });
     });
+
+  if (componentId === 'video-nada' && !feedback.some((item) => item.source === 'educator')) {
+    const createdAt = nowISO();
+    feedback.push(
+      {
+        source: 'educator',
+        text: "Students responded well to Nada's story. It made a strong opener for our discussion about seagrass restoration.",
+        createdAt,
+      },
+      {
+        source: 'educator',
+        text: 'The video worked well as-is for university learners and helped introduce the people behind marine science.',
+        createdAt,
+      }
+    );
+  }
 
   // Sort by createdAt descending (newest first), take up to 3
   feedback.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());

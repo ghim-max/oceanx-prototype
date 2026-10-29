@@ -4,7 +4,23 @@ import { getDecisionLog, COMPONENT_TITLES, type DecisionLogEntry, getReviewItems
 import { SUPABASE_IS_SAMPLE } from '../data/dataSource';
 import styles from './LogPage.module.css';
 
-type FilterAction = 'All' | 'Reuse' | 'Adapt' | 'Drop' | 'Restore' | 'Approve' | 'Edit' | 'Reject' | 'Task done';
+type FilterAction =
+  | 'All'
+  | 'Reuse'
+  | 'Adapt'
+  | 'Drop'
+  | 'Restore'
+  | 'Approve'
+  | 'Edit'
+  | 'Reject'
+  | 'Task done'
+  | 'Package pending review'
+  | 'Package cleared'
+  | 'Approve & Send'
+  | 'Edit & Send'
+  | 'Reject & Send Original'
+  | 'Delivery simulated'
+  | 'Delivery failed';
 type FilterType = 'All' | 'Library' | 'Review';
 
 interface FilterState {
@@ -130,7 +146,11 @@ export function LogPage() {
       // Type filter
       if (filters.type !== 'All') {
         const isLibrary = entry.targetType === 'component' || entry.targetType === 'adaptation_task';
-        const isReview = entry.targetType === 'ai_adaptation' || entry.targetType === 'share_back' || entry.targetType === 'issue_report';
+        const isReview =
+          entry.targetType === 'ai_adaptation' ||
+          entry.targetType === 'share_back' ||
+          entry.targetType === 'issue_report' ||
+          entry.targetType === 'package_review';
         if (filters.type === 'Library' && !isLibrary) return false;
         if (filters.type === 'Review' && !isReview) return false;
       }
@@ -192,6 +212,11 @@ export function LogPage() {
           infoMap[entry.id] = {
             label: `${kind}: ${componentTitle}`,
             onClick: () => navigate('/team/review', { state: { openItem: entry.targetId } }),
+          };
+        } else if (entry.targetType === 'package_review') {
+          infoMap[entry.id] = {
+            label: `Package: ${entry.targetId.split(':')[0]}`,
+            onClick: () => navigate('/team/review'),
           };
         } else {
           // Unknown targetType - show targetId, no link
@@ -354,6 +379,13 @@ export function LogPage() {
                 <option value="Edit">Edit</option>
                 <option value="Reject">Reject</option>
                 <option value="Task done">Task done</option>
+                <option value="Package pending review">Package pending review</option>
+                <option value="Package cleared">Package cleared</option>
+                <option value="Approve & Send">Approve &amp; Send</option>
+                <option value="Edit & Send">Edit &amp; Send</option>
+                <option value="Reject & Send Original">Reject &amp; Send Original</option>
+                <option value="Delivery simulated">Delivery simulated</option>
+                <option value="Delivery failed">Delivery failed</option>
               </select>
             </div>
 

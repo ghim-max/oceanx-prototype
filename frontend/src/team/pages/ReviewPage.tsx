@@ -13,15 +13,26 @@ import {
   type ReviewStatus,
   USE_MOCK,
 } from '../data/governanceService';
+import {
+  decideDemoPackageComponent,
+  getPackageReviewRecords,
+  type PackageReviewMaterial,
+  type PackageReviewRecord,
+} from '../data/packageReviewService';
 import styles from './ReviewPage.module.css';
 
 const KIND_LABELS: Record<ReviewKind, string> = {
   ai_adaptation: 'AI adaptations',
-  share_back: 'Share backs',
-  issue_report: 'Issue reports',
+  share_back: 'Share Backs (AI-checked)',
+  issue_report: 'Issues Log',
 };
 
-const KIND_KEYS: ReviewKind[] = ['ai_adaptation', 'share_back', 'issue_report'];
+type ReviewTab = 'packages' | 'share_back' | 'issue_report';
+const REVIEW_TABS: Array<{ id: ReviewTab; label: string }> = [
+  { id: 'packages', label: 'Packages (AI-flagged)' },
+  { id: 'share_back', label: KIND_LABELS.share_back },
+  { id: 'issue_report', label: KIND_LABELS.issue_report },
+];
 
 function formatDateTime(iso: string): string {
   const date = new Date(iso);
@@ -36,7 +47,7 @@ function formatDateTime(iso: string): string {
 }
 
 function formatWaiting(createdAt: string): string {
-  const diff = Date.now() - new Date(createdAt).getTime();
+  const diff = Math.max(0, Date.now() - new Date(createdAt).getTime());
   const hours = Math.floor(diff / 3600000);
   const minutes = Math.floor((diff % 3600000) / 60000);
   if (hours >= 24) {
@@ -87,11 +98,13 @@ function getPackageDisplay(item: ReviewItem): string {
 }
 
 export function ReviewPage() {
-  const [activeKind, setActiveKind] = useState<ReviewKind>('ai_adaptation');
-  const [filterStatus, setFilterStatus] = useState<ReviewStatus>('pending');
+  const [activeTab, setActiveTab] = useState<ReviewTab>('packages');
+  const [filterStatus, setFilterStatus] = useState<'pending' | 'done'>('pending');
   const [items, setItems] = useState<ReviewItem[]>([]);
-  const [counts, setCounts] = useState<Record<ReviewKind, number>>({
-    ai_adaptation: 0,
+  const [packageRecords, setPackageRecords] = useState<PackageReviewRecord[]>([]);
+  const [legacyAdaptationCount, setLegacyAdaptationCount] = useState(0);
+  const [counts, setCounts] = useState({
+    packages: 0,
     share_back: 0,
     issue_report: 0,
   });
@@ -99,6 +112,8 @@ export function ReviewPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [selectedItem, setSelectedItem] = useState<ReviewItem | null>(null);
+  const [selectedPackage, setSelectedPackage] = useState<PackageReviewRecord | null>(null);
+  const [packageEdits, setPackageEdits] = useState<Record<string, string>>({});
   const [editText, setEditText] = useState('');
   const [rejectReason, setRejectReason] = useState('');
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -110,29 +125,47 @@ export function ReviewPage() {
 
   const [searchParams] = useSearchParams();
 
-  // Load counts
   const loadCounts = useCallback(async () => {
     try {
       const c = await getPendingCounts();
-      setCounts({ ai_adaptation: c.ai_adaptation, share_back: c.share_back, issue_report: c.issue_report });
-    } catch (e) {
+      const packages = getPackageReviewRecords('pending_review').length;
+      const pendingShareBacks = await getReviewQueue('share_back', 'pending');
+      const flaggedShareBackCount = pendingShareBacks.filter((item) => item.screeningStatus === 'flagged').length;
+      setCounts({ packages, share_back: flaggedShareBackCount, issue_report: c.issue_report });
+    } catch {
       setError('Could not load counts');
     }
   }, []);
 
-  // Load items for current tab + filter
   const loadItems = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getReviewQueue(activeKind, filterStatus);
-      setItems(data);
-    } catch (e) {
+      if (activeTab === 'packages') {
+        const status = filterStatus === 'pending' ? 'pending_review' : 'cleared';
+        setPackageRecords(getPackageReviewRecords(status));
+        const legacyAdaptations =
+          filterStatus === 'pending' ? await getReviewQueue('ai_adaptation', 'pending') : [];
+        setLegacyAdaptationCount(legacyAdaptations.length);
+        setItems([]);
+      } else {
+        const data = await getReviewQueue(activeTab, filterStatus === 'pending' ? 'pending' : 'done');
+        if (activeTab === 'share_back') {
+          const flaggedItems = data.filter((item) => item.screeningStatus === 'flagged');
+          flaggedItems.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+          setItems(flaggedItems);
+        } else {
+          setItems(data);
+        }
+        setPackageRecords([]);
+        setLegacyAdaptationCount(0);
+      }
+    } catch {
       setError('Could not load review queue');
     } finally {
       setLoading(false);
     }
-  }, [activeKind, filterStatus]);
+  }, [activeTab, filterStatus]);
 
   useEffect(() => {
     loadCounts();
@@ -154,6 +187,42 @@ export function ReviewPage() {
       const opened = await openReview(item.id);
       setSelectedItem(opened ?? item);
     } finally {
+    }
+  };
+
+  const handlePackageDecision = async (
+    packageId: string,
+    material: PackageReviewMaterial,
+    action: 'approve' | 'edit' | 'reject_original',
+  ) => {
+    const editKey = `${packageId}:${material.componentId}`;
+    setDeciding(true);
+    try {
+      const result = decideDemoPackageComponent(
+        packageId,
+        material.componentId,
+        action,
+        action === 'edit' ? packageEdits[editKey] : undefined,
+      );
+      setSelectedPackage(result.record);
+      setPackageRecords((previous) =>
+        previous.map((record) => (record.id === result.record.id ? result.record : record)),
+      );
+      setToast({
+        message: result.unresolvedCount > 0
+          ? `Decision saved. ${result.unresolvedCount} flagged component(s) remain; package is still on hold.`
+          : 'All flagged components resolved. Delivery was simulated; no email was sent.',
+        type: 'success',
+      });
+      await loadCounts();
+      await loadItems();
+    } catch (error) {
+      setToast({
+        message: error instanceof Error ? error.message : 'Package decision failed. Nothing was released.',
+        type: 'info',
+      });
+    } finally {
+      setDeciding(false);
     }
   };
 
@@ -321,6 +390,50 @@ export function ReviewPage() {
       );
     }
 
+    if (activeTab === 'packages') {
+      if (packageRecords.length === 0) {
+        return (
+          <div className={styles.emptyState}>
+            <p>{filterStatus === 'pending' ? 'No packages are waiting for review.' : 'No cleared demo packages yet.'}</p>
+          </div>
+        );
+      }
+
+      return (
+        <ul className={styles.list} role="listbox" aria-label="Packages requiring review">
+          {packageRecords.map((record) => {
+            const flaggedCount = record.materials.filter((material) => material.screeningStatus === 'flagged').length;
+            return (
+              <li
+                key={record.id}
+                className={`${styles.listItem} ${selectedPackage?.id === record.id ? styles.listItemSelected : ''}`}
+                role="option"
+                aria-selected={selectedPackage?.id === record.id}
+                onClick={() => {
+                  setSelectedPackage(record);
+                  setSelectedItem(null);
+                }}
+              >
+                <div className={styles.itemMain}>
+                  <div className={styles.itemTitle}>{record.id}</div>
+                  <div className={styles.itemMeta}>
+                    <span className={styles.metaItem}>{record.educatorEmail}</span>
+                    <span className={styles.metaItem}>{formatDateTime(record.createdAt)}</span>
+                    <span className={styles.metaItem}>{flaggedCount} flagged component(s)</span>
+                  </div>
+                </div>
+                <div className={styles.itemStatus}>
+                  <span className={`${styles.statusPill} ${record.status === 'pending_review' ? styles.statusFlagged : styles.statusApproved}`}>
+                    {record.status === 'pending_review' ? 'Pending review' : 'Cleared'}
+                  </span>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      );
+    }
+
     if (items.length === 0) {
       return (
         <div className={styles.emptyState}>
@@ -330,7 +443,7 @@ export function ReviewPage() {
     }
 
     return (
-      <ul className={styles.list} role="listbox" aria-label={`${KIND_LABELS[activeKind]} queue`}>
+      <ul className={styles.list} role="listbox" aria-label={`${KIND_LABELS[activeTab]} queue`}>
         {items.map((item) => (
           <li
             key={item.id}
@@ -359,6 +472,17 @@ export function ReviewPage() {
               </div>
             </div>
             <div className={styles.itemStatus}>
+              {activeTab === 'share_back' && item.screeningStatus && (
+                <span className={`${styles.statusPill} ${
+                  item.screeningStatus === 'flagged'
+                    ? styles.statusFlagged
+                    : styles.statusApproved
+                }`}>
+                  {item.screeningStatus === 'flagged'
+                    ? '🚩 Flagged'
+                    : '✅ Passed'}
+                </span>
+              )}
               <span className={`${styles.statusPill} ${statusPillClass(item.status)}`}>
                 {statusLabel(item.status)}
               </span>
@@ -369,8 +493,131 @@ export function ReviewPage() {
     );
   };
 
-  // Render detail panel
+  const renderPackageDetail = () => {
+    if (!selectedPackage) {
+      return (
+        <div className={styles.detailEmpty}>
+          <p>Select a package to review</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className={styles.detailPanel} role="region" aria-label={`${selectedPackage.id} package detail`}>
+        <div className={styles.detailHeader}>
+          <h2 className={styles.detailTitle}>{selectedPackage.id}</h2>
+          <span className={`${styles.statusPill} ${selectedPackage.status === 'pending_review' ? styles.statusFlagged : styles.statusApproved}`}>
+            {selectedPackage.status === 'pending_review' ? 'Pending review' : 'Cleared'}
+          </span>
+        </div>
+        <div className={styles.flaggedIntro}>
+          DEMO MODE — rule-based screening only. No live AI assessment or email delivery is connected.
+        </div>
+        <div className={styles.detailMeta}>
+          <div className={styles.metaRow}><span className={styles.metaLabel}>Educator:</span> {selectedPackage.educatorEmail}</div>
+          <div className={styles.metaRow}><span className={styles.metaLabel}>Audience:</span> {selectedPackage.audience}</div>
+          <div className={styles.metaRow}><span className={styles.metaLabel}>Submitted:</span> {formatDateTime(selectedPackage.createdAt)}</div>
+          <div className={styles.metaRow}><span className={styles.metaLabel}>Delivery:</span> {selectedPackage.deliveryStatus === 'simulated' ? 'Simulated — no email sent' : 'On hold'}</div>
+          {selectedPackage.quizSummary && <div className={styles.metaRow}><span className={styles.metaLabel}>Knowledge check:</span> {selectedPackage.quizSummary}</div>}
+          {selectedPackage.lessonPlanSummary && <div className={styles.metaRow}><span className={styles.metaLabel}>Lesson plan:</span> {selectedPackage.lessonPlanSummary}</div>}
+        </div>
+
+        <div className={styles.packageMaterials}>
+          <h3 className={styles.sectionHeading}>Selected materials and decisions</h3>
+          {selectedPackage.materials.map((material) => {
+            const editKey = `${selectedPackage.id}:${material.componentId}`;
+            const unresolved = material.screeningStatus === 'flagged' && !material.decision;
+            const editedText = packageEdits[editKey] ?? material.proposedText;
+            return (
+              <section className={styles.packageMaterial} key={material.componentId}>
+                <div className={styles.detailHeader}>
+                  <h4 className={styles.detailTitle}>{material.title}</h4>
+                  <span className={`${styles.statusPill} ${material.screeningStatus === 'flagged' ? styles.statusFlagged : styles.statusApproved}`}>
+                    {material.screeningStatus === 'flagged' ? 'Flagged (demo)' : 'Passed (demo)'}
+                  </span>
+                </div>
+                {material.screeningReason && <p className={styles.reasonBlock}>{material.screeningReason}</p>}
+                <div className={styles.compareSection}>
+                  <div className={styles.compareCol}>
+                    <h4 className={styles.compareHeading}>Original approved resource</h4>
+                    <div className={styles.textBlock}>
+                      {material.originalApproved && material.originalText
+                        ? material.originalText
+                        : '(Approved original resource unavailable)'}
+                    </div>
+                  </div>
+                  <div className={styles.compareCol}>
+                    <h4 className={styles.compareHeading}>
+                      {material.decision === 'original' ? 'Final: approved original' : 'Proposed adaptation'}
+                    </h4>
+                    {unresolved ? (
+                      <textarea
+                        className={styles.editTextarea}
+                        value={editedText}
+                        onChange={(event) => setPackageEdits((previous) => ({ ...previous, [editKey]: event.target.value }))}
+                        rows={5}
+                        aria-label={`Edit ${material.title}`}
+                      />
+                    ) : (
+                      <div className={styles.textBlock}>
+                        {material.finalText || '(No text content is available for this resource.)'}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {material.decision && (
+                  <p className={styles.reuseNote}>
+                    Staff decision: {material.decision === 'approved' ? 'Approved adaptation' : material.decision === 'edited' ? 'Edited and approved' : 'Rejected adaptation; original selected'}
+                  </p>
+                )}
+                {unresolved && (
+                  <>
+                    {material.screeningStatus === 'flagged' && !material.originalApproved && (
+                      <p className={styles.reuseNote}>Reject &amp; Send Original is unavailable because an approved original could not be verified.</p>
+                    )}
+                    <div className={styles.detailActions}>
+                      <button
+                        type="button"
+                        className={`${styles.btn} ${styles.btnApprove}`}
+                        onClick={() => handlePackageDecision(selectedPackage.id, material, 'approve')}
+                        disabled={deciding}
+                      >
+                        Approve &amp; Send
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.btn} ${styles.btnEdit}`}
+                        onClick={() => handlePackageDecision(selectedPackage.id, material, 'edit')}
+                        disabled={deciding || !editedText.trim() || editedText === material.proposedText}
+                      >
+                        Edit &amp; Send
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.btn} ${styles.btnReject}`}
+                        onClick={() => handlePackageDecision(selectedPackage.id, material, 'reject_original')}
+                        disabled={deciding || !material.originalApproved}
+                      >
+                        Reject &amp; Send Original
+                      </button>
+                    </div>
+                  </>
+                )}
+              </section>
+            );
+          })}
+        </div>
+        {selectedPackage.status === 'cleared' && (
+          <div className={styles.flaggedIntro}>
+            Final package preview is shown above. The demo records what would be sent; no real email was sent.
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderDetail = () => {
+    if (activeTab === 'packages') return renderPackageDetail();
     if (!selectedItem) {
       return (
         <div className={styles.detailEmpty}>
@@ -424,7 +671,22 @@ export function ReviewPage() {
               <span className={styles.metaLabel}>OK to reuse:</span> {item.okToReuse ? 'Yes' : 'No'}
             </div>
           )}
+          {item.kind === 'share_back' && item.screeningStatus && (
+            <div className={styles.metaRow}>
+              <span className={styles.metaLabel}>Screening:</span>{' '}
+              {item.screeningStatus === 'flagged'
+                ? `Flagged${item.screeningMode === 'demo' ? ' (demo)' : ''}`
+                : `Passed${item.screeningMode === 'demo' ? ' (demo)' : ''}`}
+            </div>
+          )}
         </div>
+
+        {item.kind === 'share_back' && item.screeningStatus === 'flagged' && item.screeningReason && (
+          <div className={styles.reasonBlock}>
+            <span className={styles.metaLabel}>Flag reason:</span>
+            <p>{item.screeningReason}</p>
+          </div>
+        )}
 
         <div className={styles.compareSection}>
           <div className={styles.compareCol}>
@@ -606,21 +868,29 @@ export function ReviewPage() {
     <article className={styles.page}>
       <div className={styles.container}>
         <header className={styles.header}>
-          <h1 className={styles.h1}>Review queue</h1>
+          <h1 className={styles.h1}>Review</h1>
         </header>
 
         {/* Tabs */}
-        <div className={styles.tabs} role="tablist" aria-label="Review kind">
-          {KIND_KEYS.map((kind) => (
+        <div className={styles.tabs} role="tablist" aria-label="Review queue">
+          {REVIEW_TABS.map((tab) => (
             <button
-              key={kind}
+              key={tab.id}
               role="tab"
-              aria-selected={activeKind === kind}
-              className={`${styles.tab} ${activeKind === kind ? styles.tabActive : ''}`}
-              onClick={() => setActiveKind(kind)}
+              aria-selected={activeTab === tab.id}
+              className={`${styles.tab} ${activeTab === tab.id ? styles.tabActive : ''}`}
+              onClick={() => {
+                setActiveTab(tab.id);
+                setSelectedItem(null);
+                setSelectedPackage(null);
+                setEditText('');
+                setPackageEdits({});
+              }}
             >
-              {KIND_LABELS[kind]}
-              <span className={styles.tabCount}>{counts[kind]}</span>
+              {tab.label}
+              <span className={styles.tabCount}>
+                {counts[tab.id]}
+              </span>
             </button>
           ))}
         </div>
@@ -637,7 +907,7 @@ export function ReviewPage() {
           <button
             type="button"
             className={`${styles.filterBtn} ${filterStatus !== 'pending' ? styles.filterBtnActive : ''}`}
-            onClick={() => setFilterStatus('approved')}
+            onClick={() => setFilterStatus('done')}
           >
             Done
           </button>
@@ -647,14 +917,24 @@ export function ReviewPage() {
         <div className={styles.mainLayout}>
           <section className={styles.listSection} aria-labelledby="list-heading">
             <h2 id="list-heading" className={styles.sectionHeading}>
-              {KIND_LABELS[activeKind]} ({items.length})
+              {REVIEW_TABS.find((tab) => tab.id === activeTab)?.label} ({activeTab === 'packages' ? packageRecords.length : items.length})
             </h2>
+            {activeTab === 'packages' && legacyAdaptationCount > 0 && (
+              <p className={styles.flaggedIntro} role="note">
+                {legacyAdaptationCount} legacy AI adaptation review item(s) remain in the earlier demo queue. They are not complete package submissions and cannot be safely released. New requests are reviewed as full packages.
+              </p>
+            )}
+            {activeTab === 'share_back' && (
+              <p className={styles.flaggedIntro}>
+                Only submissions flagged by demo screening appear here. All contributions still require staff review before library inclusion.
+              </p>
+            )}
             {renderList()}
           </section>
 
           <aside className={styles.detailSection} aria-labelledby="detail-heading">
             <h2 id="detail-heading" className={styles.sectionHeading}>
-              {selectedItem ? 'Detail' : 'Detail'}
+              Detail
             </h2>
             {renderDetail()}
           </aside>

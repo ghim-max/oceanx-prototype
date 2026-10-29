@@ -12,6 +12,7 @@ import {
   type ComponentStage,
 } from '../data/seagrass-stories';
 import { getPendingCounts } from '../../team/data/governanceService';
+import { getPendingPackageReviewCount } from '../../team/data/packageReviewService';
 import styles from './Nav.module.css';
 
 const PARTNER_LINKS: Array<{ to: string; label: string; countKey?: string }> = [
@@ -205,18 +206,26 @@ const [pendingCounts, setPendingCounts] = useState<Record<string, number>>({});
   useEffect(() => {
     if (pathname.startsWith('/team')) {
       let cancelled = false;
+    const refreshReviewCount = () => {
       getPendingCounts().then((counts) => {
         if (!cancelled) {
           setPendingCounts({
-            review: counts.ai_adaptation + counts.share_back + counts.issue_report,
+            review: getPendingPackageReviewCount() + counts.share_back + counts.issue_report,
           });
         }
       }).catch(() => {
-        // ignore
+        // Keep the existing badge value when counts cannot be loaded.
       });
-      return () => { cancelled = true; };
-    }
-  }, [pathname]);
+    };
+
+    refreshReviewCount();
+    window.addEventListener('oceanx-review-counts-changed', refreshReviewCount);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('oceanx-review-counts-changed', refreshReviewCount);
+    };
+  }
+}, [pathname]);
 
   const effectiveRole =
     role ??
