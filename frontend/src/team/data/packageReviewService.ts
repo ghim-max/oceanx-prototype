@@ -353,3 +353,23 @@ export function decideDemoPackageComponent(
   window.dispatchEvent(new Event('oceanx-review-counts-changed'));
   return { record, unresolvedCount };
 }
+
+export function undoDemoPackageDecisions(packageId: string, reason?: string): PackageReviewRecord {
+  const records = readRecords();
+  const recordIndex = records.findIndex((entry) => entry.id === packageId);
+  if (recordIndex < 0) throw new Error('Package not found in review storage.');
+  const record = records[recordIndex];
+  if (record.status !== 'cleared') throw new Error('Only completed packages can be undone.');
+  if (!record.materials.some((m) => m.screeningStatus === 'flagged')) {
+    throw new Error('This package was not flagged, so there is nothing to undo.');
+  }
+  record.materials = record.materials.map((m) =>
+    m.screeningStatus === 'flagged' ? { ...m, decision: undefined, finalText: m.proposedText } : m,
+  );
+  record.status = 'pending_review';
+  records[recordIndex] = record;
+  writeRecords(records);
+  recordPackageDecision(record.id, 'Undo', reason?.trim() || 'Decisions undone. Package moved back to Open.');
+  window.dispatchEvent(new Event('oceanx-review-counts-changed'));
+  return record;
+}

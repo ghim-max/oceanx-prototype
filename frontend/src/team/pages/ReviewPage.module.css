@@ -949,3 +949,59 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
+
+/* ── Undo section ─────────────────────────────────────────────────────────── */
+.undoSection {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border-subtle, #e5e9ee);
+}
+
+.undoConfirm {
+  padding: 16px;
+  background: #f7fafb;
+  border: 1px solid var(--color-border-subtle, #e5e9ee);
+  border-radius: 8px;
+}
+
+.undoConfirmText {
+  margin: 0 0 16px;
+  color: var(--color-text-primary, #0f1e28);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.undoReasonLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.undoReasonLabelText {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary, #5b6770);
+}
+
+.undoReasonInput {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border, #d1d9e0);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: var(--font-body);
+  color: var(--color-text-primary, #0f1e28);
+  background: var(--color-bg);
+}
+
+.undoReasonInput:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 1px;
+  border-color: var(--color-link);
+}
+
+.undoConfirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}

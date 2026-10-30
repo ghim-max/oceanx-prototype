@@ -16,6 +16,7 @@ import {
   getPackageReviewRecords,
   type PackageReviewMaterial,
   type PackageReviewRecord,
+  undoDemoPackageDecisions,
 } from '../data/packageReviewService';
 import styles from './ReviewPage.module.css';
 
@@ -121,6 +122,8 @@ export function ReviewPage() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
   const [deciding, setDeciding] = useState(false);
   const [openLinkChecked, setOpenLinkChecked] = useState(false);
+  const [showUndoConfirm, setShowUndoConfirm] = useState(false);
+  const [undoReason, setUndoReason] = useState('');
 
   const [searchParams] = useSearchParams();
 
@@ -386,6 +389,35 @@ export function ReviewPage() {
     setShowResolveModal(false);
   };
 
+  const handleUndoOpen = () => {
+    setUndoReason('');
+    setShowUndoConfirm(true);
+  };
+
+  const handleUndoCancel = () => {
+    setUndoReason('');
+    setShowUndoConfirm(false);
+  };
+
+  const handleUndoConfirm = async () => {
+    if (!selectedPackage) return;
+    setDeciding(true);
+    try {
+      const record = undoDemoPackageDecisions(selectedPackage.id, undoReason.trim() || undefined);
+      setSelectedPackage(record);
+      setFilterStatus('pending');
+      await loadCounts();
+      await loadItems();
+      setToast({ message: 'Package moved back to Open.', type: 'success' });
+      setShowUndoConfirm(false);
+      setUndoReason('');
+    } catch (error) {
+      setToast({ message: error instanceof Error ? error.message : 'Undo failed. Please try again.', type: 'info' });
+    } finally {
+      setDeciding(false);
+    }
+  };
+
   // Render list rows
   const renderList = () => {
     if (loading) {
@@ -546,102 +578,152 @@ export function ReviewPage() {
         </div>
 
         <div className={styles.packageMaterials}>
-          <h3 className={styles.sectionHeading}>Selected materials and decisions</h3>
-          {selectedPackage.materials.map((material) => {
-            const editKey = `${selectedPackage.id}:${material.componentId}`;
-            const unresolved = material.screeningStatus === 'flagged' && !material.decision;
-            const editedText = packageEdits[editKey] ?? material.proposedText;
-            return (
-              <section className={styles.packageMaterial} key={material.componentId}>
-                <div className={styles.detailHeader}>
-                  <h4 className={styles.detailTitle}>{material.title}</h4>
-                  <span className={`${styles.statusPill} ${material.screeningStatus === 'flagged' ? styles.statusFlagged : styles.statusApproved}`}>
-                    {material.screeningStatus === 'flagged' ? 'Flagged' : 'Passed'}
-                  </span>
+                  <h3 className={styles.sectionHeading}>Selected materials and decisions</h3>
+                  {selectedPackage.materials.map((material) => {
+                    const editKey = `${selectedPackage.id}:${material.componentId}`;
+                    const unresolved = material.screeningStatus === 'flagged' && !material.decision;
+                    const editedText = packageEdits[editKey] ?? material.proposedText;
+                    return (
+                      <section className={styles.packageMaterial} key={material.componentId}>
+                        <div className={styles.detailHeader}>
+                          <h4 className={styles.detailTitle}>{material.title}</h4>
+                          <span className={`${styles.statusPill} ${material.screeningStatus === 'flagged' ? styles.statusFlagged : styles.statusApproved}`}>
+                            {material.screeningStatus === 'flagged' ? 'Flagged' : 'Passed'}
+                          </span>
+                        </div>
+                        {material.screeningReason && (
+                          <div className={styles.reasonBlock}>
+                            <span className={styles.metaLabel}>Flag reason:</span>
+                            <p>{material.screeningReason}</p>
+                          </div>
+                        )}
+                        <div className={styles.compareSection}>
+                          <div className={styles.compareCol}>
+                            <h4 className={styles.compareHeading}>Original approved resource</h4>
+                            <div className={styles.textBlock}>
+                              {material.originalApproved && material.originalText
+                                ? material.originalText
+                                : material.componentId === 'package-knowledge-check'
+                                ? 'Assembled from the OceanX question bank'
+                                : material.componentId === 'package-lesson-plan'
+                                ? 'Assembled from library components'
+                                : '(Approved original resource unavailable)'}
+                            </div>
+                          </div>
+                          <div className={styles.compareCol}>
+                            <h4 className={styles.compareHeading}>
+                              {material.decision === 'original' ? 'Final: approved original' : 'Proposed adaptation'}
+                            </h4>
+                            {unresolved ? (
+                              <textarea
+                                className={styles.editTextarea}
+                                value={editedText}
+                                onChange={(event) => setPackageEdits((previous) => ({ ...previous, [editKey]: event.target.value }))}
+                                rows={5}
+                                aria-label={`Edit ${material.title}`}
+                              />
+                            ) : (
+                              <div className={styles.textBlock}>
+                                {material.finalText || '(No text content is available for this resource.)'}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        {material.decision && (
+                          <p className={styles.reuseNote}>
+                            Staff decision: {material.decision === 'approved' ? 'Approved adaptation' : material.decision === 'edited' ? 'Edited and approved' : 'Rejected adaptation; original selected'}
+                          </p>
+                        )}
+                        {unresolved && (
+                          <>
+                            {material.screeningStatus === 'flagged' && !material.originalApproved && (
+                              <p className={styles.reuseNote}>Reject & Send Original is unavailable because an approved original could not be verified.</p>
+                            )}
+                            <div className={styles.detailActions}>
+                              <button
+                                type="button"
+                                className={`${styles.btn} ${styles.btnApprove}`}
+                                onClick={() => setApprovalMaterial(material)}
+                                disabled={deciding}
+                              >
+                                Approve & Send
+                              </button>
+                              <button
+                                type="button"
+                                className={`${styles.btn} ${styles.btnEdit}`}
+                                onClick={() => handlePackageDecision(selectedPackage.id, material, 'edit')}
+                                disabled={deciding || !editedText.trim() || editedText === material.proposedText}
+                              >
+                                Edit & Send
+                              </button>
+                              <button
+                                type="button"
+                                className={`${styles.btn} ${styles.btnReject}`}
+                                onClick={() => handlePackageDecision(selectedPackage.id, material, 'reject_original')}
+                                disabled={deciding || !material.originalApproved}
+                              >
+                                Reject & Send Original
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </section>
+                    );
+                  })}
                 </div>
-                {material.screeningReason && (
-                  <div className={styles.reasonBlock}>
-                    <span className={styles.metaLabel}>Flag reason:</span>
-                    <p>{material.screeningReason}</p>
-                  </div>
-                )}
-                <div className={styles.compareSection}>
-                  <div className={styles.compareCol}>
-                    <h4 className={styles.compareHeading}>Original approved resource</h4>
-                    <div className={styles.textBlock}>
-                      {material.originalApproved && material.originalText
-                        ? material.originalText
-                        : material.componentId === 'package-knowledge-check'
-                        ? 'Assembled from the OceanX question bank'
-                        : material.componentId === 'package-lesson-plan'
-                        ? 'Assembled from library components'
-                        : '(Approved original resource unavailable)'}
-                    </div>
-                  </div>
-                  <div className={styles.compareCol}>
-                    <h4 className={styles.compareHeading}>
-                      {material.decision === 'original' ? 'Final: approved original' : 'Proposed adaptation'}
-                    </h4>
-                    {unresolved ? (
-                      <textarea
-                        className={styles.editTextarea}
-                        value={editedText}
-                        onChange={(event) => setPackageEdits((previous) => ({ ...previous, [editKey]: event.target.value }))}
-                        rows={5}
-                        aria-label={`Edit ${material.title}`}
-                      />
-                    ) : (
-                      <div className={styles.textBlock}>
-                        {material.finalText || '(No text content is available for this resource.)'}
+
+                {filterStatus === 'done' && selectedPackage.status === 'cleared' && selectedPackage.materials.some((m) => m.screeningStatus === 'flagged') && (
+                  <div className={styles.undoSection}>
+                    {showUndoConfirm ? (
+                      <div className={styles.undoConfirm}>
+                        <p className={styles.undoConfirmText}>
+                          Move this package back to Open? Staff decisions on its flagged components will be cleared. The educator is not emailed again.
+                        </p>
+                        <label className={styles.undoReasonLabel}>
+                          <span className={styles.undoReasonLabelText}>Reason (optional)</span>
+                          <input
+                            type="text"
+                            className={styles.undoReasonInput}
+                            value={undoReason}
+                            onChange={(e) => setUndoReason(e.target.value)}
+                            placeholder="Reason for undo..."
+                            maxLength={500}
+                          />
+                        </label>
+                        <div className={styles.undoConfirmActions}>
+                          <button
+                            type="button"
+                            className={`${styles.btn} ${styles.btnCancel}`}
+                            onClick={handleUndoCancel}
+                            disabled={deciding}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            className={`${styles.btn} ${styles.btnApprove}`}
+                            onClick={handleUndoConfirm}
+                            disabled={deciding}
+                          >
+                            Confirm undo
+                          </button>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                </div>
-                {material.decision && (
-                  <p className={styles.reuseNote}>
-                    Staff decision: {material.decision === 'approved' ? 'Approved adaptation' : material.decision === 'edited' ? 'Edited and approved' : 'Rejected adaptation; original selected'}
-                  </p>
-                )}
-                {unresolved && (
-                  <>
-                    {material.screeningStatus === 'flagged' && !material.originalApproved && (
-                      <p className={styles.reuseNote}>Reject &amp; Send Original is unavailable because an approved original could not be verified.</p>
-                    )}
-                    <div className={styles.detailActions}>
+                    ) : (
                       <button
                         type="button"
                         className={`${styles.btn} ${styles.btnApprove}`}
-                        onClick={() => setApprovalMaterial(material)}
+                        onClick={handleUndoOpen}
                         disabled={deciding}
                       >
-                        Approve &amp; Send
+                        Undo decisions
                       </button>
-                      <button
-                        type="button"
-                        className={`${styles.btn} ${styles.btnEdit}`}
-                        onClick={() => handlePackageDecision(selectedPackage.id, material, 'edit')}
-                        disabled={deciding || !editedText.trim() || editedText === material.proposedText}
-                      >
-                        Edit &amp; Send
-                      </button>
-                      <button
-                        type="button"
-                        className={`${styles.btn} ${styles.btnReject}`}
-                        onClick={() => handlePackageDecision(selectedPackage.id, material, 'reject_original')}
-                        disabled={deciding || !material.originalApproved}
-                      >
-                        Reject &amp; Send Original
-                      </button>
-                    </div>
-                  </>
+                    )}
+                  </div>
                 )}
-              </section>
+              </div>
             );
-          })}
-        </div>
-      </div>
-    );
-  };
+          };
 
   const renderDetail = () => {
     if (activeTab === 'packages') return renderPackageDetail();
