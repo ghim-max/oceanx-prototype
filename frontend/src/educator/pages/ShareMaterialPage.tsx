@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { STAGES } from '../../shared/data/seagrass-stories';
 import { submitNewMaterial } from '../../team/data/governanceService';
-import { Button } from '../../shared/ui/Button';
+import { Button, LinkButton } from '../../shared/ui/Button';
 import styles from './ShareMaterialPage.module.css';
 
 type Stage = typeof STAGES[number];
@@ -44,6 +44,10 @@ const initialFormData: FormData = {
 };
 
 const initialErrors: Errors = {};
+
+function stageToAnchor(stage: string): string {
+  return stage.toLowerCase().replace(/\s+/g, '-');
+}
 
 function isValidUrl(url: string): boolean {
   try {
@@ -351,7 +355,14 @@ export function ShareMaterialPage() {
   const renderSuccess = () => (
     <div className={styles.success} role="status" aria-live="polite">
       <h1 className={styles.successTitle} ref={h1Ref} tabIndex={-1}>Thanks, we've got it.</h1>
-      <p className={styles.successDesc}>The OceanX team checks every shared material. You'll hear back at {formData.email} within 5 business days.</p>
+      <p className={styles.successDesc}>Your material is now in the Seagrass Stories library, marked In review. The OceanX team will check it and confirm at {formData.email}.</p>
+      <LinkButton
+        to={`/partner/library?audience=university#${stageToAnchor(formData.stage)}`}
+        variant="dark"
+        className={styles.successAction}
+      >
+        Back to library
+      </LinkButton>
     </div>
   );
 

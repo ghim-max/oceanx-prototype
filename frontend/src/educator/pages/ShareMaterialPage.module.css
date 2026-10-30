@@ -248,6 +248,10 @@
   color: var(--color-text-secondary);
 }
 
+.successAction {
+  margin-top: var(--space-6);
+}
+
 @media (min-width: 640px) {
   .container {
     padding: var(--space-16) var(--space-6) var(--space-20);
