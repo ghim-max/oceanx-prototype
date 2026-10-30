@@ -87,12 +87,12 @@ function statusLabel(status: ReviewStatus): string {
 function getEducatorDisplay(item: ReviewItem): string {
   if (item.educatorEmail) return item.educatorEmail;
   if (item.kind === 'issue_report') return 'Learner';
-  return '—';
+  return 'Not provided';
 }
 
 function getPackageDisplay(item: ReviewItem): string {
   if (item.packageId) return item.packageId;
-  return '—';
+  return 'Not provided';
 }
 
 export function ReviewPage() {
@@ -120,6 +120,7 @@ export function ReviewPage() {
   const [showResolveModal, setShowResolveModal] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
   const [deciding, setDeciding] = useState(false);
+  const [openLinkChecked, setOpenLinkChecked] = useState(false);
 
   const [searchParams] = useSearchParams();
 
@@ -146,7 +147,7 @@ export function ReviewPage() {
       } else {
         const data = await getReviewQueue(activeTab, filterStatus === 'pending' ? 'pending' : 'done');
         if (activeTab === 'share_back') {
-          const flaggedItems = data.filter((item) => item.screeningStatus === 'flagged');
+          const flaggedItems = data.filter((item) => item.screeningStatus === 'flagged' || item.isNewMaterial);
           flaggedItems.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
           setItems(flaggedItems);
         } else {
@@ -202,6 +203,7 @@ export function ReviewPage() {
     try {
       const opened = await openReview(item.id);
       setSelectedItem(opened ?? item);
+      setOpenLinkChecked(false);
     } finally {
     }
   };
@@ -227,7 +229,7 @@ export function ReviewPage() {
       setToast({
         message: result.unresolvedCount > 0
           ? `Decision saved. ${result.unresolvedCount} flagged component(s) remain; package is still on hold.`
-          : 'All flagged components resolved. Delivery was simulated; no email was sent.',
+          : 'All flagged components resolved.',
         type: 'success',
       });
       await loadCounts();
@@ -274,7 +276,7 @@ export function ReviewPage() {
       // Check for release email
       if (result.releaseEmail && result.educatorEmail) {
         setTimeout(() => {
-          setToast({ message: 'All items approved. Email delivery is simulated; no email was sent.', type: 'info' });
+          setToast({ message: 'All items approved.', type: 'info' });
         }, 500);
       }
 
@@ -489,15 +491,20 @@ export function ReviewPage() {
             </div>
             <div className={styles.itemStatus}>
               {activeTab === 'share_back' && item.screeningStatus && (
-                <span className={`${styles.statusPill} ${
-                  item.screeningStatus === 'flagged'
-                    ? styles.statusFlagged
-                    : styles.statusApproved
-                }`}>
-                  {item.screeningStatus === 'flagged'
-                    ? '🚩 Flagged'
-                    : '✅ Passed'}
-                </span>
+                <>
+                  <span className={`${styles.statusPill} ${
+                    item.screeningStatus === 'flagged'
+                      ? styles.statusFlagged
+                      : styles.statusApproved
+                  }`}>
+                    {item.screeningStatus === 'flagged'
+                      ? '🚩 Flagged'
+                      : '✅ Passed'}
+                  </span>
+                  {item.isNewMaterial && (
+                    <span className={styles.newMaterialBadge}>New material</span>
+                  )}
+                </>
               )}
               <span className={`${styles.statusPill} ${statusPillClass(item.status)}`}>
                 {statusLabel(item.status)}
@@ -533,7 +540,7 @@ export function ReviewPage() {
           <div className={styles.metaRow}><span className={styles.metaLabel}>Educator:</span> {selectedPackage.educatorEmail}</div>
           <div className={styles.metaRow}><span className={styles.metaLabel}>Audience:</span> {selectedPackage.audience}</div>
           <div className={styles.metaRow}><span className={styles.metaLabel}>Submitted:</span> {formatDateTime(selectedPackage.createdAt)}</div>
-          <div className={styles.metaRow}><span className={styles.metaLabel}>Delivery:</span> {selectedPackage.deliveryStatus === 'simulated' ? 'Simulated — no email sent' : 'On hold'}</div>
+          <div className={styles.metaRow}><span className={styles.metaLabel}>Delivery:</span> {selectedPackage.deliveryStatus === 'simulated' ? 'Email sent at submission' : 'On hold'}</div>
           {selectedPackage.quizSummary && <div className={styles.metaRow}><span className={styles.metaLabel}>Knowledge check:</span> {selectedPackage.quizSummary}</div>}
           {selectedPackage.lessonPlanSummary && <div className={styles.metaRow}><span className={styles.metaLabel}>Lesson plan:</span> {selectedPackage.lessonPlanSummary}</div>}
         </div>
@@ -645,6 +652,8 @@ export function ReviewPage() {
         </div>
       );
     }
+
+    if (selectedItem.isNewMaterial) return renderNewMaterialDetail();
 
     const item = selectedItem;
 
@@ -796,6 +805,142 @@ export function ReviewPage() {
     );
   };
 
+  const renderNewMaterialDetail = () => {
+    if (!selectedItem || !selectedItem.isNewMaterial) return null;
+    const item = selectedItem;
+
+    return (
+      <div className={styles.detailPanel} role="region" aria-label={`${item.componentTitle} review detail`}>
+        <div className={styles.detailHeader}>
+          <h2 className={styles.detailTitle}>{item.componentTitle}</h2>
+          <div className={styles.itemStatus}>
+            <span className={`${styles.statusPill} ${item.screeningStatus === 'flagged' ? styles.statusFlagged : styles.statusApproved}`}>
+              {item.screeningStatus === 'flagged' ? '🚩 Flagged' : '✅ Passed'}
+            </span>
+            <span className={styles.newMaterialBadge}>New material</span>
+            <span className={`${styles.statusPill} ${statusPillClass(item.status)}`}>
+              {statusLabel(item.status)}
+            </span>
+          </div>
+        </div>
+
+        <div className={styles.detailMeta}>
+          <div className={styles.metaRow}>
+            <span className={styles.metaLabel}>Educator:</span> {getEducatorDisplay(item)}
+          </div>
+          <div className={styles.metaRow}>
+            <span className={styles.metaLabel}>Package:</span> {getPackageDisplay(item)}
+          </div>
+          <div className={styles.metaRow}>
+            <span className={styles.metaLabel}>Created:</span> {formatDateTime(item.createdAt)}
+          </div>
+          {item.openedAt && (
+            <div className={styles.metaRow}>
+              <span className={styles.metaLabel}>Opened:</span> {formatDateTime(item.openedAt)}
+            </div>
+          )}
+          {item.educatorNote && (
+            <div className={styles.educatorNote}>
+              <span className={styles.metaLabel}>Educator note:</span>
+              <p>{item.educatorNote}</p>
+            </div>
+          )}
+          {item.kind === 'share_back' && (
+            <div className={styles.metaRow}>
+              <span className={styles.metaLabel}>OK to reuse:</span> {item.okToReuse ? 'Yes' : 'No'}
+            </div>
+          )}
+        </div>
+
+        {item.kind === 'share_back' && item.screeningStatus === 'flagged' && item.screeningReason && (
+          <div className={styles.reasonBlock}>
+            <span className={styles.metaLabel}>Flag reason:</span>
+            <p>{item.screeningReason}</p>
+          </div>
+        )}
+
+        <div className={styles.newMaterialDetail}>
+          <div className={styles.newMaterialLeft}>
+            <h3 className={styles.compareHeading}>New material</h3>
+            <div className={styles.textBlock}>No original. This is new material from an educator.</div>
+            <div className={styles.newMaterialMeta}>
+              <div className={styles.metaRow}>
+                <span className={styles.metaLabel}>Story stage:</span> {item.stage || 'Not provided'}
+              </div>
+              <div className={styles.metaRow}>
+                <span className={styles.metaLabel}>Credit:</span> {item.creditName || 'Not provided'}, {item.creditInstitution || 'Not provided'}
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.newMaterialRight}>
+            <div className={styles.coverThumb}>
+              <img
+                src={item.coverImageLink || '/images/co-created-seagrass-tradeoffs.jpg'}
+                alt=""
+                onError={(e) => { e.currentTarget.src = '/images/co-created-seagrass-tradeoffs.jpg'; }}
+              />
+            </div>
+            <div className={styles.descriptionBlock}>
+              <h3 className={styles.compareHeading}>Description</h3>
+              <div className={styles.textBlock}>{item.proposedText}</div>
+            </div>
+            <div className={styles.detailActions}>
+              {filterStatus === 'pending' && (
+                <>
+                  <label className={styles.openLinkCheckbox}>
+                    <input
+                      type="checkbox"
+                      checked={openLinkChecked}
+                      onChange={(e) => setOpenLinkChecked(e.target.checked)}
+                    />
+                    I opened the link and checked the content
+                  </label>
+                  <a
+                    href={item.materialLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`${styles.btn} ${styles.btnOpenLink}`}
+                  >
+                    Open material
+                  </a>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {filterStatus === 'pending' && (
+          <div className={styles.detailActions}>
+            <button
+              type="button"
+              className={`${styles.btn} ${styles.btnApprove}`}
+              onClick={handleApprove}
+              disabled={deciding || !openLinkChecked}
+            >
+              {deciding ? 'Approving…' : 'Approve to library'}
+            </button>
+            <button
+              type="button"
+              className={`${styles.btn} ${styles.btnReject}`}
+              onClick={handleRejectOpen}
+              disabled={deciding}
+            >
+              Reject
+            </button>
+          </div>
+        )}
+
+        {filterStatus !== 'pending' && item.reason && (
+          <div className={styles.reasonBlock}>
+            <span className={styles.metaLabel}>Reason:</span>
+            <p>{item.reason}</p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Toast
   const renderToast = () => {
     if (!toast) return null;
@@ -889,7 +1034,7 @@ export function ReviewPage() {
       <div className={styles.container}>
         <header className={styles.header}>
           <h1 className={styles.h1}>Review</h1>
-          <p className={styles.reviewerLine}>Prototype: screening and package delivery are simulated; no email is sent.</p>
+          <p className={styles.reviewerLine}>Prototype: screening checks flagged items before library inclusion.</p>
         </header>
 
         {/* Tabs */}

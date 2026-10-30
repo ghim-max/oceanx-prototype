@@ -23,6 +23,7 @@ const SAMPLE_WITH_AI = {
   lessonPlanLevel: 'intermediate',
   feedbackLink: appLink('educator/p/pkg-university-2026-q3'),
   hadAiReview: true,
+  slug: 'pkg-university-2026-q3',
 };
 
 const SAMPLE_NO_AI = {
@@ -36,6 +37,7 @@ const SAMPLE_NO_AI = {
   lessonPlanLevel: undefined,
   feedbackLink: appLink('educator/p/pkg-university-2026-q4'),
   hadAiReview: false,
+  slug: 'pkg-university-2026-q4',
 };
 
 export function EmailPreviewPage() {

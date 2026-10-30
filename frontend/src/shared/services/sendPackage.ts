@@ -43,8 +43,6 @@ export async function sendPackage(payload: PackagePayload): Promise<void> {
 
   const feedbackLink = appLink(payload.slug ? `educator/p/${payload.slug}` : 'educator/seagrass-university');
 
-  console.log({ feedbackLink });
-
   const emailInput = {
     educatorName: payload.educatorName,
     audience: payload.audience,
@@ -56,6 +54,7 @@ export async function sendPackage(payload: PackagePayload): Promise<void> {
     lessonPlanLevel: payload.lessonPlanLevel,
     feedbackLink,
     hadAiReview: payload.hadAiReview,
+    slug: payload.slug,
   };
 
   const { subject, html } = buildPackageEmail(emailInput);
@@ -67,8 +66,6 @@ export async function sendPackage(payload: PackagePayload): Promise<void> {
     to_email: payload.email,
     reply_to: 'noreply@oceanx.org',
   };
-
-  console.log('[sendPackage] params keys:', Object.keys(templateParams), 'email_html length:', html.length);
 
   await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, { publicKey: PUBLIC_KEY });
 }

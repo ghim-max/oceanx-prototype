@@ -1,4 +1,5 @@
 import { SEAGRASS_STORIES } from '../../shared/data/seagrass-stories';
+import { demoScreen } from './packageReviewService';
 
 export const USE_MOCK = true;
 
@@ -40,6 +41,13 @@ export interface ReviewItem {
   screeningStatus?: 'flagged' | 'passed';
   screeningReason?: string;
   screeningMode?: 'demo';
+  // Share material fields
+  isNewMaterial?: boolean;
+  materialLink?: string;
+  stage?: string;
+  creditName?: string;
+  creditInstitution?: string;
+  coverImageLink?: string;
 }
 
 export interface DecisionLogEntry {
@@ -76,6 +84,19 @@ export interface PendingCounts {
   share_back: number;
   issue_report: number;
   total: number;
+}
+
+export interface CoCreatedMaterial {
+  id: string;
+  title: string;
+  link: string;
+  stage: string;
+  coverImageLink?: string;
+  creditName: string;
+  creditInstitution: string;
+  approvedAt: string;
+  sourceTicketId: string;
+  reviewStatus: 'in_review' | 'approved';
 }
 
 export interface DecideResult {
@@ -177,10 +198,17 @@ let decisionLog: DecisionLogEntry[] = [];
 let libraryState: LibraryState[] = [];
 let adaptationTasks: AdaptationTask[] = [];
 let dismissedFlaggedIds: string[] = [];
+let coCreatedMaterials: CoCreatedMaterial[] = [];
 
 // Exported getter for reviewItems (used by LogPage for title lookup)
 export function getReviewItems(): Promise<ReviewItem[]> {
   return Promise.resolve(reviewItems);
+}
+
+export async function getCoCreatedMaterials(): Promise<CoCreatedMaterial[]> {
+  await delay(300);
+  seedIfEmpty();
+  return [...coCreatedMaterials].sort((a, b) => new Date(b.approvedAt).getTime() - new Date(a.approvedAt).getTime());
 }
 
 // ============================================
@@ -207,6 +235,9 @@ function loadFromStorage(): void {
       if (parsed.dismissedFlaggedIds && Array.isArray(parsed.dismissedFlaggedIds)) {
         dismissedFlaggedIds = parsed.dismissedFlaggedIds;
       }
+      if (parsed.coCreatedMaterials && Array.isArray(parsed.coCreatedMaterials)) {
+        coCreatedMaterials = parsed.coCreatedMaterials;
+      }
       // Sort by createdAt ascending
       reviewItems.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     }
@@ -219,7 +250,7 @@ function saveToStorage(): void {
   try {
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ reviewItems, decisionLog, libraryState, adaptationTasks, dismissedFlaggedIds })
+      JSON.stringify({ reviewItems, decisionLog, libraryState, adaptationTasks, dismissedFlaggedIds, coCreatedMaterials })
     );
   } catch {
     // Ignore storage full errors
@@ -890,6 +921,25 @@ export async function decideReview(
     }
   }
 
+  // Handle new material approval -> update co-created material status
+  if (item.kind === 'share_back' && item.isNewMaterial && action === 'approve') {
+    const coCreatedIndex = coCreatedMaterials.findIndex((c) => c.sourceTicketId === item.id);
+    if (coCreatedIndex !== -1) {
+      coCreatedMaterials[coCreatedIndex] = {
+        ...coCreatedMaterials[coCreatedIndex],
+        reviewStatus: 'approved',
+        approvedAt: nowISO(),
+      };
+      saveToStorage();
+    }
+  }
+
+  // Handle new material rejection -> remove co-created material
+  if (item.kind === 'share_back' && item.isNewMaterial && action === 'reject') {
+    coCreatedMaterials = coCreatedMaterials.filter((c) => c.sourceTicketId !== item.id);
+    saveToStorage();
+  }
+
   // Log the decision
   let logAction: DecisionLogEntry['action'];
   switch (action) {
@@ -1107,12 +1157,96 @@ export async function submitShareBack(input: SubmitShareBackInput): Promise<{ ok
   return { ok: true, id: item.id };
 }
 
+// ============================================
+// Share Material API
+// ============================================
+
+export interface SubmitNewMaterialInput {
+  title: string;
+  materialLink: string;
+  stage: string;
+  description: string;
+  coverImageLink?: string;
+  creditName: string;
+  creditInstitution: string;
+  educatorEmail: string;
+  okToReuse: boolean;
+  pkgSlug?: string;
+}
+
+export async function submitNewMaterial(input: SubmitNewMaterialInput): Promise<{ ok: boolean; id?: string; error?: string }> {
+  await delay(300);
+  seedIfEmpty();
+
+  const now = nowISO();
+  const screen = demoScreen(`${input.title}\n${input.description}`);
+
+  const item: ReviewItem = {
+    id: genId(),
+    kind: 'share_back',
+    componentId: `new-${genId()}`,
+    componentTitle: input.title,
+    packageId: input.pkgSlug,
+    educatorEmail: input.educatorEmail,
+    originalText: '',
+    proposedText: input.description,
+    status: 'pending',
+    reviewer: 'OceanX team',
+    createdAt: now,
+    okToReuse: input.okToReuse,
+    screeningStatus: screen.status,
+    screeningReason: screen.reason,
+    screeningMode: 'demo',
+    isNewMaterial: true,
+    materialLink: input.materialLink,
+    stage: input.stage,
+    creditName: input.creditName,
+    creditInstitution: input.creditInstitution,
+    coverImageLink: input.coverImageLink,
+  };
+
+  reviewItems.push(item);
+  reviewItems.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  saveToStorage();
+
+  // Also create a co-created material entry with 'in_review' status
+  const coCreated: CoCreatedMaterial = {
+    id: genId(),
+    title: input.title,
+    link: input.materialLink,
+    stage: input.stage,
+    coverImageLink: input.coverImageLink,
+    creditName: input.creditName,
+    creditInstitution: input.creditInstitution,
+    approvedAt: now,
+    sourceTicketId: item.id,
+    reviewStatus: 'in_review',
+  };
+  coCreatedMaterials.unshift(coCreated);
+  saveToStorage();
+
+  // Write a decision_log entry the same way submitShareBack does
+  addDecisionLog({
+    who: 'OceanX team',
+    action: 'Package pending review',
+    targetType: 'share_back',
+    targetId: item.id,
+    why: `New material shared: ${input.title}`,
+    aiOverride: false,
+  });
+
+  window.dispatchEvent(new Event('oceanx-review-counts-changed'));
+
+  return { ok: true, id: item.id };
+}
+
 export function resetMock(): void {
   reviewItems = [];
   decisionLog = [];
   libraryState = [];
   adaptationTasks = [];
   dismissedFlaggedIds = [];
+  coCreatedMaterials = [];
   try {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem('oceanx_demo_package_reviews_v2');
@@ -1120,6 +1254,32 @@ export function resetMock(): void {
     // Ignore
   }
   seedIfEmpty();
+}
+
+export function resetShareMaterialDemo(): void {
+  seedIfEmpty();
+  // Get IDs of new material items before removing them
+  const newMaterialIds = reviewItems
+    .filter((i) => i.isNewMaterial)
+    .map((i) => i.id);
+  
+  // Remove new material review items
+  reviewItems = reviewItems.filter((i) => !i.isNewMaterial);
+  
+  // Remove decision log rows that belong to removed ticket ids
+  decisionLog = decisionLog.filter((entry) => {
+    // Check if this log entry is for a new material share_back item
+    if (entry.targetType === 'share_back' && newMaterialIds.includes(entry.targetId)) {
+      return false;
+    }
+    return true;
+  });
+  
+  // Clear co-created materials
+  coCreatedMaterials = [];
+  
+  saveToStorage();
+  window.dispatchEvent(new Event('oceanx-review-counts-changed'));
 }
 
 // ============================================
@@ -1482,6 +1642,17 @@ export async function getLatestDecision(componentId: string): Promise<DecisionLo
 if (typeof window !== 'undefined' && USE_MOCK) {
   (window as any).__governanceLog = getDecisionLog;
   (window as any).__governanceReset = resetMock;
+  (window as any).__gov = {
+    getReviewItems,
+    getDecisionLog,
+    resetMock,
+    submitNewMaterial,
+    submitShareBack,
+    submitIssueReport,
+    seedIfEmpty,
+    getCoCreatedMaterials,
+    decideReview,
+  };
 }
 
 // ============================================

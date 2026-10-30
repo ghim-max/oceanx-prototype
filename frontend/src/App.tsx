@@ -24,6 +24,7 @@ import { LessonPlanPage } from './learner/pages/LessonPlanPage';
 import { LessonPlanPreviewPage } from './preview/LessonPlanPreviewPage';
 import { EducatorFeedbackPage } from './educator/pages/EducatorFeedbackPage';
 import { EducatorPackageFeedbackPage } from './educator/pages/EducatorPackageFeedbackPage';
+import { ShareMaterialPage } from './educator/pages/ShareMaterialPage';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -79,6 +80,7 @@ function AppContent() {
           <Route path="/feedback" element={<Navigate to="/quiz/seagrass-university" replace />} />
           <Route path="/educator/seagrass-university" element={<EducatorFeedbackPage />} />
           <Route path="/educator/p/:slug" element={<EducatorPackageFeedbackPage />} />
+          <Route path="/educator/share" element={<ShareMaterialPage />} />
           <Route path="/lesson/p/:slug" element={<LessonPlanPage />} />
           <Route path="/preview/quiz" element={<QuizPreviewPage />} />
           <Route path="/preview/lesson" element={<LessonPlanPreviewPage />} />
