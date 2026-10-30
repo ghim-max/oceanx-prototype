@@ -57,10 +57,10 @@ export interface DecisionLogEntry {
     | 'Reuse'
     | 'Adapt'
     | 'Drop'
+    | 'Restore'
     | 'Approve'
     | 'Edit'
     | 'Reject'
-    | 'Restore'
     | 'Task done'
     | 'Resolved'
     | 'Not an issue'
@@ -70,7 +70,8 @@ export interface DecisionLogEntry {
     | 'Edit & Send'
     | 'Reject & Send Original'
     | 'Delivery simulated'
-    | 'Delivery failed';
+    | 'Delivery failed'
+    | 'Undo';
   targetType: string;
   targetId: string;
   why?: string;
@@ -746,7 +747,7 @@ function addDecisionLog(entry: Omit<DecisionLogEntry, 'id' | 'createdAt'>): Deci
 
 export function recordPackageDecision(
   targetId: string,
-  action: Extract<DecisionLogEntry['action'], 'Package pending review' | 'Package cleared' | 'Approve & Send' | 'Edit & Send' | 'Reject & Send Original' | 'Delivery simulated' | 'Delivery failed'>,
+  action: Extract<DecisionLogEntry['action'], 'Package pending review' | 'Package cleared' | 'Approve & Send' | 'Edit & Send' | 'Reject & Send Original' | 'Delivery simulated' | 'Delivery failed' | 'Undo'>,
   why?: string,
 ): void {
   seedIfEmpty();

@@ -20,7 +20,8 @@ type FilterAction =
   | 'Edit & Send'
   | 'Reject & Send Original'
   | 'Delivery simulated'
-  | 'Delivery failed';
+  | 'Delivery failed'
+  | 'Undo';
 type FilterType = 'All' | 'Library' | 'Review';
 
 interface FilterState {
@@ -365,28 +366,29 @@ export function LogPage() {
             <div className={styles.filterGroup}>
               <label htmlFor="filter-action" className={styles.filterLabel}>Action</label>
               <select
-                id="filter-action"
-                className={styles.filterSelect}
-                value={filters.action}
-                onChange={(e) => handleFilterChange('action', e.target.value as FilterAction)}
-              >
-                <option value="All">All</option>
-                <option value="Reuse">Reuse</option>
-                <option value="Adapt">Adapt</option>
-                <option value="Drop">Drop</option>
-                <option value="Restore">Restore</option>
-                <option value="Approve">Approve</option>
-                <option value="Edit">Edit</option>
-                <option value="Reject">Reject</option>
-                <option value="Task done">Task done</option>
-                <option value="Package pending review">Package pending review</option>
-                <option value="Package cleared">Package cleared</option>
-                <option value="Approve & Send">Approve &amp; Send</option>
-                <option value="Edit & Send">Edit &amp; Send</option>
-                <option value="Reject & Send Original">Reject &amp; Send Original</option>
-                <option value="Delivery simulated">Delivery simulated</option>
-                <option value="Delivery failed">Delivery failed</option>
-              </select>
+                              id="filter-action"
+                              className={styles.filterSelect}
+                              value={filters.action}
+                              onChange={(e) => handleFilterChange('action', e.target.value as FilterAction)}
+                            >
+                              <option value="All">All</option>
+                              <option value="Reuse">Reuse</option>
+                              <option value="Adapt">Adapt</option>
+                              <option value="Drop">Drop</option>
+                              <option value="Restore">Restore</option>
+                              <option value="Approve">Approve</option>
+                              <option value="Edit">Edit</option>
+                              <option value="Reject">Reject</option>
+                              <option value="Task done">Task done</option>
+                              <option value="Package pending review">Package pending review</option>
+                              <option value="Package cleared">Package cleared</option>
+                              <option value="Approve & Send">Approve & Send</option>
+                              <option value="Edit & Send">Edit & Send</option>
+                              <option value="Reject & Send Original">Reject & Send Original</option>
+                              <option value="Delivery simulated">Delivery simulated</option>
+                              <option value="Delivery failed">Delivery failed</option>
+                              <option value="Undo">Undo</option>
+                            </select>
             </div>
 
             <div className={styles.filterGroup}>
