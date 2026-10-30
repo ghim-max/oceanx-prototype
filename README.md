@@ -121,6 +121,7 @@ All mock data goes through two files, so moving to a real database later only to
 │   ├── supabase/              SQL migrations 001 to 011 (run in order)
 │   ├── requirements.txt
 │   └── .env.example
+├── Images/                    Photos imported by the frontend (e.g. entry page cards). Keep this folder
 ├── .github/workflows/         keepalive.yml (pings the Render backend)
 ├── render.yaml                Render service definition
 ├── DESIGN.md, PRODUCT.md      Design system and product context
@@ -246,28 +247,84 @@ Render's free tier sleeps when idle. `.github/workflows/keepalive.yml` pings `/h
 
 ## Demo walkthrough
 
-Start at `/` and pick a role.
+### Step 1: Pick your role on the entry page (`/`)
 
-**Educator**
-1. `/partner/library`: pick components.
-2. `/partner/adapt`: turn on the quiz and lesson plan.
-3. `/partner/adapt/review`: enter your email and send. Check your inbox.
+There is no login. The entry page at `/` asks who you are. Pick one of two cards:
 
-**Learner**
-4. Open the quiz link from the email. Do "Start of class", then "After class".
-   Add `?reset=1` to the quiz URL to start again on the same device.
+| Card on the entry page | Who it is for | Where it takes you |
+|---|---|---|
+| **I'm a partner** | An **educator** (teacher, lecturer, facilitator) who wants to use OceanX content with their learners | `/partner`, where you choose an audience: **Schools**, **University** or **Museum**. Pick **University** for the full demo (AI rewrite, quiz and lesson plan are set up for University) |
+| **OceanX Education team** | **OceanX staff** who manage the content library | `/team/overview`, the team dashboard |
 
-**Educator after class**
-5. In the email, open **Share your feedback**, or **Share your materials**.
-   The share form is pre-filled with a sample seminar activity (`/files/seagrass-tradeoffs-seminar-activity.pdf`). Click **Send to OceanX**, then **Back to library**. The new card shows in the Reflect stage as **Co-created · In review**.
+**Learners do not pick a role.** They never see the entry page. They only reach the quiz through the link in the educator's email (see Step 3).
 
-**OceanX team**
-6. `/team/review`: review flagged packages, share backs and issue reports. The first ticket opens automatically.
-7. `/team/insights` and `/team/log`: confirm or override AI recommendations and see the audit trail.
+You can come back to `/` at any time to switch role. Note that opening `/` also resets the shared-material demo (see Step 4).
 
-**Resetting demo data**
-- Opening `/` clears shared-material cards and their tickets.
-- `/team/review?reset=1` resets the mock review queue and decision log.
+### Step 2: Educator builds and sends a package
+
+1. On the entry page, pick **I'm a partner**, then **University**.
+2. `/partner/library`: pick the components you want.
+3. `/partner/adapt`: turn on the quiz and the lesson plan. Optionally ask AI to rewrite an "Adapted" component.
+4. `/partner/adapt/review`: enter **your own email address** and send.
+
+The package is created and the email is sent straight away. Check your inbox (and spam).
+
+### Step 3: The email is the only way into the after-class pages
+
+There are no accounts, so pages that belong to one package are reached **only through the links in that package's email**. Each link carries the package code (the "slug", e.g. `/quiz/p/4km3hQbt`), which tells the page which package it belongs to.
+
+| Link in the email | Who uses it | What it opens |
+|---|---|---|
+| **Open learner quiz** (or copy the link) | **Learners.** The educator shares this link with the class | `/quiz/p/<slug>`: "Start of class" before the session, "After class" after it. Answers are saved on the learner's device. Add `?reset=1` to start again |
+| **Share your feedback** | **The educator**, after the session | `/educator/p/<slug>`: how each component worked. Components marked "Changed it" also offer **Share your changed version** |
+| **Share your materials** | **The educator**, after the session | `/educator/share?pkg=<slug>`: share their own seminar material with OceanX (see Step 4) |
+
+The email also has a **Download lesson plan (PDF)** button and an **Open your resources** button that goes back to the library.
+
+If you lose the email, you cannot open these pages from the app's menus. Send a new package to get a fresh email.
+
+### Step 4: How share back works (a prototype workaround)
+
+A real version would need educator accounts and file storage. This prototype has neither, so share back is simulated in a way that still shows the full loop: **educator shares, the library grows, OceanX reviews**.
+
+There are **two kinds of share back**:
+
+| Kind | Where | What happens |
+|---|---|---|
+| **Changed version** of an existing OceanX component | Feedback page (`/educator/p/<slug>`), on components marked "Changed it" | Creates a ticket in **Team > Review > Share backs**, shown next to the original text |
+| **New material** made by the educator | **Share your materials** link in the email (`/educator/share`) | Creates a ticket **and** adds a card to the library straight away |
+
+**How "Share your materials" works, step by step:**
+
+1. Click **Share your materials** in the email.
+2. The form is **pre-filled with demo data** (Dr. A. Rahman, Example University, a seminar debate for the **Reflect** stage). The material is shared as a **link**, not an upload. The default link points to the sample PDF in this repo: `/files/seagrass-tradeoffs-seminar-activity.pdf`.
+3. Click **Send to OceanX**.
+4. Click **Back to library**. A new card appears in the **Reflect** stage, tagged **Co-created · In review**, with the educator's name and a cover image.
+5. Optional, as the OceanX team: go to **Team > Review > Share backs**, open the **New material** ticket, click **Open material**, tick **"I opened the link and checked the content"**, then **Approve to library**. The tag changes to **Co-created**. **Reject** removes the card.
+
+**The limits of this workaround:**
+
+- **Same browser only.** Tickets and co-created cards are stored in the browser (`localStorage`). Submit, review and view the library **in the same browser** on the same device. Another person or device will not see them.
+- **Link only, no upload.** Educators paste a link (Google Drive, OneDrive, Canva, Padlet). Nothing is stored by OceanX.
+- **Cards appear before review.** To keep the demo short, new material shows in the library at once, clearly marked **In review**. In a real system it would stay hidden until approved.
+- **Resets on `/`.** Opening the entry page clears shared-material cards and their tickets, so every demo starts clean.
+
+### Step 5: OceanX team
+
+1. On the entry page, pick **OceanX Education team**.
+2. **Overview**: library health, team time and reach.
+3. **Insights**: AI recommends Reuse, Adapt or Drop per component. Confirm or override with a reason.
+4. **Question bank**: approve, edit or drop AI-drafted quiz questions.
+5. **Review**: tickets for flagged packages, share backs and issue reports. The first ticket opens automatically.
+6. **Decision log**: every decision and override, with filters and CSV export.
+
+### Resetting demo data
+
+| To reset | Do this |
+|---|---|
+| Shared-material cards and their tickets | Open `/` |
+| Review queue and decision log (mock) | Open `/team/review?reset=1` |
+| A learner's quiz answers on one device | Add `?reset=1` to the quiz link |
 
 ---
 
